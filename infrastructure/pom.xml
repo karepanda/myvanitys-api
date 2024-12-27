@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.myvanitys</groupId>
-	<artifactId>myvanitys-api-infrastructure</artifactId>
+	<artifactId>infrastructure</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>myvanitys-api-infrastructure</name>
 	<description>myvanitys-api-infrastructure</description>

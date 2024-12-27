@@ -8,7 +8,7 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>myvanitys-api-domain</artifactId>
+  <artifactId>domain</artifactId>
   <version>1.0-SNAPSHOT</version>
   <name>myvanitys-api-domain</name>
 
