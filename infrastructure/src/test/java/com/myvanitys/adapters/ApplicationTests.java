@@ -1,4 +1,4 @@
-package com.myvanitys.myvanitysapiinfrastructure;
+package com.myvanitys.adapters;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,5 +1,6 @@
-package com.myvanitys.myvanitysapiinfrastructure;
+package com.myvanitys.adapters;
 
+import com.myvanitys.infraestructure.adapters.Application;
 import org.springframework.boot.SpringApplication;
 
 public class TestMyvanitysApiInfrastructureApplication {

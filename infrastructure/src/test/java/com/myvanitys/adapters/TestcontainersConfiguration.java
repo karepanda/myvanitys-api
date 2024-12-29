@@ -1,4 +1,4 @@
-package com.myvanitys.myvanitysapiinfrastructure;
+package com.myvanitys.adapters;
 
 import org.springframework.boot.test.context.TestConfiguration;
 
