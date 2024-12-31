@@ -1,1 +1,14 @@
+# Excluir archivos .class
+*.class
+
+# Excluir directorios de construcción
+target/
+build/
+
+# Excluir informes de pruebas
+surefire-reports/
+*.lst
+
+# Excluir archivos de configuración de IntelliJ
 .idea/
+*.iml
