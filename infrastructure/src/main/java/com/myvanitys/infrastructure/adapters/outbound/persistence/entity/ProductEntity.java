@@ -23,7 +23,7 @@ public class ProductEntity {
  @JoinColumn(name = "category_id")
  private CategoryEntity categoryEntity;
 
-  @Column(length = 100)
+  @Column(length = 500)
   private String brand;
 
   @Column(nullable = false)

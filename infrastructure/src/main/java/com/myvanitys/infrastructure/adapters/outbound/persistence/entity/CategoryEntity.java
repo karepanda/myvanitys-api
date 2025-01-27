@@ -17,6 +17,6 @@ public class CategoryEntity {
     @Column(nullable = false, unique = true)
     private String Id;
 
-    @Column(length = 100)
+    @Column(length = 500)
     private String name;
 }

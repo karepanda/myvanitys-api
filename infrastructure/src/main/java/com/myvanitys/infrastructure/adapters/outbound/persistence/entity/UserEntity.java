@@ -22,10 +22,10 @@ public class UserEntity {
     @Column(nullable = false, unique = true)
     private String googleId;
 
-    @Column(length = 100)
+    @Column(length = 200)
     private String email;
 
-    @Column(length = 100)
+    @Column(length = 500)
     private String name;
 
     @Column(nullable = false)
