@@ -6,7 +6,7 @@ import com.api.myvanitys.domain.valueobject.EntityId;
 
 public class Product {
 
-  private final EntityId id;         // Using the Value Object for the ID
+  private final EntityId id;
 
   private final String name;
 
