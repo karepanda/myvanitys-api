@@ -27,7 +27,7 @@ public class UserEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   @Column(nullable = false, unique = true)
-  private UUID id; // Cambiar Id a id
+  private UUID id;
 
   @Column(nullable = false, unique = true)
   private String googleId;

@@ -3,32 +3,24 @@ package com.api.myvanitys.domain.model;
 import java.util.Objects;
 
 import com.api.myvanitys.domain.valueobject.EntityId;
+import lombok.NonNull;
 
 public class Product {
 
   private final EntityId id;
-  private String name;
-  private String brand;
-  private Category category;
-  private String colorHex;
+  private final String name;
+  private final String brand;
+  private final Category category;
+  private final String colorHex;
 
-  public Product(EntityId id, String name, String brand, Category category, String colorHex) {
+  public Product(EntityId id, @NonNull String name, @NonNull String brand, @NonNull Category category, @NonNull String colorHex) {
+
     this.id = id;
     this.name = name;
     this.brand = brand;
     this.category = category;
     this.colorHex = colorHex;
   }
-
-  @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
-
-        Product product = (Product) object;
-
-        return Objects.equals(id, product.id);
-    }
 
   @Override
   public int hashCode() {
