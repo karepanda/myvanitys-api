@@ -1,36 +1,46 @@
 package com.myvanitys.infrastructure.adapters.outbound.persistence.entity;
 
-import jakarta.persistence.*;
+import java.util.Date;
+import java.util.UUID;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
-
-@Entity
-@Table(name = "user")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@Table(name = "user")
 public class UserEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(nullable = false, unique = true)
-    private String Id;
+  @Version
+  private Long version;
 
-    @Column(nullable = false, unique = true)
-    private String googleId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(nullable = false, unique = true)
+  private UUID id; // Cambiar Id a id
 
-    @Column(length = 200)
-    private String email;
+  @Column(nullable = false, unique = true)
+  private String googleId;
 
-    @Column(length = 500)
-    private String name;
+  @Column(length = 200)
+  private String email;
 
-    @Column(nullable = false)
-    private Date createdAt;
+  @Column(length = 500)
+  private String name;
 
-    @Column
-    private Date updatedAt;
+  @Column(nullable = false)
+  private Date createdAt;
+
+  @Column
+  private Date updatedAt;
 }
