@@ -19,15 +19,15 @@ public class ProductEntity {
   @Column(nullable = false, unique = true)
   private String Id;
 
- @ManyToOne
- @JoinColumn(name = "category_id")
- private CategoryEntity categoryEntity;
+  @Column(nullable = false)
+  private String name;
 
   @Column(length = 500)
   private String brand;
 
-  @Column(nullable = false)
-  private String name;
+ @ManyToOne
+ @JoinColumn(name = "category_id")
+ private CategoryEntity categoryEntity;
 
   @Column
   private int colorHex;
