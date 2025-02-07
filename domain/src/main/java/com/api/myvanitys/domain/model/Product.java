@@ -7,10 +7,10 @@ import com.api.myvanitys.domain.valueobject.EntityId;
 public class Product {
 
   private final EntityId id;
-  private final String name;
-  private final String brand;
-  private final Category category;
-  private final String colorHex;
+  private String name;
+  private String brand;
+  private Category category;
+  private String colorHex;
 
   public Product(EntityId id, String name, String brand, Category category, String colorHex) {
     this.id = id;
@@ -21,8 +21,18 @@ public class Product {
   }
 
   @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+
+        Product product = (Product) object;
+
+        return Objects.equals(id, product.id);
+    }
+
+  @Override
   public int hashCode() {
-    return Objects.hash(id, name, brand,category,colorHex);
+    return Objects.hash(id);
   }
 
   @Override
