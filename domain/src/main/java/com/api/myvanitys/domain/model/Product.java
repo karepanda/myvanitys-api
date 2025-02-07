@@ -7,28 +7,32 @@ import com.api.myvanitys.domain.valueobject.EntityId;
 public class Product {
 
   private final EntityId id;
-
   private final String name;
+  private final String brand;
+  private final Category category;
+  private final String colorHex;
 
-  private final String description;
-
-  public Product(EntityId id, String name, String description) {
+  public Product(EntityId id, String name, String brand, Category category, String colorHex) {
     this.id = id;
     this.name = name;
-    this.description = description;
+    this.brand = brand;
+    this.category = category;
+    this.colorHex = colorHex;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, description);
+    return Objects.hash(id, name, brand,category,colorHex);
   }
 
   @Override
   public String toString() {
     return "Product{" +
-        "id=" + id +
-        ", name='" + name + '\'' +
-        ", description='" + description + '\'' +
-        '}';
+            "id=" + id +
+            ", name='" + name + '\'' +
+            ", brand='" + brand + '\'' +
+            ", category=" + category +
+            ", colorHex='" + colorHex + '\'' +
+            '}';
   }
 }
