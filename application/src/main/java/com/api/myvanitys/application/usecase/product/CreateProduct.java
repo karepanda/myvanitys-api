@@ -6,11 +6,11 @@ import com.api.myvanitys.domain.valueobject.EntityId;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CreateProductUseCase {
+public class CreateProduct {
 
   public Product execute(CreateProductCommand command) {
     EntityId id = new EntityId();
-    Product product = new Product(id, command.name(), command.description());
+    Product product = new Product(id, command.name(), command.brand(), command.categoryID(), command.colorHex());
 
     // create Product
     return product;
