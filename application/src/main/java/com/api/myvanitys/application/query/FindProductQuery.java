@@ -1,5 +1,8 @@
 package com.api.myvanitys.application.query;
 
+import lombok.Getter;
+
+@Getter
 public class FindProductQuery {
     private final String searchTerms;
 
@@ -7,7 +10,4 @@ public class FindProductQuery {
         this.searchTerms = searchTerms;
     }
 
-    public String getSearchTerms() {
-        return searchTerms;
-    }
 }

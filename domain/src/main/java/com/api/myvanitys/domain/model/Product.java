@@ -3,8 +3,12 @@ package com.api.myvanitys.domain.model;
 import java.util.Objects;
 
 import com.api.myvanitys.domain.valueobject.EntityId;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
+@Getter
+@ToString
 public class Product {
 
   private final EntityId id;
@@ -27,14 +31,4 @@ public class Product {
     return Objects.hash(id);
   }
 
-  @Override
-  public String toString() {
-    return "Product{" +
-            "id=" + id +
-            ", name='" + name + '\'' +
-            ", brand='" + brand + '\'' +
-            ", category=" + category +
-            ", colorHex='" + colorHex + '\'' +
-            '}';
-  }
 }
