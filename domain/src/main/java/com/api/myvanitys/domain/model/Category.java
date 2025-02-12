@@ -2,8 +2,9 @@ package com.api.myvanitys.domain.model;
 
 
 import com.api.myvanitys.domain.valueobject.EntityId;
+import lombok.Getter;
 import lombok.NonNull;
-
+@Getter
 public class Category {
 
     private final EntityId id;
