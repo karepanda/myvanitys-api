@@ -24,7 +24,7 @@ class EntityIdTest {
       target = new EntityId();
 
       // Then
-      assertThat(target.getValue()).isNotNull();
+      assertThat(target.value()).isNotNull();
     }
 
     @Test
@@ -36,7 +36,7 @@ class EntityIdTest {
       target = new EntityId(uuid);
 
       // Then
-      assertThat(target.getValue()).isEqualTo(uuid);
+      assertThat(target.value()).isEqualTo(uuid);
     }
 
     @Test
@@ -58,7 +58,7 @@ class EntityIdTest {
       target = new EntityId(uuid);
 
       // When
-      final UUID result = target.getValue();
+      final UUID result = target.value();
 
       // Then
       assertThat(result).isEqualTo(uuid);
