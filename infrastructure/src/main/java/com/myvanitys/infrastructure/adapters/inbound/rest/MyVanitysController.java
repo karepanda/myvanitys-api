@@ -1,4 +1,4 @@
-package com.api.myvanitys.application.controller;
+package com.myvanitys.infrastructure.adapters.inbound.rest;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
