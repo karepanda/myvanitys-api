@@ -7,6 +7,7 @@ import com.api.myvanitys.domain.model.Product;
 import com.myvanitys.infrastructure.adapters.outbound.persistence.entity.ProductEntity;
 import com.myvanitys.infrastructure.adapters.outbound.persistence.repository.ProductRepository;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,7 +18,7 @@ public class FindProduct {
 
   private final ProductMapper productMapper;  // Inject mapper
 
-  public Product execute(FindProductQuery query) {
+  public Product execute(@NonNull FindProductQuery query) {
     Optional<ProductEntity> productEntity = productRepository.findByName(query.getSearchTerms());
 
     if (productEntity.isEmpty()) {
