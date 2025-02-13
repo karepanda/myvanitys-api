@@ -1,10 +1,13 @@
 package com.api.myvanitys.domain.model;
 
 import com.api.myvanitys.domain.valueobject.EntityId;
+import lombok.Data;
 import lombok.NonNull;
+import lombok.ToString;
 
 import java.util.Objects;
-
+@Data
+@ToString
 public class Review {
     private final EntityId id;
     private final User user;
@@ -14,7 +17,6 @@ public class Review {
 
     public Review(EntityId id, @NonNull User user, @NonNull Product product, @NonNull Integer rating, @NonNull String review) {
 
-
         this.id = id;
         this.user = user;
         this.product = product;
@@ -22,20 +24,11 @@ public class Review {
         this.description = review;
     }
 
-
     @Override
     public int hashCode() {
         return Objects.hash(id, user, product, rating, description);
     }
 
-    @Override
-    public String toString() {
-        return "Review{" +
-                "id=" + id +
-                ", user=" + user +
-                ", product=" + product +
-                ", rating=" + rating +
-                ", review='" + description + '\'' +
-                '}';
-    }
+
+
 }
