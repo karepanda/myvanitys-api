@@ -1,0 +1,31 @@
+# Default connection pool
+spring:
+  datasource:
+    hikari:
+      connectionTimeout: 30000
+      maximumPoolSize: 5
+    url: jdbc:postgresql://localhost:5432/myvanitysdb
+    username: myvanitys
+    password: secret
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+logging:
+  level:
+    org.flywaydb: DEBUG
+    org.springframework: DEBUG
+
+# Other config
+server:
+  port: 8080

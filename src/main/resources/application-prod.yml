@@ -1,0 +1,18 @@
+# Default connection pool
+spring.datasource.hikari.connectionTimeout=30000
+spring.datasource.hikari.maximumPoolSize=10
+spring.datasource.hikari.minimumIdle=5
+spring.datasource.hikari.idleTimeout=600000
+spring.datasource.hikari.maxLifetime=1800000
+# PostgreSQL (by productionn)
+spring.datasource.url=jdbc:postgresql://db:5432/myvanitydb
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+# Hibernate
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+# other config
+server.port=8080
+logging.level.org.springframework=WARN
