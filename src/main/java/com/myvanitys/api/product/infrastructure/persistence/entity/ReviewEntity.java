@@ -3,15 +3,7 @@ package com.myvanitys.api.product.infrastructure.persistence.entity;
 import java.util.Date;
 import java.util.UUID;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,7 +32,7 @@ public class ReviewEntity {
   private ProductEntity productEntity;
 
   @Column
-  private int stars;
+  private int rating;
 
   @Column(length = 500)
   private String description;
@@ -51,6 +43,15 @@ public class ReviewEntity {
   @Column
   private Date updatedAt;
 
+  @PrePersist
+  protected void onCreate() {
+    createdAt = new Date();
+    updatedAt = new Date();
+  }
 
+  @PreUpdate
+  protected void onUpdate() {
+    updatedAt = new Date();
+  }
 }
 

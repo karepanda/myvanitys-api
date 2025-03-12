@@ -3,8 +3,9 @@ package com.myvanitys.api.auth.domain.model;
 import java.util.Objects;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import lombok.Getter;
 import lombok.NonNull;
-
+@Getter
 public class User {
     private final EntityId id;
     private final String authorizationId;
@@ -13,9 +14,17 @@ public class User {
 
     public User(EntityId id, @NonNull String authorizationId, @NonNull String email, String name) {
         this.id = id;
-        this.authorizationId = authorizationId;
-        this.email = email;
+        this.authorizationId = Objects.requireNonNull(authorizationId, "authorizationId is marked non-null but is null");
+        this.email = Objects.requireNonNull(email, "email is marked non-null but is null");
         this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        User user = (User) obj;
+        return Objects.equals(id, user.id); // just compare the ID
     }
 
     @Override
