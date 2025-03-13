@@ -118,4 +118,48 @@ class ProductTest {
         int expectedAverageAfterRemoval = (5 + 3) / 2; // 4
         assertEquals(expectedAverageAfterRemoval, product.getAverageRating(), "El promedio de calificación no se actualizó correctamente");
     }
+
+    @Test
+    void when_nullParametersInConstructor_then_throwException() {
+        assertThrows(NullPointerException.class, () ->
+                new Product(new EntityId(UUID.randomUUID()), null, "brand", new Category(new EntityId(UUID.randomUUID()), "category"), "#FFFFFF"));
+
+        assertThrows(NullPointerException.class, () ->
+                new Product(new EntityId(UUID.randomUUID()), "name", null, new Category(new EntityId(UUID.randomUUID()), "category"), "#FFFFFF"));
+
+        assertThrows(NullPointerException.class, () ->
+                new Product(new EntityId(UUID.randomUUID()), "name", "brand", null, "#FFFFFF"));
+
+        assertThrows(NullPointerException.class, () ->
+                new Product(new EntityId(UUID.randomUUID()), "name", "brand", new Category(new EntityId(UUID.randomUUID()), "category"), null));
+    }
+
+    @Test
+    void when_addNullReview_then_throwException() {
+        assertThrows(NullPointerException.class, () -> product.addReview(null));
+    }
+
+    @Test
+    void when_removeReviewThatDoesNotExist_then_doNothing() {
+        // Crear una review que no ha sido añadida
+        Review nonExistentReview = new Review(new EntityId(UUID.randomUUID()), user, product, 4, "No existe");
+
+        // Intentar eliminarla
+        product.removeReview(nonExistentReview);
+
+        // Verificar que la lista de reseñas sigue vacía
+        assertTrue(product.getReviews().isEmpty());
+    }
+
+    @Test
+    void when_noReviews_then_averageRatingIsZero() {
+        assertEquals(0, product.getAverageRating(), "El promedio debería ser 0 cuando no hay reseñas");
+    }
+
+    @Test
+    void testHashCode() {
+        Product sameProduct = new Product(product.getId(), product.getName(), product.getBrand(), product.getCategory(), product.getColorHex());
+        assertEquals(product.hashCode(), sameProduct.hashCode(), "El hashCode debería ser igual para productos con el mismo ID");
+    }
+
 }

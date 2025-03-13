@@ -131,4 +131,28 @@ class EntityIdTest {
       }
     }
   }
+
+  @Test
+  void when_sameInstance_then_returnTrue() {
+    // Given
+    target = new EntityId(UUID.randomUUID());
+
+    // When
+    final boolean result = target.equals(target);
+
+    // Then
+    assertThat(result).isTrue();
+  }
+
+  @Test
+  void when_nullOrDifferentClass_then_returnFalse() {
+    // Given
+    target = new EntityId(UUID.randomUUID());
+
+    // When & Then
+    assertThat(target.equals(null)).isFalse(); // Null
+    assertThat(target.equals("Not an EntityId")).isFalse(); // Otro tipo de objeto
+  }
+
+
 }
