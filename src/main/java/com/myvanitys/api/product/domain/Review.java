@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.ToString;
 @Data
-@ToString
 public class Review {
     private final EntityId id;
     private final User user;
@@ -30,6 +29,22 @@ public class Review {
         return Objects.hash(id, user, product, rating, description);
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        Review review = (Review) object;
+        return Objects.equals(id, review.id) && Objects.equals(user, review.user) && Objects.equals(product, review.product) && Objects.equals(rating, review.rating) && Objects.equals(description, review.description);
+    }
 
+    @Override
+    public String toString() {
+        return "Review{" +
+                "id=" + id +
+                ", user=" + user +
+                ", product=" + product +
+                ", rating=" + rating +
+                ", description='" + description + '\'' +
+                '}';
+    }
 
 }

@@ -13,6 +13,12 @@ public class Category {
     private final String name;
 
     public Category(@NonNull EntityId id, @NonNull String name) {
+        if (id == null) {
+            throw new NullPointerException("id is marked non-null but is null");
+        }
+        if (name == null) {
+            throw new NullPointerException("name is marked non-null but is null");
+        }
         this.id = id;
         this.name = name;
     }

@@ -4,7 +4,7 @@ CREATE TABLE product
     category_id UUID         REFERENCES category (id) ON DELETE SET NULL,
     brand       VARCHAR(500),
     name        VARCHAR(255) NOT NULL,
-    color_hex   INT,
+    color_hex   VARCHAR(7),
     created_at  TIMESTAMP,
     updated_at  TIMESTAMP
 );
