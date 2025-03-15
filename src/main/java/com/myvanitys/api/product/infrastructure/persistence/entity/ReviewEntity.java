@@ -21,15 +21,11 @@ public class ReviewEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   @Column(nullable = false, unique = true)
-  private UUID id;
+  private UUID reviewId;
 
   @ManyToOne
-  @JoinColumn(name = "user_id")
-  private UserEntity userEntity;
-
-  @ManyToOne
-  @JoinColumn(name = "product_id")
-  private ProductEntity productEntity;
+  @JoinColumn(name = "product_user_id")
+  private ProductUserEntity productUserEntity;
 
   @Column
   private int rating;

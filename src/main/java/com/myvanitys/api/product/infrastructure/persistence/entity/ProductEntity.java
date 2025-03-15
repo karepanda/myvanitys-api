@@ -19,7 +19,7 @@ public class ProductEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   @Column(nullable = false, unique = true)
-  private UUID id;
+  private UUID productId;
 
   @ManyToOne
   @JoinColumn(name = "category_id")
@@ -33,9 +33,6 @@ public class ProductEntity {
 
   @Column
   private String colorHex;
-
-  @OneToMany(mappedBy = "productEntity")
-  private List<ReviewEntity> reviews;
 
   @Column
   private Date createdAt;

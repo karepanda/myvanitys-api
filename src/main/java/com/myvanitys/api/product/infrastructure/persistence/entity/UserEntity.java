@@ -3,13 +3,7 @@ package com.myvanitys.api.product.infrastructure.persistence.entity;
 import java.util.Date;
 import java.util.UUID;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,10 +21,10 @@ public class UserEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   @Column(nullable = false, unique = true)
-  private UUID id;
+  private UUID userId;
 
   @Column(nullable = false, unique = true)
-  private String googleId;
+  private String token;
 
   @Column(length = 200)
   private String email;
@@ -43,4 +37,15 @@ public class UserEntity {
 
   @Column
   private Date updatedAt;
+
+  @PrePersist
+  protected void onCreate() {
+    createdAt = new Date();
+    updatedAt = new Date();
+  }
+
+  @PreUpdate
+  protected void onUpdate() {
+    updatedAt = new Date();
+  }
 }
