@@ -14,10 +14,15 @@ import lombok.ToString;
 public class Product {
 
   private final EntityId id;
+
   private final String name;
+
   private final String brand;
+
   private final Category category;
+
   private final String colorHex;
+
   private int averageRating;
 
   private final List<Review> reviews = new ArrayList<>();
@@ -50,6 +55,7 @@ public class Product {
       reviews.add(review);
     }
   }
+
   public void removeReview(Review review) {
     if (reviews.remove(review)) {
       calculateAverageRating();
@@ -58,11 +64,23 @@ public class Product {
 
   private void calculateAverageRating() {
     averageRating = reviews.isEmpty() ? 0 :
-            reviews.stream().mapToInt(Review::getRating).sum() / reviews.size();
+        reviews.stream().mapToInt(Review::getRating).sum() / reviews.size();
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(id);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null || getClass() != obj.getClass()) {
+      return false;
+    }
+    Product product = (Product) obj;
+    return Objects.equals(id, product.id);
   }
 }
