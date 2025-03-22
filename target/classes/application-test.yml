@@ -1,0 +1,4 @@
+# PostgreSQL (test environment)
+spring.datasource.url=jdbc:postgresql://localhost:5432/myvanitysdb
+spring.datasource.username=myvanitys
+spring.datasource.password=secret
