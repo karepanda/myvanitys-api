@@ -1,55 +1,61 @@
 package com.myvanitys.api.product.infrastructure.persistence.entity;
 
-
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "pruduct_user")
+@Table(name = "product_user")
 public class ProductUserEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(nullable = false, unique = true)
-    private UUID productUserId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(nullable = false, unique = true)
+  private UUID productUserId;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private UserEntity userEntity;
+  @Column(name = "user_id")
+  private UUID userId;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    private ProductEntity productEntity;
+  @Column(name = "product_id")
+  private UUID productId;
 
-    @OneToMany(mappedBy = "productUserEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ReviewEntity> reviews;
+  @OneToMany(mappedBy = "productUserEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<ReviewEntity> reviews;
 
-    @Column
-    private Date deleteAt;
+  @Column
+  private Date deleteAt;
 
-    @Column
-    private Date createdAt;
+  @Column
+  private Date createdAt;
 
-    @Column
-    private Date updatedAt;
+  @Column
+  private Date updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = new Date();
-        updatedAt = new Date();
-    }
+  @PrePersist
+  protected void onCreate() {
+    createdAt = new Date();
+    updatedAt = new Date();
+  }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = new Date();
-    }
+  @PreUpdate
+  protected void onUpdate() {
+    updatedAt = new Date();
+  }
 }

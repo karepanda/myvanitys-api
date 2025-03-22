@@ -15,13 +15,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class CreateProductTest {
+
   private Product product;
 
   private Review review1;
+
   private Review review2;
+
   private Review review3;
-
-
 
   @BeforeEach
   void setUp() {
@@ -37,9 +38,9 @@ class CreateProductTest {
     User user = new User(userId, "Usuario de prueba", "prueba@gmail.com", "name");
 
     // Crear reseñas con diferentes calificaciones
-    review1 = new Review(new EntityId(UUID.randomUUID()), user, product, 4, "Reseña 1");
-    review2 = new Review(new EntityId(UUID.randomUUID()), user, product, 5, "Reseña 2");
-    review3 = new Review(new EntityId(UUID.randomUUID()), user, product, 3, "Reseña 3");
+    review1 = new Review(new EntityId(UUID.randomUUID()), userId, product, 4, "Reseña 1");
+    review2 = new Review(new EntityId(UUID.randomUUID()), userId, product, 5, "Reseña 2");
+    review3 = new Review(new EntityId(UUID.randomUUID()), userId, product, 3, "Reseña 3");
   }
 
   @Test
