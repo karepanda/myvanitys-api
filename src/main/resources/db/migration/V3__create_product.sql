@@ -1,6 +1,6 @@
 CREATE TABLE product
 (
-    product_id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id  UUID PRIMARY KEY,
     category_id UUID         REFERENCES category (category_id) ON DELETE SET NULL,
     brand       VARCHAR(500),
     name        VARCHAR(255) NOT NULL,
