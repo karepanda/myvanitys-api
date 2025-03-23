@@ -11,8 +11,10 @@ import com.myvanitys.api.product.domain.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
+import com.myvanitys.api.product.infrastructure.persistence.repository.CategoryRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -28,60 +30,105 @@ class CreateProductUseCaseTest {
   private ProductRepository productRepository;
 
   @Mock
-  private ProductMapper productMapper; // Add the mock for ProductMapper
+  private ProductMapper productMapper;
+
+  @Mock
+  private CategoryRepository categoryRepository;
 
   @InjectMocks
-  private CreateProductUseCase useCase;
+  private CreateProductUseCase target;
 
   @Captor
   private ArgumentCaptor<Product> productCaptor;
 
-  private CreateProductCommand command;
+  @Nested
+  class Execute {
 
-  private ProductEntity mappedEntity;
+    private final EntityId productId = new EntityId();
 
-  @BeforeEach
-  void setUp() {
-    // Setup test data
-    EntityId productId = new EntityId();
-    String name = "Test Product";
-    String brand = "Test Brand";
+    private final String name = "Test Product";
 
-    EntityId categoryId = new EntityId();
-    Category category = new Category(categoryId, "Test Category");
+    private final String brand = "Test Brand";
 
-    String colorHex = "#FF5733";
+    private final EntityId categoryId = new EntityId();
 
-    command = new CreateProductCommand(productId, name, brand, category, colorHex);
+    private final Category category = new Category(categoryId, "Test Category");
 
-    // Create a product entity to be returned by the mapper
-    mappedEntity = new ProductEntity();
-    // Set up any necessary fields for the entity
-  }
+    private final String colorHex = "#FF5733";
 
-  @Test
-  void execute_ShouldSaveProductToRepository() {
-    // Mock the mapper behavior to return our prepared entity
-    when(productMapper.toEntity(any(Product.class))).thenReturn(mappedEntity);
+    private final EntityId userId = new EntityId();
 
-    // When
-    useCase.execute(command);
+    private final String reviewText = "Great product, highly recommended!";
 
-    // Then
-    // Verify mapper was called with a product domain object
-    verify(productMapper).toEntity(productCaptor.capture());
+    private CreateProductCommand command;
 
-    // Get the captured domain object and verify its properties
-    Product capturedProduct = productCaptor.getValue();
-    assertThat(capturedProduct).satisfies(product -> {
-      assertThat(product).isNotNull();
-      assertThat(product.getName()).isEqualTo(command.name());
-      assertThat(product.getBrand()).isEqualTo(command.brand());
-      assertThat(product.getCategory()).isEqualTo(command.categoryID());
-      assertThat(product.getColorHex()).isEqualTo(command.colorHex());
-    });
+    private ProductEntity mappedEntity;
 
-    // Verify the repository was called with the mapped entity
-    verify(productRepository).save(mappedEntity);
+    private Product expectedProduct;
+
+    @BeforeEach
+    void setUp() {
+      command = new CreateProductCommand(
+          productId,
+          name,
+          brand,
+          categoryId,
+          colorHex,
+          userId,
+          reviewText
+      );
+
+      mappedEntity = new ProductEntity();
+
+      expectedProduct = new Product(productId, name, brand, category, colorHex);
+
+      when(productMapper.toEntity(any(Product.class))).thenReturn(mappedEntity);
+      when(productRepository.save(any(ProductEntity.class))).thenReturn(mappedEntity);
+      when(productMapper.toDomain(any(ProductEntity.class))).thenReturn(expectedProduct);
+      when(categoryRepository.findById(categoryId)).thenReturn(java.util.Optional.of(category));
+    }
+
+    @Test
+    void when_validCommand_then_saveProductWithUserRelation() {
+      // Act
+      final Product result = target.execute(command);
+
+      // Assert
+      verify(productMapper).toEntity(productCaptor.capture());
+
+      final Product capturedProduct = productCaptor.getValue();
+      assertThat(capturedProduct.getId()).isEqualTo(productId);
+      assertThat(capturedProduct.getName()).isEqualTo(name);
+      assertThat(capturedProduct.getBrand()).isEqualTo(brand);
+      assertThat(capturedProduct.getCategory()).isEqualTo(category);
+      assertThat(capturedProduct.getColorHex()).isEqualTo(colorHex);
+
+      verify(productRepository).save(mappedEntity);
+      assertThat(result).isEqualTo(expectedProduct);
+    }
+
+    @Test
+    void when_commandWithoutReviewText_then_saveProductWithUserRelationWithoutReview() {
+      // Arrange
+      final CreateProductCommand commandWithoutReview = new CreateProductCommand(
+          productId, name, brand, categoryId, colorHex, userId, null
+      );
+
+      // Act
+      final Product result = target.execute(commandWithoutReview);
+
+      // Assert
+      verify(productMapper).toEntity(productCaptor.capture());
+
+      final Product capturedProduct = productCaptor.getValue();
+      assertThat(capturedProduct.getId()).isEqualTo(productId);
+      assertThat(capturedProduct.getName()).isEqualTo(name);
+      assertThat(capturedProduct.getBrand()).isEqualTo(brand);
+      assertThat(capturedProduct.getCategory()).isEqualTo(category);
+      assertThat(capturedProduct.getColorHex()).isEqualTo(colorHex);
+
+      verify(productRepository).save(mappedEntity);
+      assertThat(result).isEqualTo(expectedProduct);
+    }
   }
 }

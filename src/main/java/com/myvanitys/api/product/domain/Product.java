@@ -1,8 +1,10 @@
 package com.myvanitys.api.product.domain;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.Getter;
@@ -27,8 +29,10 @@ public class Product {
 
   private final List<Review> reviews = new ArrayList<>();
 
-  public Product(EntityId id, @NonNull String name, @NonNull String brand, @NonNull Category category, @NonNull String colorHex) {
+  // Usuarios que tienen este producto en su vanity
+  private final Set<ProductUserRelation> userRelations = new HashSet<>();
 
+  public Product(EntityId id, @NonNull String name, @NonNull String brand, @NonNull Category category, @NonNull String colorHex) {
     this.id = id;
     this.name = name;
     this.brand = brand;
@@ -53,6 +57,7 @@ public class Product {
   public void addReview(@NonNull Review review) {
     if (!reviews.contains(review)) {
       reviews.add(review);
+      calculateAverageRating();
     }
   }
 
@@ -60,6 +65,27 @@ public class Product {
     if (reviews.remove(review)) {
       calculateAverageRating();
     }
+  }
+
+  // Método para asociar un producto a un usuario (añadirlo a su vanity)
+  public void addToUserVanity(@NonNull EntityId userId, String reviewText) {
+    // Crear la relación producto-usuario
+    ProductUserRelation relation = new ProductUserRelation(new EntityId(), this.id, userId);
+
+    // Si se proporciona un review, añadirlo
+    if (reviewText != null && !reviewText.trim().isEmpty()) {
+      Review review = new Review(new EntityId(), userId, this, 5, reviewText); // Pasar el producto actual (this)
+      this.addReview(review);
+      relation.setReviewId(review.getId());
+    }
+
+    // Añadir la relación a la colección
+    userRelations.add(relation);
+  }
+
+  // Método para eliminar un producto de la vanity de un usuario
+  public void removeFromUserVanity(@NonNull EntityId userId) {
+    userRelations.removeIf(relation -> relation.getUserId().equals(userId));
   }
 
   private void calculateAverageRating() {
