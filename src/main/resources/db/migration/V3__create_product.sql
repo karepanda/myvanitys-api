@@ -8,3 +8,5 @@ CREATE TABLE product
     created_at  TIMESTAMP,
     updated_at  TIMESTAMP
 );
+
+CREATE INDEX idx_product_category ON product (category_id);

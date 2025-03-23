@@ -35,7 +35,7 @@ class ReviewTest {
   void testReviewInitialization() {
     assertNotNull(review1.getId());
     assertEquals(5, review1.getRating());
-    assertEquals("Excelente producto", review1.getDescription());
+    assertEquals("Excelente producto", review1.getComment());
   }
 
   @Test

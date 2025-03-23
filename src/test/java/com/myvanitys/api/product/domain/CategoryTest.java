@@ -16,7 +16,7 @@ class CategoryTest {
     String name = "Skincare";
     Category category = new Category(id, name);
 
-    assertNotNull(category.id());
+    assertNotNull(category.categoryId());
     assertEquals(name, category.name());
   }
 

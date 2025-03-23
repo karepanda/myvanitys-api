@@ -17,7 +17,7 @@ public class Review {
 
   private final Integer rating;
 
-  private final String description;
+  private final String comment;
 
   public Review(EntityId id, @NonNull EntityId userId, @NonNull Product product, @NonNull Integer rating, @NonNull String review) {
 
@@ -25,22 +25,22 @@ public class Review {
     this.userId = userId;
     this.product = product;
     this.rating = rating;
-    this.description = review;
+    this.comment = review;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, userId, product, rating, description);
+    return Objects.hash(id, userId, product, rating, comment);
   }
 
   @Override
   public boolean equals(Object object) {
-      if (object == null || getClass() != object.getClass()) {
-          return false;
-      }
+    if (object == null || getClass() != object.getClass()) {
+      return false;
+    }
     Review review = (Review) object;
     return Objects.equals(id, review.id) && Objects.equals(userId, review.userId) && Objects.equals(product, review.product)
-        && Objects.equals(rating, review.rating) && Objects.equals(description, review.description);
+        && Objects.equals(rating, review.rating) && Objects.equals(comment, review.comment);
   }
 
   @Override
@@ -50,7 +50,7 @@ public class Review {
         ", user=" + userId +
         ", product=" + product +
         ", rating=" + rating +
-        ", description='" + description + '\'' +
+        ", description='" + comment + '\'' +
         '}';
   }
 

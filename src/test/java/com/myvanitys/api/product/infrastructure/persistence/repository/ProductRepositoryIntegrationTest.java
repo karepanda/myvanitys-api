@@ -1,11 +1,14 @@
 package com.myvanitys.api.product.infrastructure.persistence.repository;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.common.test.AbstractRepositoryIntegrationTest;
+import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +18,16 @@ class ProductRepositoryIntegrationTest extends AbstractRepositoryIntegrationTest
   @Autowired
   private ProductRepository productRepository;
 
+  @Autowired
+  private CategoryRepository categoryRepository;
+
   @Test
   void shouldSaveAndRetrieveProduct() {
     // Given
-    ProductEntity product = createSampleProduct("Test Product", "Test Brand");
+    CategoryEntity category = createSampleCategory("Test Category");
+    CategoryEntity savedCategory = categoryRepository.save(category);
+
+    ProductEntity product = createSampleProduct("Test Product", "Test Brand", savedCategory);
 
     // When
     ProductEntity savedProduct = productRepository.save(product);
@@ -30,13 +39,17 @@ class ProductRepositoryIntegrationTest extends AbstractRepositoryIntegrationTest
         .hasValueSatisfying(productEntity -> {
           assertThat(productEntity.getName()).isEqualTo("Test Product");
           assertThat(productEntity.getBrand()).isEqualTo("Test Brand");
+          assertThat(productEntity.getCategory().getName()).isEqualTo("Test Category");
         });
   }
 
   @Test
   void shouldFindProductByName() {
     // Given
-    ProductEntity product = createSampleProduct("Unique Product Name", "Brand X");
+    CategoryEntity category = createSampleCategory("Some Category");
+    CategoryEntity savedCategory = categoryRepository.save(category);
+
+    ProductEntity product = createSampleProduct("Unique Product Name", "Brand X", savedCategory);
     productRepository.save(product);
 
     // When
@@ -60,7 +73,10 @@ class ProductRepositoryIntegrationTest extends AbstractRepositoryIntegrationTest
   @Test
   void shouldFindProductByBrand() {
     // Given
-    ProductEntity product = createSampleProduct("Some Product", "Unique Brand Name");
+    CategoryEntity category = createSampleCategory("Some Category");
+    CategoryEntity savedCategory = categoryRepository.save(category);
+
+    ProductEntity product = createSampleProduct("Some Product", "Unique Brand Name", savedCategory);
     productRepository.save(product);
 
     // When
@@ -82,14 +98,84 @@ class ProductRepositoryIntegrationTest extends AbstractRepositoryIntegrationTest
   }
 
   @Test
+  void shouldFindProductsByCategoryId() {
+    // Given
+    CategoryEntity category1 = createSampleCategory("Electronics");
+    CategoryEntity savedCategory1 = categoryRepository.save(category1);
+
+    CategoryEntity category2 = createSampleCategory("Clothing");
+    CategoryEntity savedCategory2 = categoryRepository.save(category2);
+
+    ProductEntity product1 = createSampleProduct("Product 1", "Brand A", savedCategory1);
+    ProductEntity product2 = createSampleProduct("Product 2", "Brand B", savedCategory1);
+    ProductEntity product3 = createSampleProduct("Product 3", "Brand C", savedCategory2);
+
+    productRepository.save(product1);
+    productRepository.save(product2);
+    productRepository.save(product3);
+
+    // When
+    List<ProductEntity> foundProducts = productRepository.findByCategoryCategoryId(savedCategory1.getCategoryId());
+
+    // Then
+    assertThat(foundProducts).hasSize(2);
+    assertThat(foundProducts)
+        .extracting(ProductEntity::getName)
+        .containsExactlyInAnyOrder("Product 1", "Product 2");
+  }
+
+  @Test
+  void shouldFindProductsByCategoryName() {
+    // Given
+    CategoryEntity category1 = createSampleCategory("Electronics");
+    CategoryEntity savedCategory1 = categoryRepository.save(category1);
+
+    CategoryEntity category2 = createSampleCategory("Clothing");
+    CategoryEntity savedCategory2 = categoryRepository.save(category2);
+
+    ProductEntity product1 = createSampleProduct("Product 1", "Brand A", savedCategory1);
+    ProductEntity product2 = createSampleProduct("Product 2", "Brand B", savedCategory1);
+    ProductEntity product3 = createSampleProduct("Product 3", "Brand C", savedCategory2);
+
+    productRepository.save(product1);
+    productRepository.save(product2);
+    productRepository.save(product3);
+
+    // When
+    List<ProductEntity> foundProducts = productRepository.findByCategoryName("Electronics");
+
+    // Then
+    assertThat(foundProducts).hasSize(2);
+    assertThat(foundProducts)
+        .extracting(ProductEntity::getName)
+        .containsExactlyInAnyOrder("Product 1", "Product 2");
+  }
+
+  @Test
+  void shouldReturnEmptyListForNonExistentCategoryName() {
+    // When
+    List<ProductEntity> foundProducts = productRepository.findByCategoryName("Non Existent Category");
+
+    // Then
+    assertThat(foundProducts).isEmpty();
+  }
+
+  @Test
   void shouldUpdateExistingProduct() {
     // Given
-    ProductEntity product = createSampleProduct("Initial Name", "Initial Brand");
+    CategoryEntity category1 = createSampleCategory("Initial Category");
+    CategoryEntity savedCategory1 = categoryRepository.save(category1);
+
+    CategoryEntity category2 = createSampleCategory("Updated Category");
+    CategoryEntity savedCategory2 = categoryRepository.save(category2);
+
+    ProductEntity product = createSampleProduct("Initial Name", "Initial Brand", savedCategory1);
     ProductEntity savedProduct = productRepository.save(product);
 
     // When
     savedProduct.setName("Updated Name");
     savedProduct.setBrand("Updated Brand");
+    savedProduct.setCategory(savedCategory2);
     productRepository.save(savedProduct);
 
     // Then
@@ -99,13 +185,17 @@ class ProductRepositoryIntegrationTest extends AbstractRepositoryIntegrationTest
         .hasValueSatisfying(productEntity -> {
           assertThat(productEntity.getName()).isEqualTo("Updated Name");
           assertThat(productEntity.getBrand()).isEqualTo("Updated Brand");
+          assertThat(productEntity.getCategory().getName()).isEqualTo("Updated Category");
         });
   }
 
   @Test
   void shouldDeleteProduct() {
     // Given
-    ProductEntity product = createSampleProduct("Product to Delete", "Brand to Delete");
+    CategoryEntity category = createSampleCategory("Some Category");
+    CategoryEntity savedCategory = categoryRepository.save(category);
+
+    ProductEntity product = createSampleProduct("Product to Delete", "Brand to Delete", savedCategory);
     ProductEntity savedProduct = productRepository.save(product);
     UUID id = savedProduct.getProductId();
 
@@ -117,12 +207,18 @@ class ProductRepositoryIntegrationTest extends AbstractRepositoryIntegrationTest
     assertThat(deletedProduct).isEmpty();
   }
 
-  private ProductEntity createSampleProduct(String name, String brand) {
+  private CategoryEntity createSampleCategory(String name) {
+    CategoryEntity category = new CategoryEntity();
+    category.setName(name);
+    return category;
+  }
+
+  private ProductEntity createSampleProduct(String name, String brand, CategoryEntity category) {
     ProductEntity product = new ProductEntity();
     product.setName(name);
     product.setBrand(brand);
     product.setColorHex("#FFFFFF");
-    // No necesitas establecer createdAt ni updatedAt, ya que se manejan con @PrePersist y @PreUpdate
+    product.setCategory(category);
     return product;
   }
 }
