@@ -1,57 +1,53 @@
 package com.myvanitys.api.product.infrastructure.persistence.entity;
 
-import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+/**
+ * JPA entity for products
+ */
 @Entity
 @Table(name = "product")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProductEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
-  @Column(nullable = false, unique = true)
-  private UUID id;
+  @Column(name = "product_id")
+  private UUID productId;
 
   @ManyToOne
   @JoinColumn(name = "category_id")
-  private CategoryEntity categoryEntity;
-
-  @Column(length = 500)
-  private String brand;
+  private CategoryEntity category;
 
   @Column(nullable = false)
   private String name;
 
   @Column
+  private String brand;
+
+  @Column(name = "color_hex")
   private String colorHex;
 
-  @OneToMany(mappedBy = "productEntity")
-  private List<ReviewEntity> reviews;
+  @Column(name = "created_at")
+  private java.util.Date createdAt;
 
-  @Column
-  private Date createdAt;
-
-  @Column
-  private Date updatedAt;
-
-  @PrePersist
-  protected void onCreate() {
-    createdAt = new Date();
-    updatedAt = new Date();
-  }
-
-  @PreUpdate
-  protected void onUpdate() {
-    updatedAt = new Date();
-  }
+  @Column(name = "updated_at")
+  private java.util.Date updatedAt;
 
 }

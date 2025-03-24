@@ -1,5 +1,7 @@
 CREATE TABLE category
 (
-    id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100)
+    category_id UUID PRIMARY KEY,
+    name        VARCHAR(500),
+    created_at  TIMESTAMP,
+    updated_at  TIMESTAMP
 );
