@@ -38,6 +38,7 @@ class ReviewMapperTest {
             // Given
             final UUID reviewId = UUID.randomUUID();
             final UUID userId = UUID.randomUUID();
+            UUID productId = UUID.randomUUID();
             final int rating = 5;
             final String comment = "Great product!";
 
@@ -45,22 +46,25 @@ class ReviewMapperTest {
             final ProductUserEntity productUserEntity = mock(ProductUserEntity.class);
             final ReviewEntity entity = mock(ReviewEntity.class);
 
-            doReturn(userId).when(productUserEntity).getUserId();
-            doReturn(productUserEntity).when(entity).getProductUserEntity();
-            doReturn(reviewId).when(entity).getReviewId();
-            doReturn(rating).when(entity).getRating();
-            doReturn(comment).when(entity).getComment();
+            // Configurar los mocks
+            when(entity.getReviewId()).thenReturn(reviewId);
+            when(entity.getRating()).thenReturn(rating);
+            when(entity.getComment()).thenReturn(comment);
+            when(entity.getProductUserEntity()).thenReturn(productUserEntity);
+            when(productUserEntity.getUserId()).thenReturn(userId);
+            when(productUserEntity.getProductId()).thenReturn(productId);
+            when(productEntity.getProductId()).thenReturn(productId);
 
-            final EntityId reviewEntityId = new EntityId(reviewId);
-            final EntityId userEntityId = new EntityId(userId);
-            final Product product = mock(Product.class);
 
-            doReturn(reviewEntityId).when(entityIdMapper).toEntityId(reviewId);
-            doReturn(userEntityId).when(entityIdMapper).toEntityId(userId);
-            doReturn(product).when(productMapper).toDomain(productEntity);
+            // Configurar mappers
+            EntityId reviewEntityId = new EntityId(reviewId);
+            EntityId userEntityId = new EntityId(userId);
+            Product product = mock(Product.class);
 
-            System.out.println("entity.getUserEntity(): " + entity.getProductUserEntity());
-            System.out.println("entity.getUserEntity().getId(): " + (entity.getProductUserEntity() != null ? entity.getProductUserEntity().getUserId() : "null"));
+            when(entityIdMapper.toEntityId(reviewId)).thenReturn(reviewEntityId);
+            when(entityIdMapper.toEntityId(userId)).thenReturn(userEntityId);
+            when(productMapper.toDomain(productEntity)).thenReturn(product);
+
             // When
             final Review result = target.toDomain(entity);
 
