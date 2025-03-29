@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.UUID;
 
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import org.junit.jupiter.api.Test;
 

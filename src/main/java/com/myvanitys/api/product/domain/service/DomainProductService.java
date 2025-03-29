@@ -5,9 +5,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.myvanitys.api.product.domain.Category;
-import com.myvanitys.api.product.domain.Product;
-import com.myvanitys.api.product.domain.Review;
+import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;

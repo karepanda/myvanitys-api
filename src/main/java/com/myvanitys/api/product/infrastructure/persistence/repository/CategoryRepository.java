@@ -3,7 +3,7 @@ package com.myvanitys.api.product.infrastructure.persistence.repository;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.myvanitys.api.product.domain.Category;
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,5 +32,5 @@ public interface CategoryRepository extends JpaRepository<CategoryEntity, UUID> 
             new EntityId(entity.getCategoryId()),
             entity.getName()));
   }
-  
+
 }

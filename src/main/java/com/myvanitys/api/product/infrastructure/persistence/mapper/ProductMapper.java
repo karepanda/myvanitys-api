@@ -1,31 +1,60 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import com.myvanitys.api.product.domain.Category;
-import com.myvanitys.api.product.domain.Product;
+import java.util.List;
+
+import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
+import com.myvanitys.api.product.infrastructure.persistence.repository.CategoryRepository;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class})
-public interface ProductMapper {
+public abstract class ProductMapper {
 
-  @Mapping(source = "productId", target = "id")
-  @Mapping(source = "category.categoryId", target = "category.categoryId")
-  Product toDomain(ProductEntity entity);
+  @Autowired
+  protected CategoryRepository categoryRepository;
 
-  @Mapping(source = "id", target = "productId")
-  @Mapping(source = "category.categoryId", target = "category.categoryId")
-  @Mapping(target = "category", source = "category")
-  ProductEntity toEntity(Product domain);
+  @Mapping(target = "id", source = "productId")
+  @Mapping(target = "category", source = "category", qualifiedByName = "categoryEntityToCategory")
+  public abstract Product toDomain(ProductEntity productEntity);
 
-  // Método para mapear Category a CategoryEntity
-  default CategoryEntity mapCategoryToCategoryEntity(Category category) {
+  @Mapping(target = "productId", source = "id")
+  @Mapping(target = "category", source = "category", qualifiedByName = "categoryToCategoryEntity")
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  public abstract ProductEntity toEntity(Product product);
+
+  public abstract List<Product> toDomainList(List<ProductEntity> productEntities);
+
+  public abstract List<ProductEntity> toEntityList(List<Product> products);
+
+  @Named("categoryEntityToCategory")
+  protected Category categoryEntityToCategory(CategoryEntity categoryEntity) {
+    if (categoryEntity == null || categoryEntity.getCategoryId() == null) {
+      return null;
+    }
+
+    return new Category(
+        new EntityId(categoryEntity.getCategoryId()),
+        categoryEntity.getName()
+    );
+  }
+
+  @Named("categoryToCategoryEntity")
+  protected CategoryEntity categoryToCategoryEntity(Category category) {
     if (category == null || category.categoryId() == null) {
       return null;
     }
+
     CategoryEntity categoryEntity = new CategoryEntity();
     categoryEntity.setCategoryId(category.categoryId().getValue());
+    categoryEntity.setName(category.name());
+
     return categoryEntity;
   }
 }

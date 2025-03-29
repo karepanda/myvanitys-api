@@ -1,68 +1,86 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import com.myvanitys.api.product.domain.valueobject.EntityId;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
-@ExtendWith(MockitoExtension.class)
 class EntityIdMapperTest {
 
-    private final EntityIdMapper target = EntityIdMapper.INSTANCE;
+  private EntityIdMapper entityIdMapper;
 
-    @Nested
-    class ToEntityId {
-        @Test
-        void when_givenValidUUID_then_returnEntityId() {
-            // Given
-            final UUID uuid = UUID.randomUUID();
+  private UUID testUuid;
 
-            // When
-            final EntityId result = target.toEntityId(uuid);
+  private EntityId testEntityId;
 
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getValue()).isEqualTo(uuid);
-        }
+  @BeforeEach
+  void setUp() {
+    // Obtener la instancia de implementación usando Mappers.getMapper
+    entityIdMapper = Mappers.getMapper(EntityIdMapper.class);
 
-        @Test
-        void when_givenNullUUID_then_returnNull() {
-            // When
-            final EntityId result = target.toEntityId(null);
+    // Crear datos de prueba
+    testUuid = UUID.randomUUID();
+    testEntityId = new EntityId(testUuid);
+  }
 
-            // Then
-            assertThat(result).isNull();
-        }
-    }
+  @Test
+  void toEntityId_WhenGivenValidUuid_ShouldReturnEntityId() {
+    // Act
+    EntityId result = entityIdMapper.toEntityId(testUuid);
 
-    @Nested
-    class ToUUID {
-        @Test
-        void when_givenValidEntityId_then_returnUUID() {
-            // Given
-            final UUID uuid = UUID.randomUUID();
-            final EntityId entityId = new EntityId(uuid);
+    // Assert
+    assertEquals(testUuid, result.getValue());
+  }
 
-            // When
-            final UUID result = target.toUUID(entityId);
+  @Test
+  void toEntityId_WhenGivenNull_ShouldReturnNull() {
+    // Act
+    EntityId result = entityIdMapper.toEntityId(null);
 
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result).isEqualTo(uuid);
-        }
+    // Assert
+    assertNull(result);
+  }
 
-        @Test
-        void when_givenNullEntityId_then_returnNull() {
-            // When
-            final UUID result = target.toUUID(null);
+  @Test
+  void toUUID_WhenGivenValidEntityId_ShouldReturnUuid() {
+    // Act
+    UUID result = entityIdMapper.toUUID(testEntityId);
 
-            // Then
-            assertThat(result).isNull();
-        }
-    }
+    // Assert
+    assertEquals(testUuid, result);
+  }
+
+  @Test
+  void toUUID_WhenGivenNull_ShouldReturnNull() {
+    // Act
+    UUID result = entityIdMapper.toUUID(null);
+
+    // Assert
+    assertNull(result);
+  }
+
+  @Test
+  void roundTrip_FromUuidToEntityIdAndBack_ShouldReturnOriginalUuid() {
+    // Act
+    EntityId entityId = entityIdMapper.toEntityId(testUuid);
+    UUID result = entityIdMapper.toUUID(entityId);
+
+    // Assert
+    assertEquals(testUuid, result);
+  }
+
+  @Test
+  void roundTrip_FromEntityIdToUuidAndBack_ShouldReturnOriginalEntityId() {
+    // Act
+    UUID uuid = entityIdMapper.toUUID(testEntityId);
+    EntityId result = entityIdMapper.toEntityId(uuid);
+
+    // Assert
+    assertEquals(testEntityId, result);
+  }
 }

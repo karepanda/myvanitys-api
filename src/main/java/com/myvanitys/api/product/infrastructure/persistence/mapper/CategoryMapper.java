@@ -1,6 +1,6 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import com.myvanitys.api.product.domain.Category;
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import org.mapstruct.Mapper;
 

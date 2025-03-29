@@ -1,6 +1,6 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import com.myvanitys.api.product.domain.Category;
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import org.junit.jupiter.api.Nested;
@@ -19,61 +19,61 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CategoryMapperTest {
 
-    @InjectMocks
-    private final CategoryMapper target = Mappers.getMapper(CategoryMapper.class);
+  @InjectMocks
+  private final CategoryMapper target = Mappers.getMapper(CategoryMapper.class);
 
-    @Mock
-    private EntityIdMapper entityIdMapper;
+  @Mock
+  private EntityIdMapper entityIdMapper;
 
-    @Nested
-    class ToDomain {
+  @Nested
+  class ToDomain {
 
-        @Test
-        void when_givenCategoryEntity_then_returnCategory() {
-            // Given
-            final UUID categoryId = UUID.randomUUID();
-            final String name = "Skincare";
-            final CategoryEntity entity = new CategoryEntity();
-            entity.setCategoryId(categoryId);
-            entity.setName(name);
-            final EntityId entityId = new EntityId(categoryId);
+    @Test
+    void when_givenCategoryEntity_then_returnCategory() {
+      // Given
+      final UUID categoryId = UUID.randomUUID();
+      final String name = "Skincare";
+      final CategoryEntity entity = new CategoryEntity();
+      entity.setCategoryId(categoryId);
+      entity.setName(name);
+      final EntityId entityId = new EntityId(categoryId);
 
-            when(entityIdMapper.toEntityId(categoryId)).thenReturn(entityId);
+      when(entityIdMapper.toEntityId(categoryId)).thenReturn(entityId);
 
-            // When
-            final Category result = target.toDomain(entity);
+      // When
+      final Category result = target.toDomain(entity);
 
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.categoryId()).isEqualTo(entityId);
-            assertThat(result.name()).isEqualTo(name);
-        }
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.categoryId()).isEqualTo(entityId);
+      assertThat(result.name()).isEqualTo(name);
     }
+  }
 
-    @Nested
-    class ToEntity {
+  @Nested
+  class ToEntity {
 
-        @Test
-        void when_givenCategory_then_returnCategoryEntity() {
-            // Given
-            final UUID categoryId = UUID.randomUUID();
-            final String name = "Makeup";
-            final EntityId entityId = new EntityId(categoryId);
-            final Category domain = new Category(entityId, name);
-            final CategoryEntity expectedEntity = new CategoryEntity();
-            expectedEntity.setCategoryId(categoryId);
-            expectedEntity.setName(name);
+    @Test
+    void when_givenCategory_then_returnCategoryEntity() {
+      // Given
+      final UUID categoryId = UUID.randomUUID();
+      final String name = "Makeup";
+      final EntityId entityId = new EntityId(categoryId);
+      final Category domain = new Category(entityId, name);
+      final CategoryEntity expectedEntity = new CategoryEntity();
+      expectedEntity.setCategoryId(categoryId);
+      expectedEntity.setName(name);
 
-            when(entityIdMapper.toUUID(entityId)).thenReturn(categoryId);
+      when(entityIdMapper.toUUID(entityId)).thenReturn(categoryId);
 
-            // When
-            final CategoryEntity result = target.toEntity(domain);
+      // When
+      final CategoryEntity result = target.toEntity(domain);
 
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getCategoryId()).isEqualTo(expectedEntity.getCategoryId());
-            assertThat(result.getName()).isEqualTo(expectedEntity.getName());
-        }
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getCategoryId()).isEqualTo(expectedEntity.getCategoryId());
+      assertThat(result.getName()).isEqualTo(expectedEntity.getName());
     }
+  }
 
 }

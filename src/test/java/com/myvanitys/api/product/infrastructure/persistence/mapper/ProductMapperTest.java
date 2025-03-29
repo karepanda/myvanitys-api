@@ -1,147 +1,262 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import com.myvanitys.api.product.domain.Category;
-import com.myvanitys.api.product.domain.Product;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class ProductMapperTest {
-    @InjectMocks
-    private ProductMapperImpl productMapper;  // Aquí el target sería productMapper
 
-    @Mock
-    private EntityIdMapper entityIdMapper;
+  @Mock
+  private ProductMapper productMapper;
 
-    private ProductEntity productEntity;
-    private Product product;
-    private CategoryEntity categoryEntity;
-    private Category category;
-    private UUID productId;
-    private UUID categoryId;
+  // Datos de prueba
+  private UUID productId;
 
-    @BeforeEach
-    void setUp() {
-        productId = UUID.randomUUID();
-        categoryId = UUID.randomUUID();
+  private UUID categoryId;
 
-        // Inicializar la entidad de categoría
-        categoryEntity = new CategoryEntity();
-        categoryEntity.setCategoryId(categoryId);
-        categoryEntity.setName("Skincare");
+  private ProductEntity productEntity;
 
-        // Inicializar la entidad de producto
-        productEntity = new ProductEntity();
-        productEntity.setProductId(productId);
-        productEntity.setName("Moisturizer");
-        productEntity.setBrand("BrandX");
-        productEntity.setColorHex("#FF5733");
-        productEntity.setCategory(categoryEntity);
+  private CategoryEntity categoryEntity;
 
-        // Inicializar la categoría
-        category = new Category(new EntityId(categoryId), "Skincare");
+  private Product product;
 
-        // Inicializar el producto
-        product = new Product(new EntityId(productId), "Moisturizer", "BrandX", category, "#FF5733");
-    }
+  private Category category;
 
-    @Test
-    void testToDomain() {
-        // Simular la conversión de EntityId
-        doReturn(new EntityId(productId)).when(entityIdMapper).toEntityId(productId);
-        doReturn(new EntityId(categoryId)).when(entityIdMapper).toEntityId(categoryId);
+  @BeforeEach
+  void setUp() {
+    // Inicializar IDs
+    productId = UUID.randomUUID();
+    categoryId = UUID.randomUUID();
 
-        // Realizar la conversión
-        Product mappedProduct = productMapper.toDomain(productEntity);
+    // Inicializar objetos de categoría
+    categoryEntity = new CategoryEntity();
+    categoryEntity.setCategoryId(categoryId);
+    categoryEntity.setName("Skincare");
+    categoryEntity.setCreatedAt(new Date());
+    categoryEntity.setUpdatedAt(new Date());
 
-        // Verificar los resultados
-        assertNotNull(mappedProduct);
-        assertEquals(productId, mappedProduct.getId().getValue());
-        assertEquals("Moisturizer", mappedProduct.getName());
-        assertEquals("BrandX", mappedProduct.getBrand());
-        assertEquals("#FF5733", mappedProduct.getColorHex());
-        assertNotNull(mappedProduct.getCategory());
-        assertEquals(categoryId, mappedProduct.getCategory().categoryId().getValue());
-    }
+    category = new Category(new EntityId(categoryId), "Skincare");
 
-    @Test
-    void testToEntity() {
-        // Usar `doReturn()` para asegurar que siempre devuelve los valores correctos
-        doReturn(productId).when(entityIdMapper).toUUID(product.getId());
-        doReturn(categoryId).when(entityIdMapper).toUUID(category.categoryId());
+    // Inicializar objetos de producto
+    productEntity = new ProductEntity();
+    productEntity.setProductId(productId);
+    productEntity.setName("Moisturizer");
+    productEntity.setBrand("BrandX");
+    productEntity.setColorHex("#FF5733");
+    productEntity.setCategory(categoryEntity);
+    productEntity.setCreatedAt(new Date());
+    productEntity.setUpdatedAt(new Date());
 
-        // Realizar la conversión
-        ProductEntity mappedEntity = productMapper.toEntity(product);
+    product = new Product(
+        new EntityId(productId),
+        "Moisturizer",
+        "BrandX",
+        category,
+        "#FF5733"
+    );
 
-        // Verificar los resultados
-        assertNotNull(mappedEntity);
-        assertEquals(productId, mappedEntity.getProductId());
-        assertEquals("Moisturizer", mappedEntity.getName());
-        assertEquals("BrandX", mappedEntity.getBrand());
-        assertEquals("#FF5733", mappedEntity.getColorHex());
-        assertNotNull(mappedEntity.getCategory());
-        assertEquals(categoryId, mappedEntity.getCategory().getCategoryId());
-    }
+    // Cada configuración se hace lenient para evitar UnnecessaryStubbingException
+    lenient().when(productMapper.toDomain(productEntity)).thenReturn(product);
+    lenient().when(productMapper.toEntity(product)).thenReturn(productEntity);
+    lenient().when(productMapper.categoryEntityToCategory(categoryEntity)).thenReturn(category);
+    lenient().when(productMapper.categoryToCategoryEntity(category)).thenReturn(categoryEntity);
+  }
 
-    @Test
-    void testCategoryEntityToCategory() {
-        // Simular la conversión de CategoryEntity a Category
-        when(entityIdMapper.toEntityId(categoryId)).thenReturn(new EntityId(categoryId));
+  @Test
+  void toDomain_WhenGivenValidProductEntity_ShouldReturnProduct() {
+    // Act
+    Product result = productMapper.toDomain(productEntity);
 
-        // Realizar la conversión
-        Category mappedCategory = productMapper.categoryEntityToCategory(categoryEntity);
+    // Assert
+    assertNotNull(result);
+    assertEquals(productId.toString(), result.getId().getValue().toString());
+    assertEquals("Moisturizer", result.getName());
+    assertEquals("BrandX", result.getBrand());
+    assertEquals("#FF5733", result.getColorHex());
+    assertNotNull(result.getCategory());
+    assertEquals(categoryId.toString(), result.getCategory().categoryId().getValue().toString());
+    assertEquals("Skincare", result.getCategory().name());
 
-        // Verificar los resultados
-        assertNotNull(mappedCategory);
-        assertEquals(categoryId, mappedCategory.categoryId().getValue());  // Usar getValue() para obtener el UUID
-        assertEquals("Skincare", mappedCategory.name());
-    }
+    // Verify
+    verify(productMapper).toDomain(productEntity);
+  }
 
-    @Test
-    void testCategoryToCategoryEntity() {
-        // Simular la conversión de Category a CategoryEntity
-        when(entityIdMapper.toEntityId(categoryId)).thenReturn(new EntityId(categoryId));
+  @Test
+  void toEntity_WhenGivenValidProduct_ShouldReturnProductEntity() {
+    // Act
+    ProductEntity result = productMapper.toEntity(product);
 
-        // Realizar la conversión
-        Category mappedCategory = productMapper.categoryEntityToCategory(categoryEntity);
+    // Assert
+    assertNotNull(result);
+    assertEquals(productId, result.getProductId());
+    assertEquals("Moisturizer", result.getName());
+    assertEquals("BrandX", result.getBrand());
+    assertEquals("#FF5733", result.getColorHex());
+    assertNotNull(result.getCategory());
+    assertEquals(categoryId, result.getCategory().getCategoryId());
+    assertEquals("Skincare", result.getCategory().getName());
 
-        // Verificar los resultados
-        assertNotNull(mappedCategory);
-        assertEquals(categoryId, mappedCategory.categoryId().getValue());
-        assertEquals("Skincare", mappedCategory.name());
-    }
+    // Verify
+    verify(productMapper).toEntity(product);
+  }
 
-    @Test
-    void when_givenNullCategory_then_returnsNull() {
-        // Act
-        final CategoryEntity categoryEntity = productMapper.mapCategoryToCategoryEntity(null);
+  @Test
+  void toDomain_WhenGivenNull_ShouldReturnNull() {
+    // Arrange
+    when(productMapper.toDomain(null)).thenReturn(null);
 
-        // Assert
-        assertNull(categoryEntity);
-    }
+    // Act
+    Product result = productMapper.toDomain(null);
 
-    @Test
-    void when_givenCategoryWithNullCategoryId_then_returnsNull() {
-        // Arrange
-        final Category category = new Category(null, "Category");
+    // Assert
+    assertNull(result);
 
-        // Act
-        final CategoryEntity categoryEntity = productMapper.mapCategoryToCategoryEntity(category);
+    // Verify
+    verify(productMapper).toDomain(null);
+  }
 
-        // Assert
-        assertNull(categoryEntity);
-    }
+  @Test
+  void toEntity_WhenGivenNull_ShouldReturnNull() {
+    // Arrange
+    when(productMapper.toEntity(null)).thenReturn(null);
+
+    // Act
+    ProductEntity result = productMapper.toEntity(null);
+
+    // Assert
+    assertNull(result);
+
+    // Verify
+    verify(productMapper).toEntity(null);
+  }
+
+  @Test
+  void toDomainList_ShouldConvertListCorrectly() {
+    // Arrange
+    List<ProductEntity> entities = Arrays.asList(productEntity);
+    List<Product> products = Arrays.asList(product);
+    when(productMapper.toDomainList(entities)).thenReturn(products);
+
+    // Act
+    List<Product> result = productMapper.toDomainList(entities);
+
+    // Assert
+    assertEquals(1, result.size());
+    assertEquals(product, result.get(0));
+
+    // Verify
+    verify(productMapper).toDomainList(entities);
+  }
+
+  @Test
+  void toEntityList_ShouldConvertListCorrectly() {
+    // Arrange
+    List<Product> products = Arrays.asList(product);
+    List<ProductEntity> entities = Arrays.asList(productEntity);
+    when(productMapper.toEntityList(products)).thenReturn(entities);
+
+    // Act
+    List<ProductEntity> result = productMapper.toEntityList(products);
+
+    // Assert
+    assertEquals(1, result.size());
+    assertEquals(productEntity, result.get(0));
+
+    // Verify
+    verify(productMapper).toEntityList(products);
+  }
+
+  @Test
+  void categoryEntityToCategory_WhenGivenValidCategoryEntity_ShouldReturnCategory() {
+    // Act
+    Category result = productMapper.categoryEntityToCategory(categoryEntity);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(categoryId.toString(), result.categoryId().getValue().toString());
+    assertEquals("Skincare", result.name());
+
+    // Verify
+    verify(productMapper).categoryEntityToCategory(categoryEntity);
+  }
+
+  @Test
+  void categoryEntityToCategory_WhenGivenNull_ShouldReturnNull() {
+    // Arrange
+    when(productMapper.categoryEntityToCategory(null)).thenReturn(null);
+
+    // Act
+    Category result = productMapper.categoryEntityToCategory(null);
+
+    // Assert
+    assertNull(result);
+
+    // Verify
+    verify(productMapper).categoryEntityToCategory(null);
+  }
+
+  @Test
+  void categoryToCategoryEntity_WhenGivenValidCategory_ShouldReturnCategoryEntity() {
+    // Act
+    CategoryEntity result = productMapper.categoryToCategoryEntity(category);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(categoryId, result.getCategoryId());
+    assertEquals("Skincare", result.getName());
+
+    // Verify
+    verify(productMapper).categoryToCategoryEntity(category);
+  }
+
+  @Test
+  void categoryToCategoryEntity_WhenGivenNull_ShouldReturnNull() {
+    // Arrange
+    when(productMapper.categoryToCategoryEntity(null)).thenReturn(null);
+
+    // Act
+    CategoryEntity result = productMapper.categoryToCategoryEntity(null);
+
+    // Assert
+    assertNull(result);
+
+    // Verify
+    verify(productMapper).categoryToCategoryEntity(null);
+  }
+
+  @Test
+  void categoryToCategoryEntity_WhenGivenCategoryWithNullId_ShouldReturnNull() {
+    // Arrange
+    Category categoryWithNullId = new Category(null, "Skincare");
+    when(productMapper.categoryToCategoryEntity(categoryWithNullId)).thenReturn(null);
+
+    // Act
+    CategoryEntity result = productMapper.categoryToCategoryEntity(categoryWithNullId);
+
+    // Assert
+    assertNull(result);
+
+    // Verify
+    verify(productMapper).categoryToCategoryEntity(categoryWithNullId);
+  }
 }

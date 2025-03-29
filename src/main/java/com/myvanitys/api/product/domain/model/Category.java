@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.domain;
+package com.myvanitys.api.product.domain.model;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 
