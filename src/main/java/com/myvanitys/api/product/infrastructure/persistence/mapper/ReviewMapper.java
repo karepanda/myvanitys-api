@@ -6,8 +6,8 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
-import com.myvanitys.api.product.infrastructure.persistence.repository.ProductRepository;
-import com.myvanitys.api.product.infrastructure.persistence.repository.ProductUserRepository;
+import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
+import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -17,10 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class ReviewMapper {
 
   @Autowired
-  protected ProductRepository productRepository;
+  protected JpaProductRepository jpaProductRepository;
 
   @Autowired
-  protected ProductUserRepository productUserRepository;
+  protected JpaProductUserRepository jpaProductUserRepository;
 
   @Autowired
   protected ProductMapper productMapper;
@@ -43,7 +43,7 @@ public abstract class ReviewMapper {
     }
 
     // Buscar el producto usando el repositorio inyectado
-    return productRepository.findById(productId)
+    return jpaProductRepository.findById(productId)
         .map(productMapper::toDomain)
         .orElse(null);
   }
@@ -54,15 +54,15 @@ public abstract class ReviewMapper {
     UUID productId = review.getProduct().getId().getValue();
 
     // Usar el método existente en el repositorio inyectado
-    return productUserRepository.findByProductIdAndUserId(productId, userId);
+    return jpaProductUserRepository.findByProductIdAndUserId(productId, userId);
   }
 
-  protected ProductRepository getProductRepository() {
-    return productRepository;
+  protected JpaProductRepository getProductRepository() {
+    return jpaProductRepository;
   }
 
-  protected ProductUserRepository getProductUserRepository() {
-    return productUserRepository;
+  protected JpaProductUserRepository getProductUserRepository() {
+    return jpaProductUserRepository;
   }
 
   protected ProductMapper getProductMapper() {

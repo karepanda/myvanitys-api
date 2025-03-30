@@ -1,12 +1,15 @@
 package com.myvanitys.api.product.domain.model;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
 @Getter
+@ToString
 public class Review {
 
   private final EntityId id;
@@ -15,15 +18,16 @@ public class Review {
 
   private final Product product;
 
-  private final Integer rating;
+  private int rating;
 
-  private final String comment;
+  private String comment;
 
-  public Review(EntityId id,
-      @NonNull EntityId userId,
-      @NonNull Product product,
-      @NonNull Integer rating,
-      @NonNull String comment) {
+  /**
+   * Creates a new review with validation
+   */
+  public Review(EntityId id, @NonNull EntityId userId, @NonNull Product product, int rating, @NonNull String comment) {
+    validateRating(rating);
+
     this.id = id;
     this.userId = userId;
     this.product = product;
@@ -32,19 +36,43 @@ public class Review {
   }
 
   /**
-   * Método de fábrica para crear una reseña a partir de una relación de producto-usuario
+   * Factory method to create a new review
    *
-   * @param id El ID de la reseña
-   * @param productUserRelation La relación de producto-usuario existente
-   * @param rating La calificación
-   * @param comment El comentario
-   * @param product El producto asociado a la reseña
-   * @return Una nueva instancia de Review
+   * @param userId The user ID
+   * @param product The product
+   * @param rating The rating
+   * @param comment The comment
+   * @return A new Review instance
+   */
+  public static Review create(
+      @NonNull EntityId userId,
+      @NonNull Product product,
+      int rating,
+      @NonNull String comment) {
+
+    return new Review(
+        new EntityId(UUID.randomUUID()),
+        userId,
+        product,
+        rating,
+        comment
+    );
+  }
+
+  /**
+   * Factory method to create a review from a product-user relation
+   *
+   * @param id The review ID
+   * @param productUserRelation The existing product-user relation
+   * @param rating The rating
+   * @param comment The comment
+   * @param product The product associated with the review
+   * @return A new Review instance
    */
   public static Review createFromRelation(
       EntityId id,
       @NonNull ProductUserRelation productUserRelation,
-      @NonNull Integer rating,
+      int rating,
       @NonNull String comment,
       @NonNull Product product) {
 
@@ -58,55 +86,38 @@ public class Review {
   }
 
   /**
-   * Método de fábrica para crear una reseña nueva
-   *
-   * @param userId El ID del usuario
-   * @param product El producto
-   * @param rating La calificación
-   * @param comment El comentario
-   * @return Una nueva instancia de Review
+   * Updates review details with validation
    */
-  public static Review create(
-      @NonNull EntityId userId,
-      @NonNull Product product,
-      @NonNull Integer rating,
-      @NonNull String comment) {
+  public void updateDetails(int rating, @NonNull String comment) {
+    validateRating(rating);
 
-    return new Review(
-        new EntityId(), // Genera un nuevo ID
-        userId,
-        product,
-        rating,
-        comment
-    );
+    this.rating = rating;
+    this.comment = comment;
+  }
+
+  /**
+   * Validates that the rating is between 1 and 5
+   */
+  private void validateRating(int rating) {
+    if (rating < 1 || rating > 5) {
+      throw new IllegalArgumentException("Rating must be between 1 and 5");
+    }
   }
 
   @Override
-  public boolean equals(Object object) {
-    if (object == null || getClass() != object.getClass()) {
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Review review = (Review) object;
-    return Objects.equals(id, review.id) &&
-        Objects.equals(userId, review.userId) &&
-        Objects.equals(product, review.product) &&
-        Objects.equals(rating, review.rating) &&
-        Objects.equals(comment, review.comment);
+    Review review = (Review) o;
+    return Objects.equals(id, review.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, userId, product, rating, comment);
-  }
-
-  @Override
-  public String toString() {
-    return "Review{" +
-        "id=" + id +
-        ", userId=" + userId +
-        ", product=" + product +
-        ", rating=" + rating +
-        ", comment='" + comment + '\'' +
-        '}';
+    return Objects.hashCode(id);
   }
 }

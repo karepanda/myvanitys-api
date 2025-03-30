@@ -19,8 +19,8 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntit
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
-import com.myvanitys.api.product.infrastructure.persistence.repository.ProductRepository;
-import com.myvanitys.api.product.infrastructure.persistence.repository.ProductUserRepository;
+import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
+import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,10 +34,10 @@ class ReviewMapperTest {
   private ReviewMapper reviewMapper;
 
   @Mock
-  private ProductRepository productRepository;
+  private JpaProductRepository jpaProductRepository;
 
   @Mock
-  private ProductUserRepository productUserRepository;
+  private JpaProductUserRepository jpaProductUserRepository;
 
   @Mock
   private ProductMapper productMapper;
@@ -127,11 +127,11 @@ class ReviewMapperTest {
     );
 
     // Configurar comportamientos del productRepository y productMapper
-    lenient().when(productRepository.findById(productId)).thenReturn(Optional.of(productEntity));
+    lenient().when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(productEntity));
     lenient().when(productMapper.toDomain(productEntity)).thenReturn(product);
 
     // Configurar comportamiento del productUserRepository
-    lenient().when(productUserRepository.findByProductIdAndUserId(productId, userId)).thenReturn(productUserEntity);
+    lenient().when(jpaProductUserRepository.findByProductIdAndUserId(productId, userId)).thenReturn(productUserEntity);
 
     // Configurar comportamiento del reviewMapper
     lenient().when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
@@ -208,7 +208,7 @@ class ReviewMapperTest {
 
   @Test
   void productIdToProduct_WhenGivenValidProductId_ShouldReturnProduct() {
-    
+
     // Act
     Product result = reviewMapper.productIdToProduct(productId);
 

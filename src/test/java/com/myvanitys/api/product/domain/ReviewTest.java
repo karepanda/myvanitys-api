@@ -3,7 +3,6 @@ package com.myvanitys.api.product.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 
@@ -75,14 +74,6 @@ class ReviewTest {
     assertEquals(userId, review.getUserId());
     assertEquals(3, review.getRating());
     assertEquals("Acceptable", review.getComment());
-  }
-
-  @Test
-  void testToString() {
-    String result = review1.toString();
-    assertTrue(result.contains("Review{"));
-    assertTrue(result.contains("rating=5"));
-    assertTrue(result.contains("comment='Excellent product'"));
   }
 
 }

@@ -8,7 +8,6 @@ import java.util.Set;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
 
 @Getter
@@ -17,28 +16,77 @@ public class Product {
 
   private final EntityId id;
 
-  private final String name;
+  private String name;
 
-  private final String brand;
+  private String brand;
 
-  private final Category category;
+  private Category category;
 
-  private final String colorHex;
+  private String colorHex;
 
   private int averageRating;
 
   private final List<Review> reviews = new ArrayList<>();
 
-  // Usuarios que tienen este producto en su vanity
+  // Users who have this product in their vanity
   private final Set<ProductUserRelation> userRelations = new HashSet<>();
 
-  public Product(EntityId id, @NonNull String name, @NonNull String brand, @NonNull Category category, @NonNull String colorHex) {
+  /**
+   * Creates a new product with validation
+   */
+  public Product(EntityId id, String name, String brand, Category category, String colorHex) {
+    validateName(name);
+    validateBrand(brand);
+    validateColorHex(colorHex);
+
     this.id = id;
     this.name = name;
     this.brand = brand;
     this.category = category;
     this.colorHex = colorHex;
     this.averageRating = 0;
+  }
+
+  /**
+   * Updates product details with validation
+   */
+  public void updateDetails(String name, String brand, Category category, String colorHex) {
+    validateName(name);
+    validateBrand(brand);
+    validateColorHex(colorHex);
+
+    this.name = name;
+    this.brand = brand;
+    this.category = category;
+    this.colorHex = colorHex;
+  }
+
+  /**
+   * Validates that the product name is not empty
+   */
+  private void validateName(String name) {
+    if (name == null || name.trim().isEmpty()) {
+      throw new IllegalArgumentException("Product name cannot be empty");
+    }
+  }
+
+  /**
+   * Validates that the brand name is not empty
+   */
+  private void validateBrand(String brand) {
+    if (brand == null || brand.trim().isEmpty()) {
+      throw new IllegalArgumentException("Brand name cannot be empty");
+    }
+  }
+
+  /**
+   * Validates the color hex format
+   */
+  private void validateColorHex(String colorHex) {
+    if (colorHex != null && !colorHex.trim().isEmpty() &&
+        !colorHex.matches("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")) {
+      throw new IllegalArgumentException("Invalid color hex format");
+    }
   }
 
   public int getAverageRating() {
@@ -54,7 +102,11 @@ public class Product {
     return totalRating / reviews.size();
   }
 
-  public void addReview(@NonNull Review review) {
+  public void addReview(Review review) {
+    if (review == null) {
+      throw new IllegalArgumentException("Review cannot be null");
+    }
+
     if (!reviews.contains(review)) {
       reviews.add(review);
       calculateAverageRating();
@@ -67,24 +119,32 @@ public class Product {
     }
   }
 
-  // Método para asociar un producto a un usuario (añadirlo a su vanity)
-  public void addToUserVanity(@NonNull EntityId userId, String reviewText) {
-    // Crear la relación producto-usuario
+  // Method to associate a product with a user (add it to their vanity)
+  public void addToUserVanity(EntityId userId, String reviewText) {
+    if (userId == null) {
+      throw new IllegalArgumentException("User ID cannot be null");
+    }
+
+    // Create the product-user relationship
     ProductUserRelation relation = new ProductUserRelation(new EntityId(), this.id, userId);
 
-    // Si se proporciona un review, añadirlo
+    // If a review is provided, add it
     if (reviewText != null && !reviewText.trim().isEmpty()) {
-      Review review = new Review(new EntityId(), userId, this, 5, reviewText); // Pasar el producto actual (this)
+      Review review = new Review(new EntityId(), userId, this, 5, reviewText);
       this.addReview(review);
       relation.setReviewId(review.getId());
     }
 
-    // Añadir la relación a la colección
+    // Add the relationship to the collection
     userRelations.add(relation);
   }
 
-  // Método para eliminar un producto de la vanity de un usuario
-  public void removeFromUserVanity(@NonNull EntityId userId) {
+  // Method to remove a product from a user's vanity
+  public void removeFromUserVanity(EntityId userId) {
+    if (userId == null) {
+      throw new IllegalArgumentException("User ID cannot be null");
+    }
+
     userRelations.removeIf(relation -> relation.getUserId().equals(userId));
   }
 

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
  * JPA repository for review entities
  */
 @Repository
-public interface ReviewRepository extends JpaRepository<ReviewEntity, UUID> {
+public interface JpaReviewRepository extends JpaRepository<ReviewEntity, UUID> {
 
   /**
    * Finds reviews by product user ID

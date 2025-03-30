@@ -7,7 +7,7 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
-import com.myvanitys.api.product.infrastructure.persistence.repository.CategoryRepository;
+import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class ProductMapper {
 
   @Autowired
-  protected CategoryRepository categoryRepository;
+  protected JpaCategoryRepository jpaCategoryRepository;
 
   @Mapping(target = "id", source = "productId")
   @Mapping(target = "category", source = "category", qualifiedByName = "categoryEntityToCategory")

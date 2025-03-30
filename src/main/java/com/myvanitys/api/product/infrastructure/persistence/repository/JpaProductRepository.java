@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
  * JPA repository for product entities
  */
 @Repository
-public interface ProductRepository extends JpaRepository<ProductEntity, UUID> {
+public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID> {
 
   /**
    * Finds products by user ID using JPQL

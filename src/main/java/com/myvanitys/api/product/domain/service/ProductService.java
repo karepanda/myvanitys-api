@@ -9,7 +9,7 @@ import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 
 /**
- * Domain service for product and review related operations
+ * Domain service interface for product and review related operations
  */
 public interface ProductService {
 
