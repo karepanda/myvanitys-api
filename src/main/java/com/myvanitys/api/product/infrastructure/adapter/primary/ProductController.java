@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.application.adapter.input;
+package com.myvanitys.api.product.infrastructure.adapter.primary;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
