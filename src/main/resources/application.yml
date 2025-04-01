@@ -1,6 +1,6 @@
 server:
   servlet:
-    context-path: /myvanitys/v1
+    context-path: /
 spring:
   profiles:
     active: dev

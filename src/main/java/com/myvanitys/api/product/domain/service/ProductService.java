@@ -3,13 +3,13 @@ package com.myvanitys.api.product.domain.service;
 import java.util.List;
 import java.util.Optional;
 
-import com.myvanitys.api.product.domain.Category;
-import com.myvanitys.api.product.domain.Product;
-import com.myvanitys.api.product.domain.Review;
+import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 
 /**
- * Domain service for product and review related operations
+ * Domain service interface for product and review related operations
  */
 public interface ProductService {
 

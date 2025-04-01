@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.UUID;
 
 import com.myvanitys.api.auth.domain.model.User;
-import com.myvanitys.api.product.domain.Category;
-import com.myvanitys.api.product.domain.Product;
-import com.myvanitys.api.product.domain.Review;
+import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
