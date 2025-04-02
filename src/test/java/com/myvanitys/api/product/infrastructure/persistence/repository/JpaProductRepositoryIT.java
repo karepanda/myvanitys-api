@@ -13,7 +13,7 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-class JpaProductRepositoryIntegrationTest extends AbstractRepositoryIntegrationTest {
+class JpaProductRepositoryIT extends AbstractRepositoryIntegrationTest {
 
   @Autowired
   private JpaProductRepository jpaProductRepository;
