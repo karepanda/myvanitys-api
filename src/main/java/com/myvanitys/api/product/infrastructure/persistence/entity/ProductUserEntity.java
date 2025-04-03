@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @Builder
@@ -39,6 +40,7 @@ public class ProductUserEntity {
   private UUID productId;
 
   @OneToMany(mappedBy = "productUserEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+  @ToString.Exclude
   private List<ReviewEntity> reviews;
 
   @Column

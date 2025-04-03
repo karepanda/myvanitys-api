@@ -7,19 +7,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.myvanitys.api.common.test.AbstractRepositoryIntegrationTest;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
-class JpaProductRepositoryIT extends AbstractRepositoryIntegrationTest {
-
-  @Autowired
-  private JpaProductRepository jpaProductRepository;
-
-  @Autowired
-  private JpaCategoryRepository jpaCategoryRepository;
+class JpaProductRepositoryIT extends AbstractJpaTest {
 
   @Test
   void shouldSaveAndRetrieveProduct() {
@@ -31,16 +25,53 @@ class JpaProductRepositoryIT extends AbstractRepositoryIntegrationTest {
 
     // When
     ProductEntity savedProduct = jpaProductRepository.save(product);
+
+    ReviewEntity review = new ReviewEntity();
+    review.setRating(5);
+    review.setComment("Great product!");
+    ProductUserEntity productUser = new ProductUserEntity();
+    productUser.setProductId(product.getProductId());
+    final var userid = UUID.randomUUID();
+    productUser.setUserId(userid);
+    review.setProductUserEntity(productUser);
+    productUser.setReviews(List.of(review));
+    ProductUserEntity savedProductUser = jpaProductUserRepository.save(productUser);
+
     Optional<ProductEntity> retrievedProduct = jpaProductRepository.findById(savedProduct.getProductId());
 
+    ProductUserEntity retrievedProductUser =
+        jpaProductUserRepository.findByProductIdAndUserId(savedProductUser.getProductId(), savedProductUser.getUserId());
+
+    // Then
     // Then
     assertThat(retrievedProduct)
         .isPresent()
-        .hasValueSatisfying(productEntity -> {
-          assertThat(productEntity.getName()).isEqualTo("Test Product");
-          assertThat(productEntity.getBrand()).isEqualTo("Test Brand");
-          assertThat(productEntity.getCategory().getName()).isEqualTo("Test Category");
+        .get()
+        .satisfies(productEntity -> {
+          assertThat(productEntity)
+              .extracting(ProductEntity::getName, ProductEntity::getBrand)
+              .containsExactly("Test Product", "Test Brand");
+
+          assertThat(productEntity.getCategory())
+              .extracting(CategoryEntity::getName)
+              .isEqualTo("Test Category");
         });
+
+    assertThat(retrievedProductUser)
+        .extracting(ProductUserEntity::getUserId, ProductUserEntity::getProductId)
+        .containsExactly(userid, product.getProductId());
+
+    assertThat(retrievedProductUser.getReviews())
+        .hasSize(1)
+        .first()
+        .satisfies(r -> assertThat(r)
+            .extracting(ReviewEntity::getRating, ReviewEntity::getComment)
+            .containsExactly(5, "Great product!")
+        );
+
+    assertThat(retrievedProductUser.getReviews().getFirst().getProductUserEntity())
+        .extracting(ProductUserEntity::getProductId)
+        .isEqualTo(product.getProductId());
   }
 
   @Test
