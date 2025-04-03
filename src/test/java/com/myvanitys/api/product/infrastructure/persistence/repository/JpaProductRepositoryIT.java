@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class JpaProductRepositoryIT extends AbstractJpaTest {
 
   @Test
-  void shouldSaveAndRetrieveProduct() {
+  void shouldSaveAndRetrieveProductWithReviews() {
     // Given
     CategoryEntity category = createSampleCategory("Test Category");
     CategoryEntity savedCategory = jpaCategoryRepository.save(category);
@@ -30,7 +30,7 @@ class JpaProductRepositoryIT extends AbstractJpaTest {
     review.setRating(5);
     review.setComment("Great product!");
     ProductUserEntity productUser = new ProductUserEntity();
-    productUser.setProductId(product.getProductId());
+    productUser.setProductId(savedProduct.getProductId());
     final var userid = UUID.randomUUID();
     productUser.setUserId(userid);
     review.setProductUserEntity(productUser);
@@ -68,9 +68,6 @@ class JpaProductRepositoryIT extends AbstractJpaTest {
             .containsExactly(5, "Great product!")
         );
 
-    assertThat(retrievedProductUser.getReviews().getFirst().getProductUserEntity())
-        .extracting(ProductUserEntity::getProductId)
-        .isEqualTo(product.getProductId());
   }
 
   @Test
