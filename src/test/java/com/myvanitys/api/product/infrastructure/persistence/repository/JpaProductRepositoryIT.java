@@ -43,7 +43,6 @@ class JpaProductRepositoryIT extends AbstractJpaTest {
         jpaProductUserRepository.findByProductIdAndUserId(savedProductUser.getProductId(), savedProductUser.getUserId());
 
     // Then
-    // Then
     assertThat(retrievedProduct)
         .isPresent()
         .get()
