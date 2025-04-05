@@ -41,13 +41,7 @@ class ProductRepositoryAdapterTest {
 
     private EntityId productId;
 
-    private EntityId categoryId;
-
-    private EntityId userId;
-
     private ProductEntity productEntity;
-
-    private ProductUserEntity productUserEntity;
 
     private Product product;
 
@@ -58,15 +52,15 @@ class ProductRepositoryAdapterTest {
     void setUp() {
         // Initialize IDs
         productId = new EntityId(UUID.randomUUID());
-        categoryId = new EntityId(UUID.randomUUID());
-        userId = new EntityId(UUID.randomUUID());
+        EntityId categoryId = new EntityId(UUID.randomUUID());
+        EntityId userId = new EntityId(UUID.randomUUID());
 
         // Initialize domain objects
         category = new Category(categoryId, "Test Category");
         product = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
 
         // Initialize entity objects
-        productUserEntity = new ProductUserEntity();
+        ProductUserEntity productUserEntity = new ProductUserEntity();
         productUserEntity.setProductUserId(UUID.randomUUID());
         productUserEntity.setProductId(productId.getValue());
         productUserEntity.setUserId(userId.getValue());
@@ -153,15 +147,51 @@ class ProductRepositoryAdapterTest {
         }
     }
 
-    @Test
-    void findByCategoryName() {
+    @Nested
+    class DeleteByIdTest {
+        @Test
+        void deleteById() {
+            // Act
+            target.deleteById(productId);
+
+            // Assert
+            verify(jpaProductRepository).deleteById(productId.getValue());
+        }
     }
 
-    @Test
-    void deleteById() {
-    }
+    @Nested
+    class findByUserIdTest{
+        @Test
+        void findByUserId() {
+            // Arrange
+            EntityId userId = new EntityId(UUID.randomUUID());
 
-    @Test
-    void findByUserId() {
+            // Creamos la relación ProductUserEntity
+            ProductUserEntity productUserEntity = new ProductUserEntity();
+            productUserEntity.setUserId(userId.getValue());
+            productUserEntity.setProductId(productId.getValue());
+
+            when(jpaProductUserRepository.findByUserId(userId.getValue()))
+                    .thenReturn(List.of(productUserEntity));
+
+            when(jpaProductRepository.findById(productId.getValue()))
+                    .thenReturn(Optional.of(productEntity));
+
+            when(productMapper.toDomain(productEntity))
+                    .thenReturn(product);
+
+            // Act
+            List<Product> foundProducts = target.findByUserId(userId);
+
+            // Assert
+            assertThat(foundProducts)
+                    .hasSize(1)
+                    .containsExactly(product);
+
+            verify(jpaProductUserRepository).findByUserId(userId.getValue());
+            verify(jpaProductRepository).findById(productId.getValue());
+            verify(productMapper).toDomain(productEntity);
+        }
+
     }
 }
