@@ -13,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -66,6 +68,86 @@ class CategoryRepositoryAdapterTest {
             // Then
             assertThat(savedCategory).isEqualTo(category);
             verify(jpaCategoryRepository).save(categoryEntity);
+        }
+    }
+
+    @Nested
+    class findById {
+        @Test
+        void shouldFindCategoryById() {
+            // Given
+            when(jpaCategoryRepository.findById(categoryId.getValue())).thenReturn(java.util.Optional.of(categoryEntity));
+            when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+
+            // When
+            Optional<Category> foundCategory = target.findById(categoryId);
+
+            // Then
+            assertThat(foundCategory).isPresent();
+            assertThat(foundCategory.get()).isEqualTo(category);
+        }
+    }
+
+    @Nested
+    class findByName {
+        @Test
+        void shouldFindCategoryByName() {
+            // Given
+            String name = "Test Category";
+            when(jpaCategoryRepository.findByName(name)).thenReturn(java.util.Optional.of(categoryEntity));
+            when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+
+            // When
+            Optional<Category> foundCategory = target.findByName(name);
+
+            // Then
+            assertThat(foundCategory).isPresent();
+            assertThat(foundCategory.get()).isEqualTo(category);
+        }
+    }
+
+    @Nested
+    class findAll {
+        @Test
+        void shouldFindAllCategories() {
+            // Given
+            when(jpaCategoryRepository.findAll()).thenReturn(List.of(categoryEntity));
+            when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+
+            // When
+            List<Category> foundCategories = target.findAll();
+
+            // Then
+            assertThat(foundCategories).isEqualTo(List.of(category));
+            verify(jpaCategoryRepository).findAll();
+        }
+    }
+
+    @Nested
+    class deleteById {
+        @Test
+        void shouldDeleteCategoryById() {
+            // When
+            target.deleteById(categoryId);
+
+            // Then
+            verify(jpaCategoryRepository).deleteById(categoryId.getValue());
+        }
+    }
+
+    @Nested
+    class findByIdNotFound {
+        @Test
+        void shouldReturnEmptyOptionalWhenCategoryNotFound() {
+            // Given
+            when(jpaCategoryRepository.findById(categoryId.getValue())).thenReturn(Optional.empty());
+
+            // When
+            Optional<Category> foundCategory = target.findById(categoryId);
+
+            // Then
+            assertThat(foundCategory).isEmpty();
+            verify(jpaCategoryRepository).findById(categoryId.getValue());
         }
     }
 
