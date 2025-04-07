@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.domain;
+package com.myvanitys.api.product.domain.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -6,10 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.UUID;
 
-import com.myvanitys.api.product.domain.model.Category;
-import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.model.ProductUserRelation;
-import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
