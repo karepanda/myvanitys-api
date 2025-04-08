@@ -1,4 +1,4 @@
-package com.myvanitys.api.auth.application.adapter.input;
+package com.myvanitys.api.auth.infrastructure.persistence.entity.input;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

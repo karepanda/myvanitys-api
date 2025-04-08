@@ -50,7 +50,7 @@
     <dependency>
       <groupId>com.myvanitys</groupId>
       <artifactId>myvanitys-api-spec</artifactId>
-      <version>0.0.13-SNAPSHOT</version>
+      <version>0.0.14-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
