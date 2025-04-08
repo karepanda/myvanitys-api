@@ -1,26 +1,19 @@
 package com.myvanitys.api.auth.application.port.primary;
 
-import com.myvanitys.api.auth.domain.model.User;
+import java.util.UUID;
 
-/**
- * Input port for authentication using Google OAuth. This port defines the operations that primary adapters can use to perform
- * authentication with Google.
- */
+import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
+import com.myvanitys.api.auth.domain.model.UserSession;
+
 public interface GoogleAuthenticationUseCase {
 
   /**
-   * Authenticates a user using a Google OAuth authorization code. This method exchanges the code for Google tokens, retrieves user
-   * information, creates or updates the user in the database, and generates a JWT.
+   * Authenticates a user using the Google authorization code.
    *
-   * @param authorizationCode The authorization code obtained from Google OAuth
-   * @return The authentication result containing the JWT token and user information
+   * @param command Command containing the authorization code
+   * @param requestId Request ID for tracking
+   * @param flowId Flow ID for tracking
+   * @return User session with the token and user data
    */
-  AuthenticationResult authenticateWithGoogle(String authorizationCode);
-
-  /**
-   * Inner class that encapsulates the result of the authentication process.
-   */
-  record AuthenticationResult(String token, User user) {
-
-  }
+  UserSession authenticateWithGoogle(GoogleAuthCommand command, UUID requestId, UUID flowId);
 }
