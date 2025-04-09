@@ -3,6 +3,9 @@ package com.myvanitys.api.auth.infrastructure.adapter.primary;
 import java.util.UUID;
 
 import com.myvanitys.api.auth.application.port.primary.GoogleAuthenticationUseCase;
+import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
+import com.myvanitys.api.auth.domain.model.UserSession;
+import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.AuthenticationMapper;
 import com.myvanitys.api.model.v1.AuthResponse;
 import com.myvanitys.api.model.v1.GoogleAuthRequest;
 import com.myvanitys.api.rest.v1.AuthenticationApiDelegate;
@@ -16,7 +19,7 @@ public class AuthController implements AuthenticationApiDelegate {
 
   private final GoogleAuthenticationUseCase googleAuthenticationUseCase;
 
-  //private final AuthenticationMapper authenticationMapper;
+  private final AuthenticationMapper authenticationMapper;
 
   @Override
   public ResponseEntity<AuthResponse> authenticateWithGoogle(
@@ -25,14 +28,14 @@ public class AuthController implements AuthenticationApiDelegate {
       GoogleAuthRequest googleAuthRequest) throws Exception {
 
     // Map request to domain command
-    //GoogleAuthCommand command = authenticationMapper.toCommand(googleAuthRequest);
+    GoogleAuthCommand command = authenticationMapper.toCommand(googleAuthRequest);
 
     // Calling the use case
-    //UserSession session = googleAuthenticationUseCase.authenticateWithGoogle(command, xRequestID, xFlowID);
+    UserSession session = googleAuthenticationUseCase.authenticateWithGoogle(command, xRequestID, xFlowID);
 
     // Map user session to API response
-    //AuthResponse response = authenticationMapper.toResponse(session);
+    AuthResponse response = authenticationMapper.toResponse(session);
 
-    return ResponseEntity.ok(new AuthResponse());
+    return ResponseEntity.ok(response);
   }
 }
