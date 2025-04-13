@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
 class GoogleAuthenticationServiceTest {
@@ -51,24 +52,30 @@ class GoogleAuthenticationServiceTest {
 
     @Test
     void when_givenCommandWithRedirectUri_then_returnsUserSession() {
-      //Given
+      // Given
       UUID requestId = UUID.randomUUID();
       UUID flowId = UUID.randomUUID();
       GoogleAuthCommand command = new GoogleAuthCommand("authorization-code", DEFAULT_REDIRECT_URI);
 
-      //  Mocks required for googleAuthClient
+      // 1. Mocks required for googleAuthClient
       final String pictureUrl = "https://example.com/pic2.jpg";
       GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-user-id", "user@example.com", "Jane Doe", pictureUrl);
+
+      // Use Mono.just() to wrap simulated response
       Mockito.lenient().when(googleAuthClient.exchangeCodeForUserInfo(command.code(), command.redirectUri()))
-          .thenReturn(googleUserInfo);
+          .thenReturn(Mono.just(googleUserInfo));
+
+      // 2. Simulation of the token generator
       when(tokenGenerator.generateToken(any(TokenClaims.class)))
           .thenReturn("dummy-jwt-token");
+
       // Use lenient to avoid the problem of stubbing with different User
       Mockito.lenient().when(tokenGenerator.createClaimsFromUser(any(User.class)))
           .thenReturn(new TokenClaims("dummy-claim", "dummy-email", "dummy-name"));
 
       // When
-      UserSession result = target.authenticateWithGoogle(command, requestId, flowId);
+      UserSession result =
+          target.authenticateWithGoogle(command, requestId, flowId).block();  // Block the Mono to obtain the result
 
       // Then
       assertThat(result).isNotNull().satisfies(session -> {
@@ -77,7 +84,6 @@ class GoogleAuthenticationServiceTest {
         assertThat(session.googleId()).isEqualTo("google-user-id");
         assertThat(session.name()).isEqualTo("Jane Doe");
       });
-
     }
 
     @Test
@@ -90,18 +96,21 @@ class GoogleAuthenticationServiceTest {
       // Mocks required for googleAuthClient
       final String pictureUrl = "https://example.com/pic2.jpg";
       GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-user-id", "user@example.com", "Jane Doe", pictureUrl);
+
+      // Use Mono.just() to wrap simulated response
       Mockito.lenient().when(
               googleAuthClient.exchangeCodeForUserInfo(command.code(), DEFAULT_REDIRECT_URI)) // Esperamos que use DEFAULT_REDIRECT_URI aquí
-          .thenReturn(googleUserInfo);
+          .thenReturn(Mono.just(googleUserInfo)); // Wrap in Mono.just()
 
       when(tokenGenerator.generateToken(any(TokenClaims.class)))
           .thenReturn("dummy-jwt-token");
+
       // Use lenient to avoid the problem of stubbing with different User
       Mockito.lenient().when(tokenGenerator.createClaimsFromUser(any(User.class)))
           .thenReturn(new TokenClaims("dummy-claim", "dummy-email", "dummy-name"));
 
       // When
-      UserSession result = target.authenticateWithGoogle(command, requestId, flowId);
+      UserSession result = target.authenticateWithGoogle(command, requestId, flowId).block();  // Bloquear el Mono para obtener el resultado
 
       // Then
       assertThat(result).isNotNull().satisfies(session -> {
@@ -113,6 +122,8 @@ class GoogleAuthenticationServiceTest {
     }
 
   }
+
+
 }
 
 

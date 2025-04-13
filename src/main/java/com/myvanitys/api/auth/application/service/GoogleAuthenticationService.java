@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import com.myvanitys.api.auth.application.port.primary.GoogleAuthenticationUseCase;
 import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
-import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
@@ -17,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -31,24 +31,27 @@ public class GoogleAuthenticationService implements GoogleAuthenticationUseCase 
   private String defaultRedirectUri;
 
   @Override
-  public UserSession authenticateWithGoogle(GoogleAuthCommand command, UUID requestId, UUID flowId) {
+  public Mono<UserSession> authenticateWithGoogle(GoogleAuthCommand command, UUID requestId, UUID flowId) {
     log.info("Processing Google authentication. RequestID: {}, FlowID: {}", requestId, flowId);
     log.info("Received authorization code: {}", command.code());
 
-    // 1. Exchange code for user info
+    // 1. Exchange code for user info reactively
     String redirectUri = command.redirectUri() != null ? command.redirectUri() : defaultRedirectUri;
-    GoogleUserInfo googleUserInfo = googleAuthClient.exchangeCodeForUserInfo(command.code(), redirectUri);
+    return googleAuthClient.exchangeCodeForUserInfo(command.code(), redirectUri)
+        .doOnNext(googleUserInfo -> {
+          log.info("Retrieved user info from Google. User ID: {}, Email: {}", googleUserInfo.id(), googleUserInfo.email());
+        })
+        .flatMap(googleUserInfo -> {
+          // 2. Create user (in a real implementation, you would first check if the user already exists)
+          EntityId userId = new EntityId(UUID.randomUUID());
+          User user = new User(userId, googleUserInfo.id(), googleUserInfo.email(), googleUserInfo.name());
 
-    log.info("Retrieved user info from Google. User ID: {}, Email: {}", googleUserInfo.id(), googleUserInfo.email());
+          // 3. Generate JWT tokens using TokenClaims
+          TokenClaims claims = tokenGenerator.createClaimsFromUser(user);
+          String token = tokenGenerator.generateToken(claims);
 
-    // 2. Create user (In a real implementation, you would check if the user exists first)
-    EntityId userId = new EntityId(UUID.randomUUID());
-    User user = new User(userId, googleUserInfo.id(), googleUserInfo.email(), googleUserInfo.name());
-
-    // 3. Generate JWT token using TokenClaims
-    TokenClaims claims = tokenGenerator.createClaimsFromUser(user);
-    String token = tokenGenerator.generateToken(claims);
-
-    return new UserSession(token, user);
+          return Mono.just(new UserSession(token, user));
+        });
   }
+
 }

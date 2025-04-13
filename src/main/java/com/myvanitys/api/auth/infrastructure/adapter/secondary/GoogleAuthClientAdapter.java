@@ -1,8 +1,4 @@
-// infrastructure/adapter/secondary/GoogleAuthClientAdapter.java
-
 package com.myvanitys.api.auth.infrastructure.adapter.secondary;
-
-import java.util.Optional;
 
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
@@ -14,14 +10,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -32,91 +27,82 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
 
   private static final String USER_INFO_ENDPOINT = "https://www.googleapis.com/oauth2/v3/userinfo";
 
-  private final RestTemplate restTemplate;
+  private final WebClient webClient;
 
   private final GoogleClientProperties googleClientProperties;
 
   @Override
-  public GoogleUserInfo exchangeCodeForUserInfo(String authorizationCode, String redirectUri) {
+  public Mono<GoogleUserInfo> exchangeCodeForUserInfo(String authorizationCode, String redirectUri) {
     log.debug("Starting Google authentication process with authorization code");
 
-    try {
-      // Step 1: Get access token
-      GoogleTokenResponse tokenResponse = exchangeCodeForToken(authorizationCode, redirectUri);
-
-      // Step 2: Get user info with the token
-      GoogleUserInfoResponse userInfoResponse = fetchUserInfo(tokenResponse.getAccessToken());
-
-      // Step 3: Map to domain model
-      return mapToDomainModel(userInfoResponse);
-    } catch (RestClientException e) {
-      log.error("Error communicating with Google API", e);
-      throw new GoogleAuthException("Failed to authenticate with Google: " + e.getMessage(), e);
-    }
+    return exchangeCodeForToken(authorizationCode, redirectUri)
+        .flatMap(tokenResponse -> fetchUserInfo(tokenResponse.getAccessToken()))
+        .map(this::mapToDomainModel)
+        .onErrorMap(WebClientResponseException.class, ex -> {
+          log.error("Error during Google authentication", ex);
+          return new GoogleAuthException("Failed to authenticate with Google: " + ex.getMessage(), ex);
+        })
+        .doOnTerminate(() -> log.debug("Google authentication process completed"));
   }
 
-  private GoogleTokenResponse exchangeCodeForToken(String code, String redirectUri) {
+  public HttpEntity<MultiValueMap<String, String>> getHttpEntity(String authorizationCode, String redirectUri, HttpHeaders headers) {
+    MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+    map.add("code", authorizationCode);
+    map.add("redirect_uri", redirectUri);
+    map.add("client_id", googleClientProperties.getId());
+    map.add("client_secret", googleClientProperties.getSecret());
+    map.add("grant_type", "authorization_code");
+
+    return new HttpEntity<>(map, headers);
+  }
+
+  protected Mono<GoogleTokenResponse> exchangeCodeForToken(String code, String redirectUri) {
     log.debug("Exchanging authorization code for access token");
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+    MultiValueMap<String, String> requestBody = getTokenRequestBody(code, redirectUri);
 
-    final HttpEntity<MultiValueMap<String, String>> request =
-        getHttpEntity(code, redirectUri, headers);
-
-    GoogleTokenResponse response = restTemplate.postForObject(
-        TOKEN_ENDPOINT, request, GoogleTokenResponse.class);
-
-    return Optional.ofNullable(response)
-        .filter(r -> r.getAccessToken() != null)
-        .orElseThrow(() -> {
-          log.error("Failed to obtain access token from Google");
-          return new GoogleAuthException("Access token not received from Google");
+    return webClient.post()
+        .uri(TOKEN_ENDPOINT)
+        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+        .bodyValue(requestBody)
+        .retrieve()
+        .bodyToMono(GoogleTokenResponse.class)
+        .onErrorMap(WebClientResponseException.class, ex -> {
+          log.error("Error retrieving token from Google", ex);
+          return new GoogleAuthException("Failed to exchange authorization code for token", ex);
         });
   }
 
-  private HttpEntity<MultiValueMap<String, String>> getHttpEntity(String code, String redirectUri, HttpHeaders headers) {
+  private MultiValueMap<String, String> getTokenRequestBody(String code, String redirectUri) {
     MultiValueMap<String, String> tokenRequestParams = new LinkedMultiValueMap<>();
     tokenRequestParams.add("code", code);
     tokenRequestParams.add("client_id", googleClientProperties.getId());
     tokenRequestParams.add("client_secret", googleClientProperties.getSecret());
     tokenRequestParams.add("redirect_uri", redirectUri);
     tokenRequestParams.add("grant_type", "authorization_code");
-
-    return new HttpEntity<>(tokenRequestParams, headers);
+    return tokenRequestParams;
   }
 
-  private GoogleUserInfoResponse fetchUserInfo(String accessToken) {
+  private Mono<GoogleUserInfoResponse> fetchUserInfo(String accessToken) {
     log.debug("Fetching user information with access token");
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setBearerAuth(accessToken);
-
-    HttpEntity<String> request = new HttpEntity<>(headers);
-
-    ResponseEntity<GoogleUserInfoResponse> response = restTemplate.exchange(
-        USER_INFO_ENDPOINT,
-        HttpMethod.GET,
-        request,
-        GoogleUserInfoResponse.class
-    );
-
-    return Optional.ofNullable(response.getBody())
-        .orElseThrow(() -> {
-          log.error("Received null response body from Google UserInfo endpoint");
-          return new GoogleAuthException("Failed to retrieve user information from Google");
+    return webClient.get()
+        .uri(USER_INFO_ENDPOINT)
+        .headers(headers -> headers.setBearerAuth(accessToken))
+        .retrieve()
+        .bodyToMono(GoogleUserInfoResponse.class)
+        .onErrorMap(WebClientResponseException.class, ex -> {
+          log.error("Error fetching user info from Google", ex);
+          return new GoogleAuthException("Failed to fetch user info from Google", ex);
         });
   }
 
   private GoogleUserInfo mapToDomainModel(GoogleUserInfoResponse response) {
-    // Validate required fields
-    if (response.getSub() == null || response.getEmail() == null) {
+    if (response.getSub() == null || response.getEmail() == null || !isValidEmail(response.getEmail())) {
       log.warn("Google user info is missing required fields: id={}, email={}",
           response.getSub(), response.getEmail());
-      throw new GoogleAuthException("Google user information is incomplete");
+      throw new GoogleAuthException("Google user information is incomplete or invalid");
     }
-
-    log.debug("Successfully retrieved and mapped Google user information");
 
     return new GoogleUserInfo(
         response.getSub(),
@@ -125,4 +111,10 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
         response.getPicture()
     );
   }
+
+  // Additional method to validate the e-mail
+  private boolean isValidEmail(String email) {
+    return email != null && email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+  }
 }
+

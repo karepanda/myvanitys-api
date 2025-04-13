@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import reactor.core.publisher.Mono;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -66,6 +67,7 @@ class AuthControllerTestIT {
     String email = "user@example.com";
     String name = "Test User";
 
+    // Creation of objects required for the test
     EntityId entityId = new EntityId(userId);
     User user = new User(entityId, "google-user-123", email, name);
     UserSession session = new UserSession(token, user);
@@ -73,6 +75,7 @@ class AuthControllerTestIT {
     GoogleAuthCommand command = GoogleAuthCommand.of(authCode);
     when(authenticationMapper.toCommand(any())).thenReturn(command);
 
+    // Prepare expected response
     com.myvanitys.api.model.v1.AuthResponse authResponse = new com.myvanitys.api.model.v1.AuthResponse()
         .token(token)
         .userId(userId)
@@ -80,11 +83,11 @@ class AuthControllerTestIT {
         .name(name);
     when(authenticationMapper.toResponse(any(UserSession.class))).thenReturn(authResponse);
 
-    // When
-    when(googleAuthenticationUseCase.authenticateWithGoogle(any(GoogleAuthCommand.class), any(UUID.class), any(UUID.class)))
-        .thenReturn(session);
+    // Simulating use case behavior
+    when(googleAuthenticationUseCase.authenticateWithGoogle(command, requestId, flowId))
+        .thenReturn(Mono.just(session)); // Debemos devolver un Mono de UserSession
 
-    // Then
+    // When
     mockMvc.perform(post("/api/v1/auth/google")
             .contentType(MediaType.APPLICATION_JSON)
             .header("X-Request-ID", requestId.toString())

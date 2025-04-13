@@ -1,5 +1,3 @@
-// domain/exception/GoogleAuthException.java
-
 package com.myvanitys.api.auth.domain.exception;
 
 public class GoogleAuthException extends RuntimeException {

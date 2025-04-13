@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
 import com.myvanitys.api.auth.domain.model.UserSession;
+import reactor.core.publisher.Mono;
 
 public interface GoogleAuthenticationUseCase {
 
@@ -15,5 +16,5 @@ public interface GoogleAuthenticationUseCase {
    * @param flowId Flow ID for tracking
    * @return User session with the token and user data
    */
-  UserSession authenticateWithGoogle(GoogleAuthCommand command, UUID requestId, UUID flowId);
+  Mono<UserSession> authenticateWithGoogle(GoogleAuthCommand command, UUID requestId, UUID flowId);
 }

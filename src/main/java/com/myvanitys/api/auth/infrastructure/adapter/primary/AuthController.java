@@ -32,7 +32,7 @@ public class AuthController implements AuthenticationApiDelegate {
     GoogleAuthCommand command = authenticationMapper.toCommand(googleAuthRequest);
 
     // Calling the use case
-    UserSession session = googleAuthenticationUseCase.authenticateWithGoogle(command, xRequestID, xFlowID);
+    UserSession session = googleAuthenticationUseCase.authenticateWithGoogle(command, xRequestID, xFlowID).block();
 
     // Map user session to API response
     AuthResponse response = authenticationMapper.toResponse(session);

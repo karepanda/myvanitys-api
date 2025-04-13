@@ -1,5 +1,3 @@
-// infrastructure/config/GoogleClientProperties.java
-
 package com.myvanitys.api.auth.infrastructure.config;
 
 import lombok.Getter;
