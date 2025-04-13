@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -27,7 +27,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @ExtendWith(SpringExtension.class)
-@ActiveProfiles("test")
+@SpringBootTest
 class GoogleAuthClientAdapterIT {
 
   @RegisterExtension
@@ -39,12 +39,12 @@ class GoogleAuthClientAdapterIT {
 
   @BeforeEach
   void setUp() {
-    // Configurar las propiedades
+    // Set up properties
     GoogleClientProperties googleClientProperties = new GoogleClientProperties();
     googleClientProperties.setId("mock-client-id");
     googleClientProperties.setSecret("mock-client-secret");
 
-    // Configurar WebClient con un Exchange Filter Function para redirigir las solicitudes
+    // Configure WebClient with an Exchange Filter Function to redirect requests
     WebClient webClient = WebClient.builder()
         .filter((request, next) -> {
           ClientRequest modifiedRequest = ClientRequest.from(request)
@@ -54,10 +54,10 @@ class GoogleAuthClientAdapterIT {
         })
         .build();
 
-    // Crear el adaptador
+    // Create the adapter
     googleAuthClientAdapter = new GoogleAuthClientAdapter(webClient, googleClientProperties);
 
-    // Configurar los stubs
+    // Set up stubs
     wireMockServer.stubFor(post(urlEqualTo("/token"))
         .willReturn(aResponse()
             .withStatus(200)
@@ -73,7 +73,7 @@ class GoogleAuthClientAdapterIT {
   }
 
   private URI redirectUrl(URI originalUrl) {
-    // Redireccionar las URLs de Google a WireMock
+    // Redirect Google URLs to WireMock
     String url = originalUrl.toString();
     if (url.equals("https://oauth2.googleapis.com/token")) {
       return URI.create(wireMockServer.baseUrl() + "/token");
@@ -89,7 +89,7 @@ class GoogleAuthClientAdapterIT {
     String authorizationCode = "test-authorization-code";
     String redirectUri = "https://localhost/callback";
 
-    // Stubs para los endpoints reales que serán redirigidos
+    // Stubs for real endpoints that will be redirected
     wireMockServer.stubFor(post(urlEqualTo("/token"))
         .willReturn(aResponse()
             .withStatus(200)
@@ -116,7 +116,7 @@ class GoogleAuthClientAdapterIT {
         })
         .verifyComplete();
 
-    // Verificar que las solicitudes fueron recibidas por WireMock
+    // Verify that the requests were received by WireMock
     wireMockServer.verify(postRequestedFor(urlEqualTo("/token")));
     wireMockServer.verify(getRequestedFor(urlEqualTo("/userinfo")));
   }
@@ -127,7 +127,7 @@ class GoogleAuthClientAdapterIT {
     String authorizationCode = "invalid-code";
     String redirectUri = "https://localhost/callback";
 
-    // Sobrescribir el stub existente para el endpoint de token
+    // Overwrite existing stub for token endpoint
     wireMockServer.stubFor(post(urlEqualTo("/token"))
         .willReturn(aResponse()
             .withStatus(400)
@@ -143,7 +143,7 @@ class GoogleAuthClientAdapterIT {
                 throwable.getMessage().contains("Failed to exchange authorization code for token"))
         .verify();
 
-    // Verificar que se realizó la solicitud al endpoint de token
+    // Verify request to token endpoint
     wireMockServer.verify(postRequestedFor(urlEqualTo("/token")));
   }
 
@@ -153,7 +153,7 @@ class GoogleAuthClientAdapterIT {
     String authorizationCode = "valid-code-invalid-token";
     String redirectUri = "https://localhost/callback";
 
-    // Sobrescribir el stub existente para el endpoint de userinfo
+    // Overwrite existing stub for userinfo endpoint
     wireMockServer.stubFor(post(urlEqualTo("/token"))
         .willReturn(aResponse()
             .withStatus(200)
@@ -175,7 +175,7 @@ class GoogleAuthClientAdapterIT {
                 throwable.getMessage().contains("Failed to fetch user info from Google"))
         .verify();
 
-    // Verificar que se realizaron las solicitudes a ambos endpoints
+    // Verify requests to both endpoints
     wireMockServer.verify(postRequestedFor(urlEqualTo("/token")));
     wireMockServer.verify(getRequestedFor(urlEqualTo("/userinfo")));
   }
@@ -186,7 +186,7 @@ class GoogleAuthClientAdapterIT {
     String authorizationCode = "valid-code-invalid-user";
     String redirectUri = "https://localhost/callback";
 
-    // Sobrescribir el stub existente para el endpoint de userinfo con datos incompletos
+    // Overwrite stub for userinfo endpoint with incomplete data
     wireMockServer.stubFor(post(urlEqualTo("/token"))
         .willReturn(aResponse()
             .withStatus(200)
@@ -197,7 +197,7 @@ class GoogleAuthClientAdapterIT {
         .willReturn(aResponse()
             .withStatus(200)
             .withHeader("Content-Type", "application/json")
-            .withBody("{\"sub\":\"12345\",\"name\":\"Test User\"}")));  // Sin email
+            .withBody("{\"sub\":\"12345\",\"name\":\"Test User\"}")));  // Missing email
 
     // Act & Assert
     Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, redirectUri);
@@ -208,7 +208,7 @@ class GoogleAuthClientAdapterIT {
                 throwable.getMessage().contains("incomplete or invalid"))
         .verify();
 
-    // Verificar que se realizaron las solicitudes a ambos endpoints
+    // Verify requests to both endpoints
     wireMockServer.verify(postRequestedFor(urlEqualTo("/token")));
     wireMockServer.verify(getRequestedFor(urlEqualTo("/userinfo")));
   }
@@ -219,7 +219,7 @@ class GoogleAuthClientAdapterIT {
     String authorizationCode = "valid-code-invalid-email";
     String redirectUri = "https://localhost/callback";
 
-    // Sobrescribir el stub para responder con un email inválido
+    // Overwrite stub to return an invalid email
     wireMockServer.stubFor(post(urlEqualTo("/token"))
         .willReturn(aResponse()
             .withStatus(200)
@@ -241,7 +241,7 @@ class GoogleAuthClientAdapterIT {
                 throwable.getMessage().contains("incomplete or invalid"))
         .verify();
 
-    // Verificar que se realizaron las solicitudes
+    // Verify requests
     wireMockServer.verify(postRequestedFor(urlEqualTo("/token")));
     wireMockServer.verify(getRequestedFor(urlEqualTo("/userinfo")));
   }
@@ -252,7 +252,7 @@ class GoogleAuthClientAdapterIT {
     String authorizationCode = "valid-code-missing-name";
     String redirectUri = "https://localhost/callback";
 
-    // Sobrescribir el stub para responder sin name pero con los campos requeridos
+    // Overwrite stub to respond without a name but with required fields
     wireMockServer.stubFor(post(urlEqualTo("/token"))
         .willReturn(aResponse()
             .withStatus(200)
@@ -272,15 +272,14 @@ class GoogleAuthClientAdapterIT {
         .assertNext(googleUserInfo -> {
           assertThat(googleUserInfo.id()).isEqualTo("12345");
           assertThat(googleUserInfo.email()).isEqualTo("testuser@example.com");
-          assertThat(googleUserInfo.name()).isEmpty(); // Nombre vacío
+          assertThat(googleUserInfo.name()).isEmpty(); // Empty name
           assertThat(googleUserInfo.pictureUrl()).isEqualTo("https://test.com/pic.jpg");
         })
         .verifyComplete();
 
-    // Verificar las solicitudes
+    // Verify requests
     wireMockServer.verify(postRequestedFor(urlEqualTo("/token")));
     wireMockServer.verify(getRequestedFor(urlEqualTo("/userinfo")));
   }
-
 
 }

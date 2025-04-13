@@ -8,8 +8,6 @@ import com.myvanitys.api.auth.infrastructure.adapter.secondary.dto.GoogleUserInf
 import com.myvanitys.api.auth.infrastructure.config.GoogleClientProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -43,17 +41,6 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
           return new GoogleAuthException("Failed to authenticate with Google: " + ex.getMessage(), ex);
         })
         .doOnTerminate(() -> log.debug("Google authentication process completed"));
-  }
-
-  public HttpEntity<MultiValueMap<String, String>> getHttpEntity(String authorizationCode, String redirectUri, HttpHeaders headers) {
-    MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-    map.add("code", authorizationCode);
-    map.add("redirect_uri", redirectUri);
-    map.add("client_id", googleClientProperties.getId());
-    map.add("client_secret", googleClientProperties.getSecret());
-    map.add("grant_type", "authorization_code");
-
-    return new HttpEntity<>(map, headers);
   }
 
   protected Mono<GoogleTokenResponse> exchangeCodeForToken(String code, String redirectUri) {
