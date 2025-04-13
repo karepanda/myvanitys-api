@@ -126,7 +126,6 @@ class AuthControllerTestIT {
   }
 
   @Test
-  @Disabled("Pending to implement exception handling")
   void shouldReturnInternalServerErrorWhenAuthenticationFails() throws Exception {
     // Given
     String authCode = "invalid-auth-code";

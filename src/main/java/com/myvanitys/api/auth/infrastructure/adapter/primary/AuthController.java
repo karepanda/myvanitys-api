@@ -9,6 +9,7 @@ import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.Authenticati
 import com.myvanitys.api.model.v1.AuthResponse;
 import com.myvanitys.api.model.v1.GoogleAuthRequest;
 import com.myvanitys.api.rest.v1.AuthenticationApiDelegate;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -25,7 +26,7 @@ public class AuthController implements AuthenticationApiDelegate {
   public ResponseEntity<AuthResponse> authenticateWithGoogle(
       UUID xRequestID,
       UUID xFlowID,
-      GoogleAuthRequest googleAuthRequest) throws Exception {
+      @Valid GoogleAuthRequest googleAuthRequest) {
 
     // Map request to domain command
     GoogleAuthCommand command = authenticationMapper.toCommand(googleAuthRequest);

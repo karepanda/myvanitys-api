@@ -1,37 +1,119 @@
 package com.myvanitys.api.auth.application.service;
 
-import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
-import com.myvanitys.api.auth.domain.model.UserSession;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
+import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
+import com.myvanitys.api.auth.domain.model.User;
+import com.myvanitys.api.auth.domain.model.UserSession;
+import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
+import com.myvanitys.api.auth.infrastructure.security.JwtTokenGeneratorAdapter;
+import com.myvanitys.api.auth.infrastructure.security.TokenClaims;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 class GoogleAuthenticationServiceTest {
-    private final GoogleAuthenticationService service = new GoogleAuthenticationService();
+
+  @Mock
+  private GoogleAuthClient googleAuthClient;
+
+  @Mock
+  private JwtTokenGeneratorAdapter tokenGenerator;
+
+  @InjectMocks
+  private GoogleAuthenticationService target;
+
+  private static final String DEFAULT_REDIRECT_URI = "http://localhost:5173/callback";
+
+  @BeforeEach
+  void setUp() {
+
+    target = new GoogleAuthenticationService(googleAuthClient, tokenGenerator);
+    // Inject the redirect URI manually
+    ReflectionTestUtils.setField(target, "defaultRedirectUri", DEFAULT_REDIRECT_URI);
+
+  }
+
+  @Nested
+  class AuthenticateWithGoogle {
 
     @Test
-    @DisplayName("Should authenticate and return valid UserSession")
-    void shouldAuthenticateAndReturnUserSession() {
-        // Arrange
-        GoogleAuthCommand command = new GoogleAuthCommand("valid-code", "http://localhost/callback");
-        UUID requestId = UUID.randomUUID();
-        UUID flowId = UUID.randomUUID();
+    void when_givenCommandWithRedirectUri_then_returnsUserSession() {
+      //Given
+      UUID requestId = UUID.randomUUID();
+      UUID flowId = UUID.randomUUID();
+      GoogleAuthCommand command = new GoogleAuthCommand("authorization-code", DEFAULT_REDIRECT_URI);
 
-        // Act
-        UserSession session = service.authenticateWithGoogle(command, requestId, flowId);
+      //  Mocks required for googleAuthClient
+      final String pictureUrl = "https://example.com/pic2.jpg";
+      GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-user-id", "user@example.com", "Jane Doe", pictureUrl);
+      Mockito.lenient().when(googleAuthClient.exchangeCodeForUserInfo(command.code(), command.redirectUri()))
+          .thenReturn(googleUserInfo);
+      when(tokenGenerator.generateToken(any(TokenClaims.class)))
+          .thenReturn("dummy-jwt-token");
+      // Use lenient to avoid the problem of stubbing with different User
+      Mockito.lenient().when(tokenGenerator.createClaimsFromUser(any(User.class)))
+          .thenReturn(new TokenClaims("dummy-claim", "dummy-email", "dummy-name"));
 
-        // Assert
-        assertNotNull(session);
-        assertNotNull(session.token());
-        assertTrue(session.isActive());
+      // When
+      UserSession result = target.authenticateWithGoogle(command, requestId, flowId);
 
-        assertNotNull(session.user());
-        assertNotNull(session.user().getId());
-        assertTrue(session.user().getAuthorizationId().startsWith("google-"));
-        assertEquals("user@example.com", session.user().getEmail());
-        assertEquals("User test", session.user().getName());
+      // Then
+      assertThat(result).isNotNull().satisfies(session -> {
+        assertThat(session.token()).isEqualTo("dummy-jwt-token");
+        assertThat(session.email()).isEqualTo("user@example.com");
+        assertThat(session.googleId()).isEqualTo("google-user-id");
+        assertThat(session.name()).isEqualTo("Jane Doe");
+      });
+
     }
+
+    @Test
+    void when_givenCommandWithoutRedirectUri_then_usesDefaultRedirectUri() {
+      // Given
+      UUID requestId = UUID.randomUUID();
+      UUID flowId = UUID.randomUUID();
+      GoogleAuthCommand command = new GoogleAuthCommand("authorization-code", null); // redirectUri es null
+
+      // Mocks required for googleAuthClient
+      final String pictureUrl = "https://example.com/pic2.jpg";
+      GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-user-id", "user@example.com", "Jane Doe", pictureUrl);
+      Mockito.lenient().when(
+              googleAuthClient.exchangeCodeForUserInfo(command.code(), DEFAULT_REDIRECT_URI)) // Esperamos que use DEFAULT_REDIRECT_URI aquí
+          .thenReturn(googleUserInfo);
+
+      when(tokenGenerator.generateToken(any(TokenClaims.class)))
+          .thenReturn("dummy-jwt-token");
+      // Use lenient to avoid the problem of stubbing with different User
+      Mockito.lenient().when(tokenGenerator.createClaimsFromUser(any(User.class)))
+          .thenReturn(new TokenClaims("dummy-claim", "dummy-email", "dummy-name"));
+
+      // When
+      UserSession result = target.authenticateWithGoogle(command, requestId, flowId);
+
+      // Then
+      assertThat(result).isNotNull().satisfies(session -> {
+        assertThat(session.token()).isEqualTo("dummy-jwt-token");
+        assertThat(session.email()).isEqualTo("user@example.com");
+        assertThat(session.googleId()).isEqualTo("google-user-id");
+        assertThat(session.name()).isEqualTo("Jane Doe");
+      });
+    }
+
+  }
 }
+
+
+
