@@ -1,5 +1,3 @@
-// application/service/GoogleAuthenticationService.java
-
 package com.myvanitys.api.auth.application.service;
 
 import java.util.UUID;
