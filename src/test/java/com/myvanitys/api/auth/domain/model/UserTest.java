@@ -1,71 +1,116 @@
 package com.myvanitys.api.auth.domain.model;
 
-import com.myvanitys.api.product.domain.valueobject.EntityId;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 class UserTest {
-    private User user1;
-    private User user2;
-    private User user3;
 
-    @BeforeEach
-    void setUp() {
-        // ID's for testing with UUID
-        EntityId userId1 = new EntityId(UUID.randomUUID());
-        EntityId userId2 = new EntityId(UUID.randomUUID());
+  @Nested
+  class Constructor {
 
-        // Instantiate users for testing
-        user1 = new User(userId1, "auth123", "test1@example.com", "John Doe");
-        user2 = new User(userId1, "auth123", "test1@example.com", "John Doe"); // same user as user1
-        user3 = new User(userId2, "auth456", "test2@example.com", "Jane Doe"); // different user
+    @Test
+    void when_allParametersAreValid_then_createUserSuccessfully() {
+      final EntityId id = new EntityId(UUID.randomUUID());
+      final String authorizationId = "auth123";
+      final String email = "test@example.com";
+      final String name = "Test User";
+
+      final User user = new User(id, authorizationId, email, name);
+
+      assertThat(user.getId()).isEqualTo(id);
+      assertThat(user.getAuthorizationId()).isEqualTo(authorizationId);
+      assertThat(user.getEmail()).isEqualTo(email);
+      assertThat(user.getName()).isEqualTo(name);
     }
 
     @Test
-    void testUserInitialization() {
-        // verify that the user object is initialized correctly
-        assertEquals("auth123", user1.getAuthorizationId(), "The authorizationId is incorrect");
-        assertEquals("test1@example.com", user1.getEmail(), "The email is incorrect");
-        assertEquals("John Doe", user1.getName(), "The name is incorrect");
+    void when_authorizationIdIsNull_then_throwException() {
+      final EntityId id = new EntityId(UUID.randomUUID());
+      final String email = "test@example.com";
+      final String name = "Test User";
+
+      //noinspection DataFlowIssue
+      assertThatThrownBy(() -> new User(id, null, email, name))
+          .isInstanceOf(NullPointerException.class)
+          .hasMessage("authorizationId is marked non-null but is null");
     }
 
     @Test
-    void testUsersWithSameIdAreEqual() {
-        // Same IDs → Should be equal
-        assertEquals(user1, user2, "Users with the same ID should be equal");
-        assertEquals(user1.hashCode(), user2.hashCode(), "The hashCode should be the same for equal users");
+    void when_emailIsNull_then_throwException() {
+      final EntityId id = new EntityId(UUID.randomUUID());
+      final String authorizationId = "auth123";
+      final String name = "Test User";
+
+      //noinspection DataFlowIssue
+      assertThatThrownBy(() -> new User(id, authorizationId, null, name))
+          .isInstanceOf(NullPointerException.class)
+          .hasMessage("email is marked non-null but is null");
     }
 
     @Test
-    void testUsersWithDifferentIdAreNotEqual() {
-        // Different IDs → Should not be equal
-        assertNotEquals(user1, user3, "Users with different IDs should not be equal");
-        assertNotEquals(user1.hashCode(), user3.hashCode(), "The hashCode should not be the same for different users");
+    void when_nameIsNull_then_createUserSuccessfully() {
+      final EntityId id = new EntityId(UUID.randomUUID());
+      final String authorizationId = "auth123";
+      final String email = "test@example.com";
+
+      final User user = new User(id, authorizationId, email, null);
+
+      assertThat(user.getName()).isNull();
+    }
+  }
+
+  @Nested
+  class EqualsAndHashCode {
+
+    @Test
+    void when_usersHaveSameId_then_areEqualAndHaveSameHashCode() {
+      final UUID uuid = UUID.randomUUID();
+      final EntityId id = new EntityId(uuid);
+
+      final User user1 = new User(id, "auth1", "a@b.com", "Alice");
+      final User user2 = new User(id, "auth2", "c@d.com", "Bob");
+
+      assertThat(user1).satisfies(u -> {
+        assertThat(u).isEqualTo(user2);
+        assertThat(u).hasSameHashCodeAs(user2);
+      });
     }
 
     @Test
-    void testToStringFormat() {
-        // Verify that the toString method returns the expected format
-        String userToString = user1.toString();
-        assertTrue(userToString.contains("authorizationId='auth123'"), "The toString does not contain the correct authorizationId");
-        assertTrue(userToString.contains("email='test1@example.com'"), "The toString does not contain the correct email");
-        assertTrue(userToString.contains("name='John Doe'"), "The toString does not contain the correct name");
+    void when_usersHaveDifferentIds_then_notEqual() {
+      final User user1 = new User(new EntityId(UUID.randomUUID()), "auth1", "a@b.com", "Alice");
+      final User user2 = new User(new EntityId(UUID.randomUUID()), "auth2", "c@d.com", "Bob");
+
+      assertThat(user1).isNotEqualTo(user2);
     }
+  }
+
+  @Nested
+  class ToStringMethod {
 
     @Test
-    void testNonNullAuthorizationId() {
-        Exception exception = assertThrows(NullPointerException.class, () -> new User(new EntityId(UUID.randomUUID()), null, "email@example.com", "Name"));
-        assertEquals("authorizationId is marked non-null but is null", exception.getMessage());
-    }
+    void when_toStringCalled_then_containsAllFields() {
+      final UUID uuid = UUID.randomUUID();
+      final EntityId id = new EntityId(uuid);
+      final String authorizationId = "authXYZ";
+      final String email = "email@domain.com";
+      final String name = "Johnny";
 
-    @Test
-    void testNonNullEmail() {
-        Exception exception = assertThrows(NullPointerException.class, () -> new User(new EntityId(UUID.randomUUID()), "authId", null, "Name"));
-        assertEquals("email is marked non-null but is null", exception.getMessage());
-    }
+      final User user = new User(id, authorizationId, email, name);
 
+      final String toString = user.toString();
+
+      assertThat(toString)
+          .contains(uuid.toString())
+          .contains(authorizationId)
+          .contains(email)
+          .contains(name);
+    }
+  }
 }

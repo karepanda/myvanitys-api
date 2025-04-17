@@ -1,0 +1,47 @@
+# PostgreSQL (test environment)
+spring:
+  profiles:
+    active: test  # Activa el perfil 'test'
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/myvanitysdb  # URL for PostgreSQL database
+    username: myvanitys  # Database username
+    password: secret  # Database password
+    driver-class-name: org.postgresql.Driver  # PostgreSQL driver class
+
+  # Google Authentication configuration for testing
+google:
+  client:
+    id: mock-client-id
+    secret: mock-client-secret
+    redirect-uri: "http://localhost:5173/callback"
+
+
+  # JPA and Hibernate configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Hibernate DDL mode (validate ensures that the schema is correct)
+    show-sql: true  # Show SQL queries in the log
+    properties:
+      hibernate:
+        format_sql: true  # Format SQL queries for better readability
+    database-platform: org.hibernate.dialect.PostgreSQLDialect  # Dialect for PostgreSQL
+
+  # Flyway migration configuration
+  flyway:
+    enabled: true  # Enable Flyway for database migrations
+    locations: classpath:db/migration  # Location for migration scripts
+    baseline-on-migrate: true  # Enable baseline on migrate
+    baseline-version: 0  # Set baseline version
+
+  # Logging configuration
+  logging:
+    level:
+      org.hibernate.SQL: DEBUG  # Log SQL queries from Hibernate
+      org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # Log parameter binding in Hibernate
+      org.flywaydb: DEBUG  # Log Flyway database migration details
+
+  # H2 console configuration (optional)
+  h2:
+    console:
+      enabled: true  # Enable H2 console for in-memory databases

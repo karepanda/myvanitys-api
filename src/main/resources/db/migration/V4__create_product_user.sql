@@ -6,7 +6,6 @@ CREATE TABLE product_user
     delete_at       TIMESTAMP,
     created_at      TIMESTAMP,
     updated_at      TIMESTAMP,
-    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES "user" (user_id),
     CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES product (product_id),
     CONSTRAINT uq_user_product UNIQUE (user_id, product_id)
 );

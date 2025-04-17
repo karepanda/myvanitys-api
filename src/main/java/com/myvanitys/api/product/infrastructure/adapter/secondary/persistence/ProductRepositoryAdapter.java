@@ -48,12 +48,15 @@ public class ProductRepositoryAdapter implements ProductRepository {
 
   @Override
   public Optional<Product> findByName(String productName) {
-    return Optional.empty();
+    return jpaProductRepository.findByName(productName)
+            .map(productMapper::toDomain);
   }
 
   @Override
   public List<Product> findByCategoryName(String categoryName) {
-    return List.of();
+    return jpaProductRepository.findByCategoryName(categoryName).stream()
+            .map(productMapper::toDomain)
+            .toList();
   }
 
   @Override

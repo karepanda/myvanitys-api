@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
+import com.myvanitys.api.product.application.port.primary.FindProductUseCase;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.Review;
@@ -23,7 +24,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @AllArgsConstructor
-public class ProductManager implements ProductService, CreateProductUseCase {
+public class ProductManager implements ProductService, CreateProductUseCase, FindProductUseCase {
 
   private final ProductRepository productRepository;
 
@@ -55,7 +56,8 @@ public class ProductManager implements ProductService, CreateProductUseCase {
 
   @Override
   public Optional<Product> getProductById(EntityId productId) {
-    return Optional.empty();
+    // Here you'd implement the actual functionality to find a product by ID
+    return productRepository.findById(productId);
   }
 
   @Override
@@ -91,5 +93,10 @@ public class ProductManager implements ProductService, CreateProductUseCase {
   @Override
   public Product execute(CreateProductCommand command) {
     return null;
+  }
+
+  @Override
+  public Optional<Product> execute(EntityId productId) {
+    return getProductById(productId);
   }
 }

@@ -35,6 +35,11 @@
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
@@ -50,7 +55,7 @@
     <dependency>
       <groupId>com.myvanitys</groupId>
       <artifactId>myvanitys-api-spec</artifactId>
-      <version>0.0.13-SNAPSHOT</version>
+      <version>0.0.14-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -100,7 +105,7 @@
       <version>11.3.1</version>
       <scope>runtime</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.zonky.test/embedded-postgres -->
+
     <dependency>
       <groupId>io.zonky.test</groupId>
       <artifactId>embedded-postgres</artifactId>
@@ -114,7 +119,36 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+      <version>3.6.0</version>
+    </dependency>
 
+    <!-- Dependencia de wiremock-standalone -->
+    <!-- https://mvnrepository.com/artifact/org.wiremock/wiremock-standalone -->
+    <dependency>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock-standalone</artifactId>
+      <version>3.12.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Dependencia de wiremock-spring-boot sin la parte de wiremock para evitar el conflicto -->
+    <dependency>
+      <groupId>org.wiremock.integrations</groupId>
+      <artifactId>wiremock-spring-boot</artifactId>
+      <version>3.9.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.wiremock</groupId>
+          <artifactId>wiremock</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-inline</artifactId>
@@ -133,6 +167,26 @@
       <artifactId>mapstruct-processor</artifactId>
       <version>1.6.3</version>
       <scope>provided</scope>
+    </dependency>
+
+    <!-- jjwt-jackson -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>0.12.6</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>0.12.6</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>0.12.6</version>
+      <scope>runtime</scope>
     </dependency>
 
   </dependencies>
