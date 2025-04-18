@@ -5,6 +5,7 @@
   <repositories>
     <repository>
       <id>github</id>
+      <name>GitHub karepanda Apache Maven Packages</name>
       <url>https://maven.pkg.github.com/karepanda/myvanitys-api-spec</url>
     </repository>
   </repositories>
