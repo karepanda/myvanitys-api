@@ -1,10 +1,12 @@
 # PostgreSQL (test environment)
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/myvanitysdb  # URL for PostgreSQL database
-    username: myvanitys  # Database username
-    password: secret  # Database password
+    url: ${spring.datasource.url}  # URL dynamically provided by Testcontainers
+    username: ${spring.datasource.username}  # Username dynamically provided by Testcontainers
+    password: ${spring.datasource.password}  # Password dynamically provided by Testcontainers
     driver-class-name: org.postgresql.Driver  # PostgreSQL driver class
+
+
 
 # Google Authentication configuration for testing
 google:

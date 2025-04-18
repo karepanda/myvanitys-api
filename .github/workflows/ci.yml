@@ -1,0 +1,41 @@
+---
+name: CI Workflow
+
+on:
+  pull_request:
+    branches:
+      - main  # The branch you want to merge into
+    paths:
+      - '**/*.java'   # Trigger the action for changes in Java files
+      - '**/pom.xml'  # Trigger the action for changes in the pom.xml file
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: '21'  # Use Java 21
+          distribution: 'adoptopenjdk'  # Use AdoptOpenJDK or 'zulu' if preferred
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build and run tests with Maven
+        run: mvn clean test --fail-never  # Use Maven to clean and run tests
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: target/surefire-reports  # Path to your test reports (modify if necessary)

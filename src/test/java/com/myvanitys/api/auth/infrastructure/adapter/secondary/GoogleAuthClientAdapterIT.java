@@ -15,6 +15,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
 import com.myvanitys.api.auth.infrastructure.config.GoogleClientProperties;
+import com.myvanitys.api.common.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +29,7 @@ import reactor.test.StepVerifier;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-class GoogleAuthClientAdapterIT {
+class GoogleAuthClientAdapterIT extends AbstractIntegrationTest {
 
   @RegisterExtension
   static WireMockExtension wireMockServer = WireMockExtension.newInstance()

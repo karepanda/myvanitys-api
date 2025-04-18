@@ -14,6 +14,7 @@ import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.AuthenticationMapper;
+import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import reactor.core.publisher.Mono;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class AuthControllerTestIT {
+class AuthControllerTestIT extends AbstractIntegrationTest {
 
   @TestConfiguration
   static class TestConfig {
