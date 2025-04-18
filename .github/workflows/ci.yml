@@ -1,4 +1,3 @@
----
 name: CI Workflow
 
 on:
@@ -21,7 +20,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '21'  # Use Java 21
-          distribution: 'adoptopenjdk'  # Use AdoptOpenJDK or 'zulu' if preferred
+          distribution: 'temurin'  # Using Eclipse Temurin (formerly AdoptOpenJDK)
 
       - name: Cache Maven dependencies
         uses: actions/cache@v3
@@ -35,7 +34,7 @@ jobs:
         run: mvn clean test --fail-never  # Use Maven to clean and run tests
 
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2  # Changed from v3 to v2
         with:
           name: test-results
           path: target/surefire-reports  # Path to your test reports (modify if necessary)
