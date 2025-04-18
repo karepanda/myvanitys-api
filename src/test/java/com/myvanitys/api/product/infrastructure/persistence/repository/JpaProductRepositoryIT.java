@@ -13,7 +13,7 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEn
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.junit.jupiter.api.Test;
 
-class JpaProductProductRepositoryIT extends AbstractJpaProductTest {
+class JpaProductRepositoryIT extends AbstractJpaProductTest {
 
   @Test
   void shouldSaveAndRetrieveProductWithReviews() {
@@ -34,6 +34,7 @@ class JpaProductProductRepositoryIT extends AbstractJpaProductTest {
     ProductUserEntity productUser = new ProductUserEntity();
     productUser.setProductId(savedProduct.getProductId());
     final var userid = UUID.randomUUID();
+    productUser.setProductUserId(UUID.randomUUID());
     productUser.setUserId(userid);
     review.setProductUserEntity(productUser);
     productUser.setReviews(List.of(review));

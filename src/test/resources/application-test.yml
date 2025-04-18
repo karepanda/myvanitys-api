@@ -1,15 +1,12 @@
 # PostgreSQL (test environment)
 spring:
-  profiles:
-    active: test  # Activa el perfil 'test'
-
   datasource:
     url: jdbc:postgresql://localhost:5432/myvanitysdb  # URL for PostgreSQL database
     username: myvanitys  # Database username
     password: secret  # Database password
     driver-class-name: org.postgresql.Driver  # PostgreSQL driver class
 
-  # Google Authentication configuration for testing
+# Google Authentication configuration for testing
 google:
   client:
     id: mock-client-id
