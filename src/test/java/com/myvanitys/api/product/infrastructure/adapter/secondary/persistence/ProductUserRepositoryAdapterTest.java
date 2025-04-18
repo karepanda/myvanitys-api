@@ -1,7 +1,18 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary.persistence;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.adapter.secondary.ProductUserRepositoryAdapter;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,177 +23,176 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-
 @ExtendWith(MockitoExtension.class)
 class ProductUserRepositoryAdapterTest {
 
-    @InjectMocks
-    private ProductUserRepositoryAdapter target;
+  @InjectMocks
+  private ProductUserRepositoryAdapter target;
 
-    @Mock
-    private JpaProductUserRepository jpaProductUserRepository;
+  @Mock
+  private JpaProductUserRepository jpaProductUserRepository;
 
-    private EntityId productId;
-    private EntityId userId;
-    private ProductUserEntity productUserEntity;
+  private EntityId productId;
 
-    @BeforeEach
-    void setUp() {
-        productId = new EntityId(UUID.randomUUID());
-        userId = new EntityId(UUID.randomUUID());
+  private EntityId userId;
 
-        productUserEntity = ProductUserEntity.builder()
-                .productUserId(UUID.randomUUID())
-                .productId(productId.getValue())
-                .userId(userId.getValue())
-                .reviews(new ArrayList<>())
-                .createdAt(new Date())
-                .updatedAt(new Date())
-                .deleteAt(null)
-                .build();
+  private ProductUserEntity productUserEntity;
+
+  @BeforeEach
+  void setUp() {
+    productId = new EntityId(UUID.randomUUID());
+    userId = new EntityId(UUID.randomUUID());
+
+    productUserEntity = ProductUserEntity.builder()
+        .productUserId(UUID.randomUUID())
+        .productId(productId.getValue())
+        .userId(userId.getValue())
+        .reviews(new ArrayList<>())
+        .createdAt(new Date())
+        .updatedAt(new Date())
+        .deleteAt(null)
+        .build();
+  }
+
+  @Nested
+  class SaveProductUserRelationshipTest {
+
+    @Test
+    void shouldSaveProductUserRelationship() {
+      // Act
+      target.saveProductUserRelationship(productId, userId);
+
+      // Assert
+      verify(jpaProductUserRepository).save(any(ProductUserEntity.class));
+    }
+  }
+
+  @Nested
+  class IsUserAssociatedWithProductTest {
+
+    @Test
+    void shouldReturnTrueIfUserIsAssociatedWithProduct() {
+      // Arrange
+      when(jpaProductUserRepository.existsByProductIdAndUserId(productId.getValue(), userId.getValue()))
+          .thenReturn(true);
+
+      // Act
+      boolean result = target.isUserAssociatedWithProduct(productId, userId);
+
+      // Assert
+      assertThat(result).isTrue();
+      verify(jpaProductUserRepository).existsByProductIdAndUserId(productId.getValue(), userId.getValue());
     }
 
-    @Nested
-    class SaveProductUserRelationshipTest {
-        @Test
-        void shouldSaveProductUserRelationship() {
-            // Act
-            target.saveProductUserRelationship(productId, userId);
+    @Test
+    void shouldReturnFalseIfUserIsNotAssociatedWithProduct() {
+      // Arrange
+      when(jpaProductUserRepository.existsByProductIdAndUserId(productId.getValue(), userId.getValue()))
+          .thenReturn(false);
 
-            // Assert
-            verify(jpaProductUserRepository).save(any(ProductUserEntity.class));
-        }
+      // Act
+      boolean result = target.isUserAssociatedWithProduct(productId, userId);
+
+      // Assert
+      assertThat(result).isFalse();
+      verify(jpaProductUserRepository).existsByProductIdAndUserId(productId.getValue(), userId.getValue());
+    }
+  }
+
+  @Nested
+  class DeleteByProductIdTest {
+
+    @Test
+    void shouldDeleteByProductId() {
+      // Act
+      target.deleteByProductId(productId);
+
+      // Assert
+      verify(jpaProductUserRepository).deleteByProductId(productId.getValue());
+    }
+  }
+
+  @Nested
+  class ExistsByProductIdAndUserIdTest {
+
+    @Test
+    void shouldReturnTrueIfProductAndUserExist() {
+      // Arrange
+      when(jpaProductUserRepository.existsByProductIdAndUserId(productId.getValue(), userId.getValue()))
+          .thenReturn(true);
+
+      // Act
+      boolean exists = target.existsByProductIdAndUserId(productId, userId);
+
+      // Assert
+      assertThat(exists).isTrue();
+      verify(jpaProductUserRepository).existsByProductIdAndUserId(productId.getValue(), userId.getValue());
     }
 
-    @Nested
-    class IsUserAssociatedWithProductTest {
-        @Test
-        void shouldReturnTrueIfUserIsAssociatedWithProduct() {
-            // Arrange
-            when(jpaProductUserRepository.existsByProductIdAndUserId(productId.getValue(), userId.getValue()))
-                    .thenReturn(true);
+    @Test
+    void shouldReturnFalseIfProductAndUserDoNotExist() {
+      // Arrange
+      when(jpaProductUserRepository.existsByProductIdAndUserId(productId.getValue(), userId.getValue()))
+          .thenReturn(false);
 
-            // Act
-            boolean result = target.isUserAssociatedWithProduct(productId, userId);
+      // Act
+      boolean exists = target.existsByProductIdAndUserId(productId, userId);
 
-            // Assert
-            assertThat(result).isTrue();
-            verify(jpaProductUserRepository).existsByProductIdAndUserId(productId.getValue(), userId.getValue());
-        }
+      // Assert
+      assertThat(exists).isFalse();
+      verify(jpaProductUserRepository).existsByProductIdAndUserId(productId.getValue(), userId.getValue());
+    }
+  }
 
-        @Test
-        void shouldReturnFalseIfUserIsNotAssociatedWithProduct() {
-            // Arrange
-            when(jpaProductUserRepository.existsByProductIdAndUserId(productId.getValue(), userId.getValue()))
-                    .thenReturn(false);
+  @Nested
+  class FindProductIdsByUserIdTest {
 
-            // Act
-            boolean result = target.isUserAssociatedWithProduct(productId, userId);
+    @Test
+    void shouldReturnProductIdsByUserId() {
+      // Arrange
+      UUID anotherProductId = UUID.randomUUID();
+      List<ProductUserEntity> entities = List.of(
+          productUserEntity,
+          ProductUserEntity.builder()
+              .productUserId(UUID.randomUUID())
+              .productId(anotherProductId)
+              .userId(userId.getValue())
+              .reviews(new ArrayList<>())
+              .createdAt(new Date())
+              .updatedAt(new Date())
+              .deleteAt(null)
+              .build()
+      );
 
-            // Assert
-            assertThat(result).isFalse();
-            verify(jpaProductUserRepository).existsByProductIdAndUserId(productId.getValue(), userId.getValue());
-        }
+      when(jpaProductUserRepository.findByUserId(userId.getValue()))
+          .thenReturn(entities);
+
+      // Act
+      List<EntityId> result = target.findProductIdsByUserId(userId);
+
+      // Assert
+      assertThat(result).hasSize(2);
+      assertThat(result).extracting(EntityId::getValue).containsExactlyInAnyOrder(
+          productUserEntity.getProductId(),
+          anotherProductId
+      );
+      verify(jpaProductUserRepository).findByUserId(userId.getValue());
     }
 
-    @Nested
-    class DeleteByProductIdTest {
-        @Test
-        void shouldDeleteByProductId() {
-            // Act
-            target.deleteByProductId(productId);
+    @Test
+    void shouldReturnEmptyListWhenNoProductsFoundForUser() {
+      // Arrange
+      when(jpaProductUserRepository.findByUserId(userId.getValue()))
+          .thenReturn(Collections.emptyList());
 
-            // Assert
-            verify(jpaProductUserRepository).deleteByProductId(productId.getValue());
-        }
+      // Act
+      List<EntityId> result = target.findProductIdsByUserId(userId);
+
+      // Assert
+      assertThat(result).isEmpty();
+      verify(jpaProductUserRepository).findByUserId(userId.getValue());
     }
-
-    @Nested
-    class ExistsByProductIdAndUserIdTest {
-        @Test
-        void shouldReturnTrueIfProductAndUserExist() {
-            // Arrange
-            when(jpaProductUserRepository.existsByProductIdAndUserId(productId.getValue(), userId.getValue()))
-                    .thenReturn(true);
-
-            // Act
-            boolean exists = target.existsByProductIdAndUserId(productId, userId);
-
-            // Assert
-            assertThat(exists).isTrue();
-            verify(jpaProductUserRepository).existsByProductIdAndUserId(productId.getValue(), userId.getValue());
-        }
-
-        @Test
-        void shouldReturnFalseIfProductAndUserDoNotExist() {
-            // Arrange
-            when(jpaProductUserRepository.existsByProductIdAndUserId(productId.getValue(), userId.getValue()))
-                    .thenReturn(false);
-
-            // Act
-            boolean exists = target.existsByProductIdAndUserId(productId, userId);
-
-            // Assert
-            assertThat(exists).isFalse();
-            verify(jpaProductUserRepository).existsByProductIdAndUserId(productId.getValue(), userId.getValue());
-        }
-    }
-
-    @Nested
-    class FindProductIdsByUserIdTest {
-        @Test
-        void shouldReturnProductIdsByUserId() {
-            // Arrange
-            UUID anotherProductId = UUID.randomUUID();
-            List<ProductUserEntity> entities = List.of(
-                    productUserEntity,
-                    ProductUserEntity.builder()
-                            .productUserId(UUID.randomUUID())
-                            .productId(anotherProductId)
-                            .userId(userId.getValue())
-                            .reviews(new ArrayList<>())
-                            .createdAt(new Date())
-                            .updatedAt(new Date())
-                            .deleteAt(null)
-                            .build()
-            );
-
-            when(jpaProductUserRepository.findByUserId(userId.getValue()))
-                    .thenReturn(entities);
-
-            // Act
-            List<EntityId> result = target.findProductIdsByUserId(userId);
-
-            // Assert
-            assertThat(result).hasSize(2);
-            assertThat(result).extracting(EntityId::getValue).containsExactlyInAnyOrder(
-                    productUserEntity.getProductId(),
-                    anotherProductId
-            );
-            verify(jpaProductUserRepository).findByUserId(userId.getValue());
-        }
-
-        @Test
-        void shouldReturnEmptyListWhenNoProductsFoundForUser() {
-            // Arrange
-            when(jpaProductUserRepository.findByUserId(userId.getValue()))
-                    .thenReturn(Collections.emptyList());
-
-            // Act
-            List<EntityId> result = target.findProductIdsByUserId(userId);
-
-            // Assert
-            assertThat(result).isEmpty();
-            verify(jpaProductUserRepository).findByUserId(userId.getValue());
-        }
-    }
+  }
 
 
 }

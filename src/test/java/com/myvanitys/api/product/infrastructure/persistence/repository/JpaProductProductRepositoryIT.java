@@ -13,18 +13,20 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEn
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.junit.jupiter.api.Test;
 
-class JpaProductRepositoryIT extends AbstractJpaTest {
+class JpaProductProductRepositoryIT extends AbstractJpaProductTest {
 
   @Test
   void shouldSaveAndRetrieveProductWithReviews() {
     // Given
     CategoryEntity category = createSampleCategory("Test Category");
     CategoryEntity savedCategory = jpaCategoryRepository.save(category);
+    jpaCategoryRepository.flush();
 
     ProductEntity product = createSampleProduct("Test Product", "Test Brand", savedCategory);
 
     // When
     ProductEntity savedProduct = jpaProductRepository.save(product);
+    jpaProductRepository.flush();
 
     ReviewEntity review = new ReviewEntity();
     review.setRating(5);
@@ -36,6 +38,7 @@ class JpaProductRepositoryIT extends AbstractJpaTest {
     review.setProductUserEntity(productUser);
     productUser.setReviews(List.of(review));
     ProductUserEntity savedProductUser = jpaProductUserRepository.save(productUser);
+    jpaProductUserRepository.flush();
 
     Optional<ProductEntity> retrievedProduct = jpaProductRepository.findById(savedProduct.getProductId());
 
@@ -67,7 +70,6 @@ class JpaProductRepositoryIT extends AbstractJpaTest {
             .extracting(ReviewEntity::getRating, ReviewEntity::getComment)
             .containsExactly(5, "Great product!")
         );
-
   }
 
   @Test
@@ -192,18 +194,25 @@ class JpaProductRepositoryIT extends AbstractJpaTest {
     // Given
     CategoryEntity category1 = createSampleCategory("Initial Category");
     CategoryEntity savedCategory1 = jpaCategoryRepository.save(category1);
+    jpaCategoryRepository.flush();
 
     CategoryEntity category2 = createSampleCategory("Updated Category");
     CategoryEntity savedCategory2 = jpaCategoryRepository.save(category2);
+    jpaCategoryRepository.flush();
 
     ProductEntity product = createSampleProduct("Initial Name", "Initial Brand", savedCategory1);
     ProductEntity savedProduct = jpaProductRepository.save(product);
+    jpaProductRepository.flush();
+
+    // Verifica que la versión no sea null antes de modificar
+    Long initialVersion = savedProduct.getVersion();
 
     // When
     savedProduct.setName("Updated Name");
     savedProduct.setBrand("Updated Brand");
     savedProduct.setCategory(savedCategory2);
     jpaProductRepository.save(savedProduct);
+    jpaProductRepository.flush();
 
     // Then
     Optional<ProductEntity> updatedProduct = jpaProductRepository.findById(savedProduct.getProductId());
@@ -213,6 +222,7 @@ class JpaProductRepositoryIT extends AbstractJpaTest {
           assertThat(productEntity.getName()).isEqualTo("Updated Name");
           assertThat(productEntity.getBrand()).isEqualTo("Updated Brand");
           assertThat(productEntity.getCategory().getName()).isEqualTo("Updated Category");
+          assertThat(productEntity.getVersion()).isNotEqualTo(initialVersion);
         });
   }
 
