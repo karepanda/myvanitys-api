@@ -1,18 +1,14 @@
 package com.myvanitys.api.product.infrastructure.persistence.entity;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,8 +25,7 @@ import lombok.ToString;
 public class ProductUserEntity {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  @Column(nullable = false, unique = true)
+  @Column(name = "product_user_id", nullable = false, unique = true)
   private UUID productUserId;
 
   @Column(name = "user_id")
@@ -43,23 +38,10 @@ public class ProductUserEntity {
   @ToString.Exclude
   private List<ReviewEntity> reviews;
 
-  @Column
-  private Date deleteAt;
+  @Column(name = "created_at")
+  private Instant createdAt;
 
-  @Column
-  private Date createdAt;
+  @Column(name = "updated_at")
+  private Instant updatedAt;
 
-  @Column
-  private Date updatedAt;
-
-  @PrePersist
-  protected void onCreate() {
-    createdAt = new Date();
-    updatedAt = new Date();
-  }
-
-  @PreUpdate
-  protected void onUpdate() {
-    updatedAt = new Date();
-  }
 }

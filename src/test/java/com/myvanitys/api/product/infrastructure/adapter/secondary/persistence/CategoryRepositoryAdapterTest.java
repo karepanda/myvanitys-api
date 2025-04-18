@@ -1,7 +1,16 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary.persistence;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.adapter.secondary.CategoryRepositoryAdapter;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.CategoryMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
@@ -13,143 +22,141 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-
 @ExtendWith(MockitoExtension.class)
 class CategoryRepositoryAdapterTest {
-    @InjectMocks
-    private CategoryRepositoryAdapter target;
 
-    @Mock
-    private JpaCategoryRepository jpaCategoryRepository;
+  @InjectMocks
+  private CategoryRepositoryAdapter target;
 
-    @Mock
-    private CategoryMapper categoryMapper;
+  @Mock
+  private JpaCategoryRepository jpaCategoryRepository;
 
-    private EntityId categoryId;
+  @Mock
+  private CategoryMapper categoryMapper;
 
-    private Category category;
+  private EntityId categoryId;
 
-    private CategoryEntity categoryEntity;
+  private Category category;
 
-    @BeforeEach
-    void setUp() {
-        // Initialize IDs
-        categoryId = new EntityId(UUID.randomUUID());
+  private CategoryEntity categoryEntity;
 
-        // Initialize domain objects
-        category = new Category(categoryId, "Test Category");
+  @BeforeEach
+  void setUp() {
+    // Initialize IDs
+    categoryId = new EntityId(UUID.randomUUID());
 
-        // Initialize entity objects
-        categoryEntity = new CategoryEntity();
-        categoryEntity.setCategoryId(categoryId.getValue());
-        categoryEntity.setName("Test Category");
+    // Initialize domain objects
+    category = new Category(categoryId, "Test Category");
+
+    // Initialize entity objects
+    categoryEntity = new CategoryEntity();
+    categoryEntity.setCategoryId(categoryId.getValue());
+    categoryEntity.setName("Test Category");
+  }
+
+  @Nested
+  class save {
+
+    @Test
+    void shouldSaveCategory() {
+      // Given
+      when(categoryMapper.toEntity(category)).thenReturn(categoryEntity);
+      when(jpaCategoryRepository.save(categoryEntity)).thenReturn(categoryEntity);
+      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+
+      // When
+      Category savedCategory = target.save(category);
+
+      // Then
+      assertThat(savedCategory).isEqualTo(category);
+      verify(jpaCategoryRepository).save(categoryEntity);
     }
+  }
 
-    @Nested
-    class save {
-        @Test
-        void shouldSaveCategory() {
-            // Given
-            when(categoryMapper.toEntity(category)).thenReturn(categoryEntity);
-            when(jpaCategoryRepository.save(categoryEntity)).thenReturn(categoryEntity);
-            when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+  @Nested
+  class findById {
 
-            // When
-            Category savedCategory = target.save(category);
+    @Test
+    void shouldFindCategoryById() {
+      // Given
+      when(jpaCategoryRepository.findById(categoryId.getValue())).thenReturn(java.util.Optional.of(categoryEntity));
+      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
 
-            // Then
-            assertThat(savedCategory).isEqualTo(category);
-            verify(jpaCategoryRepository).save(categoryEntity);
-        }
+      // When
+      Optional<Category> foundCategory = target.findById(categoryId);
+
+      // Then
+      assertThat(foundCategory).isPresent();
+      assertThat(foundCategory.get()).isEqualTo(category);
     }
+  }
 
-    @Nested
-    class findById {
-        @Test
-        void shouldFindCategoryById() {
-            // Given
-            when(jpaCategoryRepository.findById(categoryId.getValue())).thenReturn(java.util.Optional.of(categoryEntity));
-            when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+  @Nested
+  class findByName {
 
-            // When
-            Optional<Category> foundCategory = target.findById(categoryId);
+    @Test
+    void shouldFindCategoryByName() {
+      // Given
+      String name = "Test Category";
+      when(jpaCategoryRepository.findByName(name)).thenReturn(java.util.Optional.of(categoryEntity));
+      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
 
-            // Then
-            assertThat(foundCategory).isPresent();
-            assertThat(foundCategory.get()).isEqualTo(category);
-        }
+      // When
+      Optional<Category> foundCategory = target.findByName(name);
+
+      // Then
+      assertThat(foundCategory).isPresent();
+      assertThat(foundCategory.get()).isEqualTo(category);
     }
+  }
 
-    @Nested
-    class findByName {
-        @Test
-        void shouldFindCategoryByName() {
-            // Given
-            String name = "Test Category";
-            when(jpaCategoryRepository.findByName(name)).thenReturn(java.util.Optional.of(categoryEntity));
-            when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+  @Nested
+  class findAll {
 
-            // When
-            Optional<Category> foundCategory = target.findByName(name);
+    @Test
+    void shouldFindAllCategories() {
+      // Given
+      when(jpaCategoryRepository.findAll()).thenReturn(List.of(categoryEntity));
+      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
 
-            // Then
-            assertThat(foundCategory).isPresent();
-            assertThat(foundCategory.get()).isEqualTo(category);
-        }
+      // When
+      List<Category> foundCategories = target.findAll();
+
+      // Then
+      assertThat(foundCategories).isEqualTo(List.of(category));
+      verify(jpaCategoryRepository).findAll();
     }
+  }
 
-    @Nested
-    class findAll {
-        @Test
-        void shouldFindAllCategories() {
-            // Given
-            when(jpaCategoryRepository.findAll()).thenReturn(List.of(categoryEntity));
-            when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+  @Nested
+  class deleteById {
 
-            // When
-            List<Category> foundCategories = target.findAll();
+    @Test
+    void shouldDeleteCategoryById() {
+      // When
+      target.deleteById(categoryId);
 
-            // Then
-            assertThat(foundCategories).isEqualTo(List.of(category));
-            verify(jpaCategoryRepository).findAll();
-        }
+      // Then
+      verify(jpaCategoryRepository).deleteById(categoryId.getValue());
     }
+  }
 
-    @Nested
-    class deleteById {
-        @Test
-        void shouldDeleteCategoryById() {
-            // When
-            target.deleteById(categoryId);
+  @Nested
+  class findByIdNotFound {
 
-            // Then
-            verify(jpaCategoryRepository).deleteById(categoryId.getValue());
-        }
+    @Test
+    void shouldReturnEmptyOptionalWhenCategoryNotFound() {
+      // Given
+      when(jpaCategoryRepository.findById(categoryId.getValue())).thenReturn(Optional.empty());
+
+      // When
+      Optional<Category> foundCategory = target.findById(categoryId);
+
+      // Then
+      assertThat(foundCategory).isEmpty();
+      verify(jpaCategoryRepository).findById(categoryId.getValue());
     }
-
-    @Nested
-    class findByIdNotFound {
-        @Test
-        void shouldReturnEmptyOptionalWhenCategoryNotFound() {
-            // Given
-            when(jpaCategoryRepository.findById(categoryId.getValue())).thenReturn(Optional.empty());
-
-            // When
-            Optional<Category> foundCategory = target.findById(categoryId);
-
-            // Then
-            assertThat(foundCategory).isEmpty();
-            verify(jpaCategoryRepository).findById(categoryId.getValue());
-        }
-    }
+  }
 
 
 }

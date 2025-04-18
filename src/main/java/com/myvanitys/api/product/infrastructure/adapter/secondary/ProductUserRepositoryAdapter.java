@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.infrastructure.adapter.secondary.persistence;
+package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
 import java.util.List;
 import java.util.UUID;

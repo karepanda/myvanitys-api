@@ -1,6 +1,6 @@
 package com.myvanitys.api.product.infrastructure.persistence.entity;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -11,8 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,19 +44,9 @@ public class ReviewEntity {
   private ProductUserEntity productUserEntity;
 
   @Column
-  private Date createdAt;
+  private Instant createdAt;
 
   @Column
-  private Date updatedAt;
+  private Instant updatedAt;
 
-  @PrePersist
-  protected void onCreate() {
-    createdAt = new Date();
-    updatedAt = new Date();
-  }
-
-  @PreUpdate
-  protected void onUpdate() {
-    updatedAt = new Date();
-  }
 }

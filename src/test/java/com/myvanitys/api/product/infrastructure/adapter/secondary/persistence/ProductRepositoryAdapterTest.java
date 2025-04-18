@@ -1,8 +1,17 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary.persistence;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.adapter.secondary.ProductRepositoryAdapter;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
@@ -17,181 +26,179 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class ProductRepositoryAdapterTest {
-    @InjectMocks
-    private ProductRepositoryAdapter target;
 
-    @Mock
-    private JpaProductRepository jpaProductRepository;
+  @InjectMocks
+  private ProductRepositoryAdapter target;
 
-    @Mock
-    private JpaProductUserRepository jpaProductUserRepository;
+  @Mock
+  private JpaProductRepository jpaProductRepository;
 
-    @Mock
-    private ProductMapper productMapper;
+  @Mock
+  private JpaProductUserRepository jpaProductUserRepository;
 
-    private EntityId productId;
+  @Mock
+  private ProductMapper productMapper;
 
-    private ProductEntity productEntity;
+  private EntityId productId;
 
-    private Product product;
+  private ProductEntity productEntity;
 
-    private Category category;
+  private Product product;
+
+  private Category category;
+
+  @BeforeEach
+  void setUp() {
+    // Initialize IDs
+    productId = new EntityId(UUID.randomUUID());
+    EntityId categoryId = new EntityId(UUID.randomUUID());
+    EntityId userId = new EntityId(UUID.randomUUID());
+
+    // Initialize domain objects
+    category = new Category(categoryId, "Test Category");
+    product = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
+
+    // Initialize entity objects
+    ProductUserEntity productUserEntity = new ProductUserEntity();
+    productUserEntity.setProductUserId(UUID.randomUUID());
+    productUserEntity.setProductId(productId.getValue());
+    productUserEntity.setUserId(userId.getValue());
+
+    productEntity = new ProductEntity();
+    productEntity.setProductId(productId.getValue());
+    productEntity.setCategory(new CategoryEntity());
+    productEntity.getCategory().setCategoryId(categoryId.getValue());
+    productEntity.setName("Test Product");
+    productEntity.setBrand("Test Brand");
+    productEntity.setColorHex("#FFFFFF");
 
 
-    @BeforeEach
-    void setUp() {
-        // Initialize IDs
-        productId = new EntityId(UUID.randomUUID());
-        EntityId categoryId = new EntityId(UUID.randomUUID());
-        EntityId userId = new EntityId(UUID.randomUUID());
+  }
 
-        // Initialize domain objects
-        category = new Category(categoryId, "Test Category");
-        product = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
+  @Nested
+  class SaveTest {
 
-        // Initialize entity objects
-        ProductUserEntity productUserEntity = new ProductUserEntity();
-        productUserEntity.setProductUserId(UUID.randomUUID());
-        productUserEntity.setProductId(productId.getValue());
-        productUserEntity.setUserId(userId.getValue());
+    @Test
+    void save() {
+      // Arrange
+      when(productMapper.toEntity(product)).thenReturn(productEntity);
+      when(jpaProductRepository.save(productEntity)).thenReturn(productEntity);
+      when(productMapper.toDomain(productEntity)).thenReturn(product);
 
-        productEntity = new ProductEntity();
-        productEntity.setProductId(productId.getValue());
-        productEntity.setCategory(new CategoryEntity());
-        productEntity.getCategory().setCategoryId(categoryId.getValue());
-        productEntity.setName("Test Product");
-        productEntity.setBrand("Test Brand");
-        productEntity.setColorHex("#FFFFFF");
+      // Act
+      Product savedProduct = target.save(product);
 
+      // Assert
+      assertThat(savedProduct).isEqualTo(product);
+      verify(jpaProductRepository).save(productEntity);
+    }
+  }
 
+  @Nested
+  class FindByIdTest {
+
+    @Test
+    void findById() {
+      // Arrange
+      when(jpaProductRepository.findById(productId.getValue())).thenReturn(java.util.Optional.of(productEntity));
+      when(productMapper.toDomain(productEntity)).thenReturn(product);
+
+      // Act
+      Optional<Product> foundProduct = target.findById(productId);
+
+      // Assert
+      assertThat(foundProduct).isPresent().get().isEqualTo(product);
+      verify(jpaProductRepository).findById(productId.getValue());
+    }
+  }
+
+  @Nested
+  class FindByNameTest {
+
+    @Test
+    void findByName() {
+      // Arrange
+      when(jpaProductRepository.findByName(product.getName())).thenReturn(Optional.of(productEntity));
+      when(productMapper.toDomain(productEntity)).thenReturn(product);
+
+      // Act
+      Optional<Product> foundProduct = target.findByName(product.getName());
+
+      // Assert
+      assertThat(foundProduct).isPresent().get().isEqualTo(product);
+      verify(jpaProductRepository).findByName(product.getName());
+      verify(productMapper).toDomain(productEntity);
+    }
+  }
+
+  @Nested
+  class FindByCategoryNameTest {
+
+    @Test
+    void findByCategoryName() {
+      // Arrange
+      when(jpaProductRepository.findByCategoryName(category.name())).thenReturn(List.of(productEntity));
+      when(productMapper.toDomain(productEntity)).thenReturn(product);
+
+      // Act
+      List<Product> foundProducts = target.findByCategoryName(category.name());
+
+      // Assert
+
+      assertThat(foundProducts).isNotEmpty().containsExactly(product);
+      verify(jpaProductRepository).findByCategoryName(category.name());
+    }
+  }
+
+  @Nested
+  class DeleteByIdTest {
+
+    @Test
+    void deleteById() {
+      // Act
+      target.deleteById(productId);
+
+      // Assert
+      verify(jpaProductRepository).deleteById(productId.getValue());
+    }
+  }
+
+  @Nested
+  class findByUserIdTest {
+
+    @Test
+    void findByUserId() {
+      // Arrange
+      EntityId userId = new EntityId(UUID.randomUUID());
+
+      // Creamos la relación ProductUserEntity
+      ProductUserEntity productUserEntity = new ProductUserEntity();
+      productUserEntity.setUserId(userId.getValue());
+      productUserEntity.setProductId(productId.getValue());
+
+      when(jpaProductUserRepository.findByUserId(userId.getValue()))
+          .thenReturn(List.of(productUserEntity));
+
+      when(jpaProductRepository.findById(productId.getValue()))
+          .thenReturn(Optional.of(productEntity));
+
+      when(productMapper.toDomain(productEntity))
+          .thenReturn(product);
+
+      // Act
+      List<Product> foundProducts = target.findByUserId(userId);
+
+      // Assert
+      assertThat(foundProducts)
+          .hasSize(1)
+          .containsExactly(product);
+
+      verify(jpaProductUserRepository).findByUserId(userId.getValue());
+      verify(jpaProductRepository).findById(productId.getValue());
+      verify(productMapper).toDomain(productEntity);
     }
 
-    @Nested
-    class SaveTest {
-        @Test
-        void save() {
-            // Arrange
-            when(productMapper.toEntity(product)).thenReturn(productEntity);
-            when(jpaProductRepository.save(productEntity)).thenReturn(productEntity);
-            when(productMapper.toDomain(productEntity)).thenReturn(product);
-
-            // Act
-            Product savedProduct = target.save(product);
-
-            // Assert
-            assertThat(savedProduct).isEqualTo(product);
-            verify(jpaProductRepository).save(productEntity);
-        }
-    }
-
-    @Nested
-    class FindByIdTest {
-        @Test
-        void findById() {
-            // Arrange
-            when(jpaProductRepository.findById(productId.getValue())).thenReturn(java.util.Optional.of(productEntity));
-            when(productMapper.toDomain(productEntity)).thenReturn(product);
-
-            // Act
-            Optional<Product> foundProduct = target.findById(productId);
-
-            // Assert
-            assertThat(foundProduct).isPresent().get().isEqualTo(product);
-            verify(jpaProductRepository).findById(productId.getValue());
-        }
-    }
-
-    @Nested
-    class FindByNameTest {
-        @Test
-        void findByName() {
-            // Arrange
-            when(jpaProductRepository.findByName(product.getName())).thenReturn(Optional.of(productEntity));
-            when(productMapper.toDomain(productEntity)).thenReturn(product);
-
-            // Act
-            Optional<Product> foundProduct = target.findByName(product.getName());
-
-            // Assert
-            assertThat(foundProduct).isPresent().get().isEqualTo(product);
-            verify(jpaProductRepository).findByName(product.getName());
-            verify(productMapper).toDomain(productEntity);
-        }
-    }
-
-    @Nested
-    class FindByCategoryNameTest {
-        @Test
-        void findByCategoryName() {
-            // Arrange
-            when(jpaProductRepository.findByCategoryName(category.name())).thenReturn(List.of(productEntity));
-            when(productMapper.toDomain(productEntity)).thenReturn(product);
-
-            // Act
-            List<Product> foundProducts = target.findByCategoryName(category.name());
-
-            // Assert
-
-            assertThat(foundProducts).isNotEmpty().containsExactly(product);
-            verify(jpaProductRepository).findByCategoryName(category.name());
-        }
-    }
-
-    @Nested
-    class DeleteByIdTest {
-        @Test
-        void deleteById() {
-            // Act
-            target.deleteById(productId);
-
-            // Assert
-            verify(jpaProductRepository).deleteById(productId.getValue());
-        }
-    }
-
-    @Nested
-    class findByUserIdTest{
-        @Test
-        void findByUserId() {
-            // Arrange
-            EntityId userId = new EntityId(UUID.randomUUID());
-
-            // Creamos la relación ProductUserEntity
-            ProductUserEntity productUserEntity = new ProductUserEntity();
-            productUserEntity.setUserId(userId.getValue());
-            productUserEntity.setProductId(productId.getValue());
-
-            when(jpaProductUserRepository.findByUserId(userId.getValue()))
-                    .thenReturn(List.of(productUserEntity));
-
-            when(jpaProductRepository.findById(productId.getValue()))
-                    .thenReturn(Optional.of(productEntity));
-
-            when(productMapper.toDomain(productEntity))
-                    .thenReturn(product);
-
-            // Act
-            List<Product> foundProducts = target.findByUserId(userId);
-
-            // Assert
-            assertThat(foundProducts)
-                    .hasSize(1)
-                    .containsExactly(product);
-
-            verify(jpaProductUserRepository).findByUserId(userId.getValue());
-            verify(jpaProductRepository).findById(productId.getValue());
-            verify(productMapper).toDomain(productEntity);
-        }
-
-    }
+  }
 }

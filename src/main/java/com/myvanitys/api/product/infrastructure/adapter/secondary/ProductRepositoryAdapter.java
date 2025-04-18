@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.infrastructure.adapter.secondary.persistence;
+package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
 import java.util.List;
 import java.util.Optional;
@@ -49,14 +49,14 @@ public class ProductRepositoryAdapter implements ProductRepository {
   @Override
   public Optional<Product> findByName(String productName) {
     return jpaProductRepository.findByName(productName)
-            .map(productMapper::toDomain);
+        .map(productMapper::toDomain);
   }
 
   @Override
   public List<Product> findByCategoryName(String categoryName) {
     return jpaProductRepository.findByCategoryName(categoryName).stream()
-            .map(productMapper::toDomain)
-            .toList();
+        .map(productMapper::toDomain)
+        .toList();
   }
 
   @Override
