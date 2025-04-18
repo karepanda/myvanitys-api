@@ -7,8 +7,8 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,8 +52,8 @@ class ProductMapperTest {
     categoryEntity = new CategoryEntity();
     categoryEntity.setCategoryId(categoryId);
     categoryEntity.setName("Skincare");
-    categoryEntity.setCreatedAt(new Date());
-    categoryEntity.setUpdatedAt(new Date());
+    categoryEntity.setCreatedAt(Instant.now());
+    categoryEntity.setUpdatedAt(Instant.now());
 
     category = new Category(new EntityId(categoryId), "Skincare");
 
@@ -64,8 +64,8 @@ class ProductMapperTest {
     productEntity.setBrand("BrandX");
     productEntity.setColorHex("#FF5733");
     productEntity.setCategory(categoryEntity);
-    productEntity.setCreatedAt(new Date());
-    productEntity.setUpdatedAt(new Date());
+    productEntity.setCreatedAt(Instant.now());
+    productEntity.setUpdatedAt(Instant.now());
 
     product = new Product(
         new EntityId(productId),

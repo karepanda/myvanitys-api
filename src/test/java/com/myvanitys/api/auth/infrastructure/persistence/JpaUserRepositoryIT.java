@@ -3,7 +3,7 @@ package com.myvanitys.api.auth.infrastructure.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-import java.util.Date;
+import java.time.Instant;
 
 import com.myvanitys.api.auth.infrastructure.persistence.entity.UserEntity;
 import org.junit.jupiter.api.Test;
@@ -132,7 +132,7 @@ class JpaUserRepositoryIT extends AbstractJpaAuthTest {
     assertThat(savedUser.getUpdatedAt()).isNotNull();
 
     // Update the user to trigger PreUpdate
-    Date beforeUpdate = savedUser.getUpdatedAt();
+    Instant beforeUpdate = savedUser.getUpdatedAt();
     savedUser.setName("Updated Trigger Test");
 
     try {

@@ -5,9 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,9 +48,8 @@ class ProductUserRepositoryAdapterTest {
         .productId(productId.getValue())
         .userId(userId.getValue())
         .reviews(new ArrayList<>())
-        .createdAt(new Date())
-        .updatedAt(new Date())
-        .deleteAt(null)
+        .createdAt(Instant.now())
+        .updatedAt(Instant.now())
         .build();
   }
 
@@ -158,9 +157,8 @@ class ProductUserRepositoryAdapterTest {
               .productId(anotherProductId)
               .userId(userId.getValue())
               .reviews(new ArrayList<>())
-              .createdAt(new Date())
-              .updatedAt(new Date())
-              .deleteAt(null)
+              .createdAt(Instant.now())
+              .updatedAt(Instant.now())
               .build()
       );
 

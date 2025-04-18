@@ -6,7 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -82,8 +82,8 @@ class ReviewRepositoryAdapterTest {
     reviewEntity.setRating(5);
     reviewEntity.setComment("Great product!");
     reviewEntity.setProductUserEntity(productUserEntity);
-    reviewEntity.setCreatedAt(new Date());
-    reviewEntity.setUpdatedAt(new Date());
+    reviewEntity.setCreatedAt(Instant.now());
+    reviewEntity.setUpdatedAt(Instant.now());
   }
 
   @Nested

@@ -7,7 +7,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -77,8 +77,8 @@ class ReviewMapperTest {
     categoryEntity = new CategoryEntity();
     categoryEntity.setCategoryId(categoryId);
     categoryEntity.setName("Skincare");
-    categoryEntity.setCreatedAt(new Date());
-    categoryEntity.setUpdatedAt(new Date());
+    categoryEntity.setCreatedAt(Instant.now());
+    categoryEntity.setUpdatedAt(Instant.now());
 
     category = new Category(new EntityId(categoryId), "Skincare");
 
@@ -89,8 +89,8 @@ class ReviewMapperTest {
     productEntity.setBrand("BrandX");
     productEntity.setColorHex("#FF5733");
     productEntity.setCategory(categoryEntity);
-    productEntity.setCreatedAt(new Date());
-    productEntity.setUpdatedAt(new Date());
+    productEntity.setCreatedAt(Instant.now());
+    productEntity.setUpdatedAt(Instant.now());
 
     product = new Product(
         new EntityId(productId),
@@ -105,8 +105,8 @@ class ReviewMapperTest {
     productUserEntity.setProductUserId(UUID.randomUUID());
     productUserEntity.setUserId(userId);
     productUserEntity.setProductId(productId);
-    productUserEntity.setCreatedAt(new Date());
-    productUserEntity.setUpdatedAt(new Date());
+    productUserEntity.setCreatedAt(Instant.now());
+    productUserEntity.setUpdatedAt(Instant.now());
 
     // Inicializar objetos de ReviewEntity
     reviewEntity = new ReviewEntity();
@@ -114,8 +114,8 @@ class ReviewMapperTest {
     reviewEntity.setRating(5);
     reviewEntity.setComment("Great product!");
     reviewEntity.setProductUserEntity(productUserEntity);
-    reviewEntity.setCreatedAt(new Date());
-    reviewEntity.setUpdatedAt(new Date());
+    reviewEntity.setCreatedAt(Instant.now());
+    reviewEntity.setUpdatedAt(Instant.now());
 
     // Inicializar objetos de Review
     review = new Review(

@@ -252,6 +252,7 @@ class JpaProductProductRepositoryIT extends AbstractJpaProductTest {
 
   private ProductEntity createSampleProduct(String name, String brand, CategoryEntity category) {
     ProductEntity product = new ProductEntity();
+    product.setProductId(UUID.randomUUID());
     product.setName(name);
     product.setBrand(brand);
     product.setColorHex("#FFFFFF");
