@@ -9,23 +9,7 @@ import com.myvanitys.api.product.domain.valueobject.EntityId;
  */
 public record FindProductUserQuery(EntityId userId) {
 
-  /**
-   * Master builder with validation
-   */
   public FindProductUserQuery {
-    validate();
-  }
-
-  private void validate() {
-    Objects.requireNonNull(userId, "User ID is required");
-  }
-
-  /**
-   * Creates an instance of FindProductUserQuery
-   *
-   * @param userId user ID * @return a new instance of FindProductUserQuery
-   */
-  public static FindProductUserQuery of(EntityId userId) {
-    return new FindProductUserQuery(userId);
+    Objects.requireNonNull(userId, "UserId must not be null");
   }
 }
