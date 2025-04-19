@@ -17,7 +17,6 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,9 +33,6 @@ class ProductRepositoryAdapterTest {
 
   @Mock
   private JpaProductRepository jpaProductRepository;
-
-  @Mock
-  private JpaProductUserRepository jpaProductUserRepository;
 
   @Mock
   private ProductMapper productMapper;
@@ -73,8 +69,6 @@ class ProductRepositoryAdapterTest {
     productEntity.setName("Test Product");
     productEntity.setBrand("Test Brand");
     productEntity.setColorHex("#FFFFFF");
-
-
   }
 
   @Nested
@@ -146,7 +140,6 @@ class ProductRepositoryAdapterTest {
       List<Product> foundProducts = target.findByCategoryName(category.name());
 
       // Assert
-
       assertThat(foundProducts).isNotEmpty().containsExactly(product);
       verify(jpaProductRepository).findByCategoryName(category.name());
     }
@@ -173,30 +166,23 @@ class ProductRepositoryAdapterTest {
       // Arrange
       EntityId userId = new EntityId(UUID.randomUUID());
 
-      // Creamos la relación ProductUserEntity
-      ProductUserEntity productUserEntity = new ProductUserEntity();
-      productUserEntity.setUserId(userId.getValue());
-      productUserEntity.setProductId(productId.getValue());
-
-      when(jpaProductUserRepository.findByUserId(userId.getValue()))
-          .thenReturn(List.of(productUserEntity));
-
-      when(jpaProductRepository.findById(productId.getValue()))
-          .thenReturn(Optional.of(productEntity));
+      // Simulate the direct response of jpaProductRepository.findByUserId
+      // which is what our current implementation uses
+      when(jpaProductRepository.findByUserId(userId.getValue()))
+          .thenReturn(List.of(productEntity));
 
       when(productMapper.toDomain(productEntity))
           .thenReturn(product);
 
       // Act
-      List<Product> foundProducts = target.findByUserId(userId);
+      List<Product> foundProducts = target.findByUserId(userId.getValue());
 
       // Assert
       assertThat(foundProducts)
           .hasSize(1)
           .containsExactly(product);
 
-      verify(jpaProductUserRepository).findByUserId(userId.getValue());
-      verify(jpaProductRepository).findById(productId.getValue());
+      verify(jpaProductRepository).findByUserId(userId.getValue());
       verify(productMapper).toDomain(productEntity);
     }
 

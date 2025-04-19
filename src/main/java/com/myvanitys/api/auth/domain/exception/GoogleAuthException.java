@@ -1,6 +1,8 @@
 package com.myvanitys.api.auth.domain.exception;
 
-public class GoogleAuthException extends RuntimeException {
+import com.myvanitys.api.common.DomainException;
+
+public class GoogleAuthException extends DomainException {
 
   public GoogleAuthException(String message) {
     super(message);

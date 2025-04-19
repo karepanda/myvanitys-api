@@ -46,4 +46,6 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
    * Find product by name and brand
    */
   Optional<ProductEntity> findByNameAndBrand(String name, String brand);
+
+
 }
