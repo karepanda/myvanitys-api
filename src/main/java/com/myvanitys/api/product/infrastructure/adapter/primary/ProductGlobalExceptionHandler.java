@@ -1,5 +1,6 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 import com.myvanitys.api.common.ApplicationException;
 import com.myvanitys.api.common.DomainException;
 import com.myvanitys.api.common.InfrastructureException;
+import com.myvanitys.api.model.v1.ProblemDetail;
 import com.myvanitys.api.product.application.exception.ValidationException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
@@ -25,6 +27,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 public class ProductGlobalExceptionHandler {
 
+  private static final URI NOT_FOUND_ERROR_TYPE = URI.create("https://api.myvanitys.com/problems/not-found");
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Object> handleValidationExceptions(MethodArgumentNotValidException ex) {
     List<String> errors = ex.getBindingResult()
@@ -40,14 +44,15 @@ public class ProductGlobalExceptionHandler {
    * Handles domain-specific exceptions.
    */
   @ExceptionHandler(ProductNotFoundException.class)
-  public ResponseEntity<Object> handleProductNotFoundException(ProductNotFoundException ex) {
-    Map<String, Object> body = createErrorBody(
-        HttpStatus.NOT_FOUND.value(),
-        "Not Found",
-        ex.getMessage()
-    );
+  public ResponseEntity<ProblemDetail> handleProductNotFoundException(ProductNotFoundException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(NOT_FOUND_ERROR_TYPE)
+        .title("Product Not Found")
+        .status(404)
+        .detail(ex.getMessage())
+        .instance(URI.create("/api/v1/users/products"));
 
-    return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
   }
 
   /**

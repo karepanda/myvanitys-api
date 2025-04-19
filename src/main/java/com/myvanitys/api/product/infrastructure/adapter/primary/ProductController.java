@@ -11,16 +11,13 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
 import com.myvanitys.api.rest.v1.ProductsApiDelegate;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
 @Service
 @AllArgsConstructor
-@Validated
 public class ProductController implements ProductsApiDelegate {
 
   private final FindProductUserUseCase findProductUserUseCase;
@@ -32,7 +29,7 @@ public class ProductController implements ProductsApiDelegate {
       UUID xFlowID,
       String acceptLanguage,
       String userAgent,
-      @Valid CreateProductRequest createProductRequest) {
+      CreateProductRequest createProductRequest) {
 
     ProductResponse response = new ProductResponse();
     response.setId(UUID.randomUUID());
