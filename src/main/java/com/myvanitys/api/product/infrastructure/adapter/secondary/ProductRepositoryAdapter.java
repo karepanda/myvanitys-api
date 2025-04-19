@@ -8,29 +8,18 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@AllArgsConstructor
 public class ProductRepositoryAdapter implements ProductRepository {
 
   private final JpaProductRepository jpaProductRepository;
 
-  private final JpaProductUserRepository jpaProductUserRepository;
-
   private final ProductMapper productMapper;
-
-  public ProductRepositoryAdapter(
-      JpaProductRepository jpaProductRepository,
-      JpaProductUserRepository jpaProductUserRepository,
-      ProductMapper productMapper) {
-    this.jpaProductRepository = jpaProductRepository;
-    this.jpaProductUserRepository = jpaProductUserRepository;
-    this.productMapper = productMapper;
-  }
 
   @Override
   public Product save(Product product) {
@@ -66,13 +55,9 @@ public class ProductRepositoryAdapter implements ProductRepository {
   }
 
   @Override
-  public List<Product> findByUserId(EntityId userId) {
-    UUID uuid = userId.getValue();
-    return jpaProductUserRepository.findByUserId(uuid).stream()
-        .map(ProductUserEntity::getProductId)
-        .map(jpaProductRepository::findById)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+  public List<Product> findByUserId(UUID userId) {
+    List<ProductEntity> productEntities = jpaProductRepository.findByUserId(userId);
+    return productEntities.stream()
         .map(productMapper::toDomain)
         .toList();
   }

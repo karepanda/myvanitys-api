@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.application.useCase;
+package com.myvanitys.api.product.application.usecase;
 
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
@@ -12,19 +12,19 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class CreateProduct implements CreateProductUseCase {
 
-    protected JpaProductRepository productRepository;
+  protected JpaProductRepository productRepository;
 
-    protected JpaProductRepository reviewRepository;
+  protected JpaProductRepository reviewRepository;
 
-    protected JpaProductUserRepository productUserRepository;
+  protected JpaProductUserRepository productUserRepository;
 
-    @Override
-    public Product execute(CreateProductCommand command) {
+  @Override
+  public Product execute(CreateProductCommand command) {
 
-//        productRepository.save();
-//        productUserRepository.save();
-//        reviewRepository.save();
+    //        productRepository.save();
+    //        productUserRepository.save();
+    //        reviewRepository.save();
 
-        return null;
-    }
+    return null;
+  }
 }

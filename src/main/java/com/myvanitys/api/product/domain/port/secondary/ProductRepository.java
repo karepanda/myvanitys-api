@@ -2,6 +2,7 @@ package com.myvanitys.api.product.domain.port.secondary;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
@@ -56,5 +57,5 @@ public interface ProductRepository {
    * @param userId the user ID
    * @return list of products belonging to the user
    */
-  List<Product> findByUserId(EntityId userId);
+  List<Product> findByUserId(UUID userId);
 }
