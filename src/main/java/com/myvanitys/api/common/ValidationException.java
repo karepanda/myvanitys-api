@@ -1,17 +1,15 @@
-package com.myvanitys.api.product.application.exception;
+package com.myvanitys.api.common;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import com.myvanitys.api.common.ApplicationException;
 
 /**
  * Exception thrown when input validation fails in use cases
  */
 public class ValidationException extends ApplicationException {
 
-  private final List<ValidationError> errors;
+  private final transient List<ValidationError> errors;
 
   public ValidationException(String message, List<ValidationError> errors) {
     super(message);
@@ -39,23 +37,7 @@ public class ValidationException extends ApplicationException {
   /**
    * Represents specific validation error
    */
-  public static class ValidationError {
+  public record ValidationError(String field, String message) {
 
-    private final String field;
-
-    private final String message;
-
-    public ValidationError(String field, String message) {
-      this.field = field;
-      this.message = message;
-    }
-
-    public String getField() {
-      return field;
-    }
-
-    public String getMessage() {
-      return message;
-    }
   }
 }

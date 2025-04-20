@@ -29,7 +29,7 @@
     <dependency>
       <groupId>com.myvanitys</groupId>
       <artifactId>myvanitys-api-spec</artifactId>
-      <version>0.0.15-SNAPSHOT</version>
+      <version>0.0.16-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -62,19 +62,6 @@
       <artifactId>spring-boot-docker-compose</artifactId>
       <scope>runtime</scope>
       <optional>true</optional>
-    </dependency>
-
-    <!-- API specification dependency -->
-    <dependency>
-      <groupId>com.myvanitys</groupId>
-      <artifactId>myvanitys-api-spec</artifactId>
-      <version>0.0.14-SNAPSHOT</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <dependency>

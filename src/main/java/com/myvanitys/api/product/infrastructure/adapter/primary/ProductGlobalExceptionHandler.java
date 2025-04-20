@@ -10,8 +10,8 @@ import java.util.stream.Collectors;
 import com.myvanitys.api.common.ApplicationException;
 import com.myvanitys.api.common.DomainException;
 import com.myvanitys.api.common.InfrastructureException;
+import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.model.v1.ProblemDetail;
-import com.myvanitys.api.product.application.exception.ValidationException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import org.springframework.http.HttpStatus;
@@ -83,8 +83,8 @@ public class ProductGlobalExceptionHandler {
     // Include validation error details in the response body
     body.put("validationErrors", ex.getErrors().stream()
         .map(error -> Map.of(
-            "field", error.getField(),
-            "message", error.getMessage()
+            "field", error.field(),
+            "message", error.message()
         ))
         .collect(Collectors.toList()));
 

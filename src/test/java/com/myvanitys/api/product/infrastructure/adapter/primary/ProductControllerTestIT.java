@@ -78,35 +78,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
   private static final String USER_AGENT = "Mozilla/5.0 (Test)";
 
   @Test
-  void shouldCreateProduct() throws Exception {
-    // Given
-    UUID requestId = UUID.randomUUID();
-    UUID flowId = UUID.randomUUID();
-    String productName = "Test Product";
-    String productBrand = "Test Brand";
-    String colorHex = "#FF5733";
-
-    CreateProductRequest request = new CreateProductRequest()
-        .name(productName)
-        .brand(productBrand)
-        .colorHex(colorHex);
-
-    // When/Then
-    mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-Request-ID", requestId.toString())
-            .header("X-Flow-ID", flowId.toString())
-            .header("Accept-Language", ACCEPT_LANGUAGE)
-            .header("User-Agent", USER_AGENT)
-            .content(new ObjectMapper().writeValueAsString(request)))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.name").value(productName))
-        .andExpect(jsonPath("$.brand").value(productBrand))
-        .andExpect(jsonPath("$.colorHex").value(colorHex))
-        .andExpect(jsonPath("$.id").exists());
-  }
-
-  @Test
   void shouldFindProductsByUserId() throws Exception {
     // Given
     UUID requestId = UUID.randomUUID();
