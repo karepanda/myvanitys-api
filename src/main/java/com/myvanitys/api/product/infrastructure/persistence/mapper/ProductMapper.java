@@ -1,7 +1,9 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
@@ -10,59 +12,142 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.springframework.stereotype.Component;
 
+@Component
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class, CategoryMapper.class})
-public abstract class ProductMapper {
+public class ProductMapper {
 
-  // Mapping from ProductEntity to Product
-  @Mapping(target = "id", source = "productId")
-  @Mapping(target = "category", source = "category") // Utilizará CategoryMapper automáticamente
-  @Mapping(target = "reviews", ignore = true)
-  @Mapping(target = "userRelations", ignore = true)
-  @Mapping(target = "averageRating", ignore = true)
-  public abstract Product toDomain(ProductEntity productEntity);
+  /**
+   * Convierte de ProductEntity a Product del dominio. La categoría debe ser proporcionada externamente si es necesaria.
+   */
+  public Product toDomain(ProductEntity productEntity, Category category) {
+    if (productEntity == null) {
+      return null;
+    }
 
-  // Mapping from Product to ProductEntity
-  @Mapping(target = "productId", source = "id.value")
-  @Mapping(target = "category", source = "category") // Utilizará CategoryMapper automáticamente
-  @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "updatedAt", ignore = true)
-  @Mapping(target = "version", ignore = true)
-  public abstract ProductEntity toEntity(Product product);
+    EntityId id = new EntityId(productEntity.getProductId());
 
-  // Métodos para convertir listas
-  public abstract List<Product> toDomainList(List<ProductEntity> productEntities);
+    return new Product(
+        id,
+        productEntity.getName(),
+        productEntity.getBrand(),
+        category,
+        productEntity.getColorHex()
+    );
+  }
 
-  public abstract List<ProductEntity> toEntityList(List<Product> products);
+  /**
+   * Sobrecarga para cuando no se dispone de la categoría. El objeto Product se creará sin categoría y será responsabilidad del código
+   * cliente asignarla posteriormente si es necesario.
+   */
+  public Product toDomain(ProductEntity productEntity) {
+    if (productEntity == null) {
+      return null;
+    }
 
-  public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers) {
-    Product product = toDomain(productEntity);
+    EntityId id = new EntityId(productEntity.getProductId());
 
-    if (productUsers != null) {
-      // ProductUserRelation Mapping
-      productUsers.forEach(pu -> {
+    return new Product(
+        id,
+        productEntity.getName(),
+        productEntity.getBrand(),
+        null, // Sin categoría
+        productEntity.getColorHex()
+    );
+  }
+
+  /**
+   * Convierte de Product a ProductEntity
+   */
+  public ProductEntity toEntity(Product product) {
+    if (product == null) {
+      return null;
+    }
+
+    ProductEntity entity = new ProductEntity();
+    entity.setProductId(product.getId().getValue());
+    entity.setName(product.getName());
+    entity.setBrand(product.getBrand());
+    entity.setColorHex(product.getColorHex());
+
+    if (product.getCategory() != null) {
+      entity.setCategoryId(product.getCategory().categoryId().getValue());
+    }
+
+    return entity;
+  }
+
+  /**
+   * Métodos para convertir listas
+   */
+  public List<Product> toDomainList(List<ProductEntity> productEntities) {
+    if (productEntities == null) {
+      return new ArrayList<>();
+    }
+
+    List<Product> result = new ArrayList<>(productEntities.size());
+    for (ProductEntity entity : productEntities) {
+      result.add(toDomain(entity));
+    }
+    return result;
+  }
+
+  public List<ProductEntity> toEntityList(List<Product> products) {
+    if (products == null) {
+      return new ArrayList<>();
+    }
+
+    List<ProductEntity> result = new ArrayList<>(products.size());
+    for (Product product : products) {
+      result.add(toEntity(product));
+    }
+    return result;
+  }
+
+  /**
+   * Convierte un ProductEntity a Product con todas sus relaciones
+   */
+  public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers, Category category) {
+    Product product = toDomain(productEntity, category);
+
+    if (productUsers != null && !productUsers.isEmpty()) {
+      for (ProductUserEntity pu : productUsers) {
         ProductUserRelation relation = toProductUserRelation(pu);
         product.getUserRelations().add(relation);
 
         // Reviews Mapping
-        if (pu.getReviews() != null) {
-          pu.getReviews().forEach(reviewEntity -> {
+        if (pu.getReviews() != null && !pu.getReviews().isEmpty()) {
+          for (ReviewEntity reviewEntity : pu.getReviews()) {
             Review review = toReview(reviewEntity, product);
             product.addReview(review);
-          });
+          }
         }
-      });
+      }
     }
 
     return product;
   }
 
-  protected ProductUserRelation toProductUserRelation(ProductUserEntity productUserEntity) {
+  /**
+   * Sobrecarga para cuando no se dispone de la categoría
+   */
+  public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers) {
+    return toDomainWithRelations(productEntity, productUsers, null);
+  }
+
+  /**
+   * Convierte de ProductUserEntity a ProductUserRelation
+   */
+  public ProductUserRelation toProductUserRelation(ProductUserEntity productUserEntity) {
+    if (productUserEntity == null) {
+      return null;
+    }
+
     EntityId reviewId = null;
     if (productUserEntity.getReviews() != null && !productUserEntity.getReviews().isEmpty()) {
-      // If there are reviews, we take the ID of the first one (or apply the logic you need).
-      reviewId = new EntityId(productUserEntity.getReviews().getFirst().getReviewId());
+      // Si hay reviews, tomamos el ID de la primera
+      reviewId = new EntityId(productUserEntity.getReviews().get(0).getReviewId());
     }
 
     return new ProductUserRelation(
@@ -73,7 +158,14 @@ public abstract class ProductMapper {
     );
   }
 
-  protected Review toReview(ReviewEntity reviewEntity, Product product) {
+  /**
+   * Convierte de ReviewEntity a Review
+   */
+  public Review toReview(ReviewEntity reviewEntity, Product product) {
+    if (reviewEntity == null || product == null) {
+      return null;
+    }
+
     return new Review(
         new EntityId(reviewEntity.getReviewId()),
         new EntityId(reviewEntity.getProductUserEntity().getUserId()),
@@ -83,8 +175,14 @@ public abstract class ProductMapper {
     );
   }
 
-  //  Review to ReviewEntity mapping (needs associated ProductUserEntity)
+  /**
+   * Convierte de Review a ReviewEntity
+   */
   public ReviewEntity toReviewEntity(Review review, ProductUserEntity productUserEntity) {
+    if (review == null || productUserEntity == null) {
+      return null;
+    }
+
     return ReviewEntity.builder()
         .reviewId(review.getId().getValue())
         .rating(review.getRating())

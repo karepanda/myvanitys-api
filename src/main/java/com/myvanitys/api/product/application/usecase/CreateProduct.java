@@ -1,5 +1,6 @@
 package com.myvanitys.api.product.application.usecase;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.common.ValidationException;
@@ -28,13 +29,21 @@ public class CreateProduct implements CreateProductUseCase {
   @Override
   @Transactional
   public Product execute(CreateProductCommand command) {
+    // Verify if the product already exists by name
+    Optional<Product> existingProduct = productRepository.findByName(command.name());
 
-    // Load category
+    if (existingProduct.isPresent()) {
+      // If the product already exists, we only associate the user if he/she is not already associated.
+      productUserRepository.saveProductUserRelationship(existingProduct.get().getId(), command.userId());
+      return existingProduct.get();
+    }
+
+    // If the product does not exist, we create a new one.
     Category category = categoryRepository.findById(command.categoryId())
         .orElseThrow(() -> ValidationException.withError("categoryId",
             "Category not found with ID: " + command.categoryId()));
 
-    //  Create product
+    // Create product
     EntityId productId = new EntityId(UUID.randomUUID());
     Product product = new Product(
         productId,

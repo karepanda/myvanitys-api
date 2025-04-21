@@ -2,6 +2,7 @@ package com.myvanitys.api.product.infrastructure.adapter.secondary.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,12 +58,33 @@ class ProductUserRepositoryAdapterTest {
   class SaveProductUserRelationshipTest {
 
     @Test
-    void shouldSaveProductUserRelationship() {
+    void shouldSaveProductUserRelationshipWhenNotExists() {
+      // Arrange
+      when(jpaProductUserRepository.existsByProductIdAndUserId(
+          productId.getValue(), userId.getValue())).thenReturn(false);
+
       // Act
       target.saveProductUserRelationship(productId, userId);
 
       // Assert
+      verify(jpaProductUserRepository).existsByProductIdAndUserId(
+          productId.getValue(), userId.getValue());
       verify(jpaProductUserRepository).save(any(ProductUserEntity.class));
+    }
+
+    @Test
+    void shouldNotSaveProductUserRelationshipWhenAlreadyExists() {
+      // Arrange
+      when(jpaProductUserRepository.existsByProductIdAndUserId(
+          productId.getValue(), userId.getValue())).thenReturn(true);
+
+      // Act
+      target.saveProductUserRelationship(productId, userId);
+
+      // Assert
+      verify(jpaProductUserRepository).existsByProductIdAndUserId(
+          productId.getValue(), userId.getValue());
+      verify(jpaProductUserRepository, never()).save(any(ProductUserEntity.class));
     }
   }
 
@@ -191,6 +213,5 @@ class ProductUserRepositoryAdapterTest {
       verify(jpaProductUserRepository).findByUserId(userId.getValue());
     }
   }
-
 
 }
