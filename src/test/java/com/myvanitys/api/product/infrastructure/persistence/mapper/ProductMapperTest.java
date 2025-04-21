@@ -2,8 +2,6 @@ package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,14 +18,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ProductMapperTest {
-
-  @Mock
-  private CategoryMapper categoryMapper;
 
   @InjectMocks
   private ProductMapperImpl productMapper;
@@ -58,11 +52,8 @@ class ProductMapperTest {
 
     Category category = new Category(new EntityId(categoryId), "Test Category");
 
-    // Cuando se invoca el CategoryMapper
-    when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-
     // Act
-    Product result = productMapper.toDomain(productEntity);
+    Product result = productMapper.toDomain(productEntity, category);
 
     // Assert
     assertNotNull(result);
@@ -83,9 +74,6 @@ class ProductMapperTest {
     categoryEntity.setCategoryId(categoryId);
     categoryEntity.setName("Test Category");
 
-    // Cuando se invoca el CategoryMapper
-    when(categoryMapper.toEntity(category)).thenReturn(categoryEntity);
-
     // Act
     ProductEntity result = productMapper.toEntity(product);
 
@@ -97,8 +85,6 @@ class ProductMapperTest {
     assertEquals("#FFFFFF", result.getColorHex());
     assertEquals(categoryId, result.getCategoryId());
 
-    // Verificamos que se usó el categoryMapper
-    verify(categoryMapper).toEntity(category);
   }
 
   @Test
@@ -127,10 +113,6 @@ class ProductMapperTest {
     reviewEntity.setProductUserEntity(productUserEntity);
 
     productUserEntity.setReviews(List.of(reviewEntity));
-
-    Category category = new Category(new EntityId(categoryId), "Test Category");
-
-    when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
 
     // Act
     Product result = productMapper.toDomainWithRelations(productEntity, List.of(productUserEntity));

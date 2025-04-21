@@ -2,6 +2,7 @@ package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
@@ -94,37 +95,32 @@ public class ProductMapper {
   }
 
   public List<ProductEntity> toEntityList(List<Product> products) {
-    if (products == null) {
-      return new ArrayList<>();
-    }
-
-    List<ProductEntity> result = new ArrayList<>(products.size());
-    for (Product product : products) {
-      result.add(toEntity(product));
-    }
-    return result;
+    return Optional.ofNullable(products)
+        .map(p -> p.stream()
+            .map(this::toEntity)
+            .toList())
+        .orElseGet(ArrayList::new);
   }
 
   /**
    * Converts a ProductEntity to a Product with all its relationships.
    */
   public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers, Category category) {
+    // Create the main product
     Product product = toDomain(productEntity, category);
 
-    if (productUsers != null && !productUsers.isEmpty()) {
-      for (ProductUserEntity pu : productUsers) {
-        ProductUserRelation relation = toProductUserRelation(pu);
-        product.getUserRelations().add(relation);
+    // Use Optional to avoid explicit null checks and make it cleaner
+    Optional.ofNullable(productUsers)
+        .ifPresent(users -> users.forEach(pu -> {
+          // Add the user relation
+          product.getUserRelations().add(toProductUserRelation(pu));
 
-        // Reviews mapping
-        if (pu.getReviews() != null && !pu.getReviews().isEmpty()) {
-          for (ReviewEntity reviewEntity : pu.getReviews()) {
+          // Map reviews if they exist
+          Optional.ofNullable(pu.getReviews()).ifPresent(reviews -> reviews.forEach(reviewEntity -> {
             Review review = toReview(reviewEntity, product);
             product.addReview(review);
-          }
-        }
-      }
-    }
+          }));
+        }));
 
     return product;
   }

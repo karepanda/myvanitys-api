@@ -172,10 +172,10 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product2);
     jpaProductRepository.save(product3);
 
-    // When
-    List<ProductEntity> foundProducts = jpaProductRepository.findByName("Electronics").stream().toList();
+    // When: Find products by category ID
+    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryId(savedCategory1.getCategoryId());
 
-    // Then
+    // Then: Assert that the correct products are found
     assertThat(foundProducts).hasSize(2);
     assertThat(foundProducts)
         .extracting(ProductEntity::getName)
