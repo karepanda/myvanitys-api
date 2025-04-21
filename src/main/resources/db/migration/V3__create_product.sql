@@ -1,7 +1,7 @@
 CREATE TABLE product
 (
     product_id  UUID PRIMARY KEY,
-    category_id UUID         REFERENCES category (category_id) ON DELETE SET NULL,
+    category_id UUID         NOT NULL REFERENCES category (category_id) ON DELETE RESTRICT,
     version     BIGINT       NOT NULL DEFAULT 0,
     brand       VARCHAR(500),
     name        VARCHAR(255) NOT NULL,

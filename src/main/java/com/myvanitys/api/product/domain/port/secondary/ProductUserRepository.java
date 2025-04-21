@@ -1,8 +1,11 @@
 package com.myvanitys.api.product.domain.port.secondary;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 
 /**
  * Secondary port for product-user relationship operations
@@ -49,4 +52,29 @@ public interface ProductUserRepository {
    * @return list of relationship objects containing product IDs
    */
   List<EntityId> findProductIdsByUserId(EntityId userId);
+
+  /**
+   * Find product-user relationships by product ID
+   *
+   * @param productId the product ID
+   * @return list of product-user relationships
+   */
+  List<ProductUserEntity> findByProductId(UUID productId);
+
+  /**
+   * Find product-user relationships by user ID
+   *
+   * @param userId the user ID
+   * @return list of product-user relationships
+   */
+  List<ProductUserEntity> findByUserId(UUID userId);
+
+  /**
+   * Find a specific relationship between a product and a user
+   *
+   * @param productId the product ID
+   * @param userId the user ID
+   * @return the product-user relationship if found
+   */
+  Optional<ProductUserEntity> findByProductIdAndUserId(UUID productId, UUID userId);
 }

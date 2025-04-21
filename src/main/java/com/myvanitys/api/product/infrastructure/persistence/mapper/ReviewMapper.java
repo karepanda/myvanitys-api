@@ -4,68 +4,68 @@ import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.Review;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring", uses = {ProductMapper.class, EntityIdMapper.class})
-public abstract class ReviewMapper {
+/**
+ * Mapper to convert between domain Review and JPA ReviewEntity.
+ */
+@Component
+public class ReviewMapper {
 
-  @Autowired
-  protected JpaProductRepository jpaProductRepository;
-
-  @Autowired
-  protected JpaProductUserRepository jpaProductUserRepository;
-
-  @Autowired
-  protected ProductMapper productMapper;
-
-  @Mapping(target = "id", source = "reviewId")
-  @Mapping(target = "userId", source = "productUserEntity.userId")
-  @Mapping(target = "product", source = "productUserEntity.productId", qualifiedByName = "productIdToProduct")
-  public abstract Review toDomain(ReviewEntity reviewEntity);
-
-  @Mapping(target = "reviewId", source = "id")
-  @Mapping(target = "productUserEntity", source = ".", qualifiedByName = "findProductUserEntity")
-  @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "updatedAt", ignore = true)
-  public abstract ReviewEntity toEntity(Review review);
-
-  @Named("productIdToProduct")
-  protected Product productIdToProduct(UUID productId) {
-    if (productId == null) {
+  /**
+   * Converts a ReviewEntity to a domain Review object.
+   *
+   * @param entity The entity to convert
+   * @param product The product associated with the review
+   * @return The domain Review object
+   */
+  public Review toDomain(ReviewEntity entity, Product product) {
+    if (entity == null) {
       return null;
     }
 
-    // Buscar el producto usando el repositorio inyectado
-    return jpaProductRepository.findById(productId)
-        .map(productMapper::toDomain)
-        .orElse(null);
+    // Ensure the product is not null
+    if (product == null) {
+      throw new IllegalArgumentException("Product cannot be null for review conversion");
+    }
+
+    // Extract necessary IDs
+    EntityId reviewId = new EntityId(entity.getReviewId());
+    EntityId userId = new EntityId(entity.getProductUserEntity().getUserId());
+
+    // Build and return the domain object
+    return new Review(
+        reviewId,
+        userId,
+        product,
+        entity.getRating(),
+        entity.getComment()
+    );
   }
 
-  @Named("findProductUserEntity")
-  protected ProductUserEntity findProductUserEntity(Review review) {
-    UUID userId = review.getUserId().getValue();
-    UUID productId = review.getProduct().getId().getValue();
+  /**
+   * Converts a domain Review object to a ReviewEntity.
+   *
+   * @param domain The domain object to convert
+   * @return The corresponding ReviewEntity
+   */
+  public ReviewEntity toEntity(Review domain) {
+    if (domain == null) {
+      return null;
+    }
 
-    // Usar el método existente en el repositorio inyectado
-    return jpaProductUserRepository.findByProductIdAndUserId(productId, userId);
-  }
+    // Extract the UUID of the review
+    UUID reviewId = domain.getId() != null ? domain.getId().getValue() : null;
 
-  protected JpaProductRepository getProductRepository() {
-    return jpaProductRepository;
-  }
-
-  protected JpaProductUserRepository getProductUserRepository() {
-    return jpaProductUserRepository;
-  }
-
-  protected ProductMapper getProductMapper() {
-    return productMapper;
+    // Build the entity
+    return ReviewEntity.builder()
+        .reviewId(reviewId)
+        .rating(domain.getRating())
+        .comment(domain.getComment())
+        // The productUserEntity relation is not set here
+        // since it is handled in the adapter layer
+        .build();
   }
 }

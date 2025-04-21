@@ -58,4 +58,6 @@ public interface ProductRepository {
    * @return list of products belonging to the user
    */
   List<Product> findByUserId(UUID userId);
+
+
 }
