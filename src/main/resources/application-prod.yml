@@ -1,18 +1,75 @@
 # Default connection pool
-spring.datasource.hikari.connectionTimeout=30000
-spring.datasource.hikari.maximumPoolSize=10
-spring.datasource.hikari.minimumIdle=5
-spring.datasource.hikari.idleTimeout=600000
-spring.datasource.hikari.maxLifetime=1800000
-# PostgreSQL (by productionn)
-spring.datasource.url=jdbc:postgresql://db:5432/myvanitydb
-spring.datasource.username=${DB_USERNAME}
-spring.datasource.password=${DB_PASSWORD}
-# Hibernate
-spring.jpa.hibernate.ddl-auto=none
-spring.jpa.show-sql=false
-spring.jpa.properties.hibernate.format_sql=false
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-# other config
-server.port=8080
-logging.level.org.springframework=WARN
+spring:
+  datasource:
+    hikari:
+      connectionTimeout: 30000
+      maximumPoolSize: 10
+      minimumIdle: 5
+      idleTimeout: 600000
+      maxLifetime: 1800000
+    # PostgreSQL configuración para Railway
+    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
+    username: ${PGUSER}
+    password: ${PGPASSWORD}
+
+  # Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Flyway (asumiendo que lo usas basado en tu configuración local)
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# Configuración del servidor
+server:
+  port: 8080
+  servlet:
+    context-path: /myvanitys
+
+# Actuator configuration
+management:
+  server:
+    base-path: /actuator
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+      only-when-up: true
+
+# Configuración de logging
+logging:
+  level:
+    org:
+      springframework: WARN
+      flywaydb: INFO
+
+# OAuth Configuration
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID}
+    secret: ${GOOGLE_CLIENT_SECRET}
+  oauth:
+    redirect-uri: ${OAUTH_REDIRECT_URI:https://myvanitys.com/callback}
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000  # 24 hours in milliseconds
+
+# App info
+info:
+  app:
+    name: MyVanitys API
+    version: ${project.version}

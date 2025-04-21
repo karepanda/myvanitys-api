@@ -1,14 +1,22 @@
-# Usa una imagen base de OpenJDK 21
-FROM openjdk:21-jdk-slim as builder
+FROM eclipse-temurin:21-jre-alpine
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el JAR empaquetado desde el directorio target de tu proyecto local
-COPY boot/target/boot-0.0.1-SNAPSHOT.jar /app/myvanitys-api.jar
+# Copy the JAR file built by Maven
+COPY target/*.jar app.jar
 
-# Exponer el puerto en el que tu aplicación va a escuchar
+# Environment variables que se necesitan
+ENV SPRING_PROFILES_ACTIVE=prod
+# Variables adicionales requeridas
+ENV GOOGLE_CLIENT_ID=changeme
+ENV GOOGLE_CLIENT_SECRET=changeme
+ENV OAUTH_REDIRECT_URI=https://myvanitys.com/callback
+ENV JWT_SECRET=changeme
+# Las variables de PostgreSQL son proporcionadas automáticamente por Railway:
+# PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, DATABASE_URL
+
+# Port to expose (change if your app uses a different port)
 EXPOSE 8080
 
-# Comando para ejecutar el JAR
-ENTRYPOINT ["java", "-jar", "myvanitys-api.jar"]
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]

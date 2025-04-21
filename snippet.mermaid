@@ -1,0 +1,58 @@
+erDiagram
+    CategoryEntity ||--o{ ProductEntity : "tiene"
+    ProductEntity ||--o{ ProductUserEntity : "tiene"
+    ProductEntity ||--o{ ReviewEntity : "tiene"
+    ProductUserEntity }o--|| UserEntity : "pertenece"
+
+    CategoryEntity {
+        UUID categoryId PK
+        String name
+        String description
+        Long version
+        Date createdAt
+        Date updatedAt
+    }
+
+    ProductEntity {
+        UUID productId PK
+        UUID categoryId FK
+        Long version
+        String name
+        String brand
+        String colorHex
+        Date createdAt
+        Date updatedAt
+    }
+
+    ProductUserEntity {
+        UUID productUserId PK
+        UUID productId FK
+        UUID userId FK
+        Boolean isFavorite
+        Date createdAt
+        Date updatedAt
+        Long version
+    }
+
+    ReviewEntity {
+        UUID reviewId PK
+        UUID productId FK
+        UUID userId FK
+        Integer rating
+        String comment
+        Boolean isVerified
+        Long version
+        Date createdAt
+        Date updatedAt
+    }
+
+    UserEntity {
+        UUID userId PK
+        String username
+        String email
+        String password
+        Boolean isActive
+        Long version
+        Date createdAt
+        Date updatedAt
+    }
