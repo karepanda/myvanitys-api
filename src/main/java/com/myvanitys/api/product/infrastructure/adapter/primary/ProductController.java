@@ -42,12 +42,7 @@ public class ProductController implements ProductsApiDelegate {
       String userAgent,
       CreateProductRequest createProductRequest) {
 
-    // Extract the bearer token from the authorization header
-    String bearerToken = extractBearerToken();
-
-    // Get the userId from the token
-    UUID userIdValue = tokenService.extractUserId(bearerToken);
-    EntityId userId = new EntityId(userIdValue);
+    final EntityId userId = getUserId();
 
     // Create EntityId for categoryId
     EntityId categoryId = new EntityId(createProductRequest.getCategoryId());
@@ -70,6 +65,15 @@ public class ProductController implements ProductsApiDelegate {
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
+  private EntityId getUserId() {
+    // Extract the bearer token from the authorization header
+    String bearerToken = extractBearerToken();
+
+    // Get the userId from the token
+    UUID userIdValue = tokenService.extractUserId(bearerToken);
+    return new EntityId(userIdValue);
+  }
+
   @Override
   public ResponseEntity<List<ProductResponse>> findProductsByUserId(
       UUID userId,
@@ -79,7 +83,7 @@ public class ProductController implements ProductsApiDelegate {
       String userAgent) {
 
     // Wrap the raw UUID in a domain-specific identifier
-    EntityId userIdValue = new EntityId(userId);
+    final EntityId userIdValue = getUserId();
 
     // Create the query object
     FindProductUserQuery query = new FindProductUserQuery(userIdValue);
