@@ -6,27 +6,18 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
-import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
-import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class, CategoryMapper.class})
 public abstract class ProductMapper {
 
-  @Autowired
-  private JpaCategoryRepository jpaCategoryRepository;
-
   // Mapping from ProductEntity to Product
   @Mapping(target = "id", source = "productId")
-  @Mapping(target = "category", source = "category") // Will use CategoryMapper automatically
+  @Mapping(target = "category", source = "category") // Utilizará CategoryMapper automáticamente
   @Mapping(target = "reviews", ignore = true)
   @Mapping(target = "userRelations", ignore = true)
   @Mapping(target = "averageRating", ignore = true)
@@ -34,20 +25,16 @@ public abstract class ProductMapper {
 
   // Mapping from Product to ProductEntity
   @Mapping(target = "productId", source = "id.value")
-  @Mapping(target = "category", source = "category") // Will use CategoryMapper automatically
+  @Mapping(target = "category", source = "category") // Utilizará CategoryMapper automáticamente
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "version", ignore = true)
   public abstract ProductEntity toEntity(Product product);
 
-  @AfterMapping
-  protected void mapCategory(@MappingTarget ProductEntity entity, Product product) {
-    if (product.getCategory() != null) {
-      CategoryEntity categoryEntity = jpaCategoryRepository.findById(product.getCategory().categoryId().getValue())
-          .orElseThrow(() -> new DatabaseException("Category not found with ID: " + product.getCategory().categoryId().getValue()));
-      entity.setCategory(categoryEntity);
-    }
-  }
+  // Métodos para convertir listas
+  public abstract List<Product> toDomainList(List<ProductEntity> productEntities);
+
+  public abstract List<ProductEntity> toEntityList(List<Product> products);
 
   public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers) {
     Product product = toDomain(productEntity);
@@ -105,8 +92,4 @@ public abstract class ProductMapper {
         .productUserEntity(productUserEntity)
         .build();
   }
-
-  public abstract List<Product> toDomainList(List<ProductEntity> productEntities);
-
-  public abstract List<ProductEntity> toEntityList(List<Product> products);
 }

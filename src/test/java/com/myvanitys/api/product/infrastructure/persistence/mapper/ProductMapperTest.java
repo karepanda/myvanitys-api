@@ -2,14 +2,13 @@ package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Category;
@@ -17,12 +16,10 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,9 +35,6 @@ class ProductMapperTest {
 
   @Mock
   private EntityIdMapper entityIdMapper;
-
-  @Mock
-  private JpaCategoryRepository jpaCategoryRepository;
 
   @InjectMocks
   private ProductMapperImpl productMapper;
@@ -114,8 +108,7 @@ class ProductMapperTest {
     categoryEntity.setCategoryId(categoryId);
     categoryEntity.setName("Test Category");
 
-    // Mock the category repository for the @AfterMapping method
-    when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
+    when(categoryMapper.toEntity(category)).thenReturn(categoryEntity);
 
     // Act
     ProductEntity result = productMapper.toEntity(product);
@@ -128,12 +121,14 @@ class ProductMapperTest {
     assertEquals("#FFFFFF", result.getColorHex());
     assertEquals(categoryEntity, result.getCategory());
 
-    // Verify that the repository was called
-    verify(jpaCategoryRepository).findById(categoryId);
+    // Verificamos que se usó el categoryMapper
+    verify(categoryMapper).toEntity(category);
   }
 
+  // Este test ya no es necesario porque ya no lanzamos una excepción cuando no se encuentra la categoría
+  // La conversión ahora se maneja a través del CategoryMapper
   @Test
-  void toEntity_shouldThrowExceptionWhenCategoryNotFound() {
+  void toEntity_shouldHandleCategoryMapping() {
     // Arrange
     Category category = new Category(new EntityId(categoryId), "Test Category");
     Product product = new Product(
@@ -144,11 +139,19 @@ class ProductMapperTest {
         "#FFFFFF"
     );
 
-    // Mock the category repository to return empty
-    when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.empty());
+    // Simulamos que el CategoryMapper devuelve null para este caso
+    when(categoryMapper.toEntity(category)).thenReturn(null);
 
-    // Act & Assert
-    assertThrows(DatabaseException.class, () -> productMapper.toEntity(product));
+    // Act
+    ProductEntity result = productMapper.toEntity(product);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(productId, result.getProductId());
+    assertEquals("Test Product", result.getName());
+    assertEquals("Test Brand", result.getBrand());
+    assertEquals("#FFFFFF", result.getColorHex());
+    assertNull(result.getCategory());
   }
 
   @Test
@@ -282,8 +285,9 @@ class ProductMapperTest {
     categoryEntity.setCategoryId(categoryId);
     categoryEntity.setName("Test Category");
 
-    // Mock the category repository for the @AfterMapping method
-    when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
+    // En lugar de buscar la categoría en el repositorio, ahora MapStruct usa directamente
+    // el CategoryMapper para mapear el objeto Category a CategoryEntity
+    when(categoryMapper.toEntity(category)).thenReturn(categoryEntity);
 
     // Act
     List<ProductEntity> result = productMapper.toEntityList(List.of(product1, product2));
@@ -294,8 +298,7 @@ class ProductMapperTest {
     assertEquals("Product 1", result.get(0).getName());
     assertEquals("Product 2", result.get(1).getName());
 
-    // Verify that the repository was called for each product
-    verify(jpaCategoryRepository, times(2)).findById(categoryId);
+    verify(categoryMapper, times(2)).toEntity(category);
   }
 
   private ProductEntity createProductEntity(UUID id, String name, CategoryEntity category) {
