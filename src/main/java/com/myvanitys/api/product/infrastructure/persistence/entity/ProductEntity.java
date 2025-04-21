@@ -6,8 +6,6 @@ import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
@@ -30,9 +28,8 @@ public class ProductEntity {
   @Column(name = "product_id")
   private UUID productId;
 
-  @ManyToOne
-  @JoinColumn(name = "category_id")
-  private CategoryEntity category;
+  @Column(name = "category_id", nullable = false)
+  private UUID categoryId;
 
   @Version
   private Long version;

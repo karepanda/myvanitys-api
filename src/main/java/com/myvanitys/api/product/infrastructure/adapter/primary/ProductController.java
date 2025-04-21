@@ -1,18 +1,39 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
+import com.myvanitys.api.product.application.command.CreateProductCommand;
+import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
+import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
+import com.myvanitys.api.product.application.query.FindProductUserQuery;
+import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
+import com.myvanitys.api.product.infrastructure.adapter.primary.service.TokenService;
+import com.myvanitys.api.product.infrastructure.exception.UnauthorizedException;
 import com.myvanitys.api.rest.v1.ProductsApiDelegate;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Service
+@AllArgsConstructor
 public class ProductController implements ProductsApiDelegate {
+
+  private final FindProductUserUseCase findProductUserUseCase;
+
+  private final ProductResponseMapper productResponseMapper;
+
+  private final CreateProductUseCase createProductUseCase;
+
+  private final TokenService tokenService;
 
   @Override
   public ResponseEntity<ProductResponse> createProduct(UUID xRequestID,
@@ -21,13 +42,36 @@ public class ProductController implements ProductsApiDelegate {
       String userAgent,
       CreateProductRequest createProductRequest) {
 
-    ProductResponse response = new ProductResponse();
-    response.setId(UUID.randomUUID());
-    response.setName(createProductRequest.getName());
-    response.setBrand(createProductRequest.getBrand());
-    response.setColorHex(createProductRequest.getColorHex());
+    final EntityId userId = getUserId();
+
+    // Create EntityId for categoryId
+    EntityId categoryId = new EntityId(createProductRequest.getCategoryId());
+
+    // Create command with all necessary data
+    CreateProductCommand command = new CreateProductCommand(
+        createProductRequest.getName(),
+        createProductRequest.getBrand(),
+        categoryId,
+        createProductRequest.getColorHex(),
+        userId
+    );
+
+    // Execute the use case
+    Product createdProduct = createProductUseCase.execute(command);
+
+    // Map the response
+    ProductResponse response = productResponseMapper.toResponse(createdProduct);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
+
+  private EntityId getUserId() {
+    // Extract the bearer token from the authorization header
+    String bearerToken = extractBearerToken();
+
+    // Get the userId from the token
+    UUID userIdValue = tokenService.extractUserId(bearerToken);
+    return new EntityId(userIdValue);
   }
 
   @Override
@@ -38,29 +82,37 @@ public class ProductController implements ProductsApiDelegate {
       String acceptLanguage,
       String userAgent) {
 
-    // Here you would typically call a service to retrieve products by user ID
-    // For demonstration purposes, I'll create some sample data
-    List<ProductResponse> userProducts = new ArrayList<>();
+    // Wrap the raw UUID in a domain-specific identifier
+    final EntityId userIdValue = getUserId();
 
-    // Sample product 1
-    ProductResponse product1 = new ProductResponse();
-    product1.setId(UUID.randomUUID());
-    product1.setName("Sample Product 1");
-    product1.setBrand("Brand A");
-    product1.setColorHex("#FF5733");
-    userProducts.add(product1);
+    // Create the query object
+    FindProductUserQuery query = new FindProductUserQuery(userIdValue);
 
-    // Sample product 2
-    ProductResponse product2 = new ProductResponse();
-    product2.setId(UUID.randomUUID());
-    product2.setName("Sample Product 2");
-    product2.setBrand("Brand B");
-    product2.setColorHex("#33FF57");
-    userProducts.add(product2);
+    // Execute the use case to fetch domain products
+    List<Product> domainProducts = findProductUserUseCase.query(query);
 
-    // In a real implementation, you would query a repository:
-    // List<ProductResponse> userProducts = productService.findByUserId(userId);
+    // Map domain products to API response objects
+    List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
 
-    return ResponseEntity.ok(userProducts);
+    // Return the response with status 200 OK
+    return ResponseEntity.ok(responseProducts);
   }
+
+  private String extractBearerToken() {
+    ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    if (attributes == null) {
+      throw new UnauthorizedException("No request context available");
+    }
+
+    HttpServletRequest request = attributes.getRequest();
+    String authorization = request.getHeader("Authorization");
+
+    if (authorization != null && authorization.startsWith("Bearer ")) {
+      return authorization.substring(7);
+    }
+
+    throw new UnauthorizedException("No bearer token found");
+  }
+
+
 }

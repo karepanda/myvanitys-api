@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,17 +36,20 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
   /**
    * Finds products by category
    */
-  List<ProductEntity> findByCategoryCategoryId(UUID categoryId);
-
-  /**
-   * Finds products by category name
-   */
-  List<ProductEntity> findByCategoryName(String categoryName);
+  List<ProductEntity> findByCategoryId(UUID categoryId);
 
   /**
    * Find product by name and brand
    */
   Optional<ProductEntity> findByNameAndBrand(String name, String brand);
+
+  @Query("""
+          SELECT DISTINCT pu FROM ProductUserEntity pu
+          JOIN FETCH pu.reviews
+          JOIN FETCH pu.productId p
+          WHERE pu.userId = :userId
+      """)
+  List<ProductUserEntity> findByUserIdWithReviews(@Param("userId") UUID userId);
 
 
 }

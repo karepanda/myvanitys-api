@@ -1,18 +1,25 @@
 package com.myvanitys.api.product.domain.model;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.UUID;
 
+import com.myvanitys.api.product.domain.exception.ProductValidationException;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class ProductTest {
 
-  private Product product;
+  private Product target;
+
+  private Category category;
 
   private Review review1;
 
@@ -22,125 +29,220 @@ class ProductTest {
 
   @BeforeEach
   void setUp() {
-    // Crear IDs de prueba con UUID
     EntityId productId = new EntityId(UUID.randomUUID());
     EntityId userId = new EntityId(UUID.randomUUID());
+    category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
 
-    // Crear un producto y una categoría para la prueba
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Categoria de prueba");
-    product = new Product(productId, "Producto de prueba", "Marca de prueba", category, "#FFFFFF");
+    target = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
 
-    // Crear reseñas con diferentes calificaciones
-    review1 = new Review(new EntityId(UUID.randomUUID()), userId, product, 4, "Reseña 1");
-    review2 = new Review(new EntityId(UUID.randomUUID()), userId, product, 5, "Reseña 2");
-    review3 = new Review(new EntityId(UUID.randomUUID()), userId, product, 3, "Reseña 3");
+    review1 = new Review(new EntityId(UUID.randomUUID()), userId, target, 4, "Review 1");
+    review2 = new Review(new EntityId(UUID.randomUUID()), userId, target, 5, "Review 2");
+    review3 = new Review(new EntityId(UUID.randomUUID()), userId, target, 3, "Review 3");
   }
 
-  @Test
-  void testAddReview() {
-    // Añadir una reseña
-    product.addReview(review1);
+  @Nested
+  class Constructor {
 
-    // Verificar que la reseña ha sido añadida
-    assertEquals(1, product.getReviews().size(), "El número de reseñas debería ser 1");
-    assertTrue(product.getReviews().contains(review1), "La reseña añadida no está en la lista de reseñas");
+    @Test
+    void when_validParameters_then_objectCreated() {
+      final EntityId id = new EntityId(UUID.randomUUID());
+      final String name = "Test Product";
+      final String brand = "Test Brand";
+      final Category testCategory = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+      final String colorHex = "#FFFFFF";
+
+      final Product result = new Product(id, name, brand, testCategory, colorHex);
+
+      assertThat(result.getId()).isEqualTo(id);
+      assertThat(result.getName()).isEqualTo(name);
+      assertThat(result.getBrand()).isEqualTo(brand);
+      assertThat(result.getCategory()).isEqualTo(testCategory);
+      assertThat(result.getColorHex()).isEqualTo(colorHex);
+      assertThat(result.getAverageRating()).isZero();
+    }
+
+    @Test
+    void when_emptyName_then_throwException() {
+      assertThatThrownBy(() -> new Product(new EntityId(UUID.randomUUID()), "", "Brand", category, "#FFFFFF"))
+          .isInstanceOf(ProductValidationException.class)
+          .hasMessageContaining("name cannot be empty");
+    }
+
+    @Test
+    void when_nullName_then_throwException() {
+      assertThatThrownBy(() -> new Product(new EntityId(UUID.randomUUID()), null, "Brand", category, "#FFFFFF"))
+          .isInstanceOf(ProductValidationException.class)
+          .hasMessageContaining("name cannot be empty");
+    }
+
+    @Test
+    void when_emptyBrand_then_throwException() {
+      assertThatThrownBy(() -> new Product(new EntityId(UUID.randomUUID()), "Product", "", category, "#FFFFFF"))
+          .isInstanceOf(ProductValidationException.class)
+          .hasMessageContaining("brand cannot be empty");
+    }
+
+    @Test
+    void when_invalidColorHex_then_throwException() {
+      assertThatThrownBy(() -> new Product(new EntityId(UUID.randomUUID()), "Product", "Brand", category, "INVALID"))
+          .isInstanceOf(ProductValidationException.class)
+          .hasMessageContaining("Invalid color hex format");
+    }
   }
 
-  @Test
-  void testRemoveReview() {
-    // Añadir reseñas
-    product.addReview(review1);
-    product.addReview(review2);
+  @Nested
+  class GetAverageRating {
 
-    // Eliminar una reseña
-    product.removeReview(review1);
+    @Test
+    void when_noReviews_then_returnZero() {
+      assertThat(target.getAverageRating()).isZero();
+    }
 
-    // Verificar que la reseña ha sido eliminada correctamente
-    assertEquals(1, product.getReviews().size(), "El número de reseñas debería ser 1 después de eliminar");
-    assertFalse(product.getReviews().contains(review1), "La reseña eliminada sigue estando en la lista");
+    @Test
+    void when_hasReviews_then_calculateAverage() {
+      target.addReview(review1);
+      target.addReview(review2);
+      target.addReview(review3);
+
+      assertThat(target.getAverageRating()).isEqualTo(4);
+    }
   }
 
-  @Test
-  void testCalculateAverageRating() {
-    // Añadir varias reseñas
-    product.addReview(review1);  // 4 estrellas
-    product.addReview(review2);  // 5 estrellas
-    product.addReview(review3);  // 3 estrellas
+  @Nested
+  class AddReview {
 
-    // Calcular el promedio de calificación esperado
-    int expectedAverage = (4 + 5 + 3) / 3; // 4
-    assertEquals(expectedAverage, product.getAverageRating(), "El promedio de calificación no es el esperado");
+    @Test
+    void when_validReview_then_addToList() {
+      target.addReview(review1);
+
+      assertThat(target.getReviews()).hasSize(1);
+      assertThat(target.getReviews()).contains(review1);
+    }
+
+    @Test
+    void when_duplicateReview_then_addOnlyOnce() {
+      target.addReview(review1);
+      target.addReview(review1);
+
+      assertThat(target.getReviews()).hasSize(1);
+    }
+
+    @Test
+    void when_nullReview_then_throwException() {
+      assertThatThrownBy(() -> target.addReview(null))
+          .isInstanceOf(ProductValidationException.class)
+          .hasMessageContaining("Review cannot be null");
+    }
   }
 
-  @Test
-  void testProductInitialization() {
-    // Verificar que los atributos del producto se inicializan correctamente
-    assertEquals("Producto de prueba", product.getName(), "El nombre del producto no es correcto");
-    assertEquals("Marca de prueba", product.getBrand(), "La marca del producto no es correcta");
-    assertEquals("#FFFFFF", product.getColorHex(), "El color del producto no es correcto");
-    assertEquals(0, product.getAverageRating(), "El promedio de calificación inicial debería ser 0");
+  @Nested
+  class RemoveReview {
+
+    @Test
+    void when_existingReview_then_removeFromList() {
+      target.addReview(review1);
+      target.addReview(review2);
+
+      target.removeReview(review1);
+
+      assertThat(target.getReviews()).hasSize(1);
+      assertThat(target.getReviews()).doesNotContain(review1);
+      assertThat(target.getReviews()).contains(review2);
+    }
+
+    @Test
+    void when_nonExistingReview_then_doNothing() {
+      target.addReview(review1);
+
+      target.removeReview(review2);
+
+      assertThat(target.getReviews()).hasSize(1);
+      assertThat(target.getReviews()).contains(review1);
+    }
+
+    @Test
+    void when_removeReview_then_updateAverage() {
+      target.addReview(review1);
+      target.addReview(review2);
+      target.addReview(review3);
+
+      target.removeReview(review1);
+
+      assertThat(target.getAverageRating()).isEqualTo(4);
+    }
   }
 
-  @Test
-  void testAddReviewTwice() {
-    // Añadir la misma reseña dos veces
-    product.addReview(review1);
-    product.addReview(review1);  // No debería añadirse dos veces
+  @Nested
+  class UpdateDetails {
 
-    // Verificar que la reseña solo aparece una vez
-    assertEquals(1, product.getReviews().size(), "La reseña no debería repetirse");
-    assertTrue(product.getReviews().contains(review1), "La reseña debería estar en la lista");
+    @Test
+    void when_validParameters_then_updateFields() {
+      final String newName = "New Name";
+      final String newBrand = "New Brand";
+      final Category newCategory = new Category(new EntityId(UUID.randomUUID()), "New Category");
+      final String newColorHex = "#000000";
+
+      target.updateDetails(newName, newBrand, newCategory, newColorHex);
+
+      assertThat(target.getName()).isEqualTo(newName);
+      assertThat(target.getBrand()).isEqualTo(newBrand);
+      assertThat(target.getCategory()).isEqualTo(newCategory);
+      assertThat(target.getColorHex()).isEqualTo(newColorHex);
+    }
+
+    @Test
+    void when_invalidParameters_then_throwException() {
+      assertThatThrownBy(() -> target.updateDetails("", "Brand", category, "#FFFFFF"))
+          .isInstanceOf(ProductValidationException.class);
+    }
   }
 
-  @Test
-  void testEmptyProductHasZeroAverageRating() {
-    // Crear un producto vacío sin reseñas
-    Product emptyProduct = new Product(
-        new EntityId(UUID.randomUUID()),
-        "Producto vacío",
-        "Marca vacía",
-        new Category(new EntityId(UUID.randomUUID()), "Categoría vacía"),
-        "#000000"
-    );
+  @Nested
+  class Equals {
 
-    // Verificar que el promedio de calificación es 0
-    assertEquals(0, emptyProduct.getAverageRating(), "El promedio de calificación de un producto vacío debería ser 0");
+    @Test
+    void when_sameId_then_equal() {
+      final Product sameIdProduct = new Product(target.getId(), "Different Name", "Different Brand", category, "#000000");
+
+      assertThat(target.equals(sameIdProduct)).isTrue();
+    }
+
+    @Test
+    void when_differentId_then_notEqual() {
+      final Product differentIdProduct = new Product(new EntityId(UUID.randomUUID()), "Same Name", "Same Brand", category, "#FFFFFF");
+
+      assertThat(target.equals(differentIdProduct)).isFalse();
+    }
+
+    @Test
+    void when_nullObject_then_notEqual() {
+      assertNotNull(target);
+    }
+
+    @Test
+    void when_equalObjects_then_equal() {
+      Product product1 = new Product(new EntityId(UUID.randomUUID()), "Product", "Brand", category, "#FFFFFF");
+      Product product2 = new Product(product1.getId(), "Product", "Brand", category, "#FFFFFF");
+
+      assertThat(product1).isEqualTo(product2);
+    }
   }
 
-  @Test
-  void testRemoveReviewUpdatesAverageRating() {
-    // Añadir reseñas
-    product.addReview(review1);  // 4 estrellas
-    product.addReview(review2);  // 5 estrellas
-    product.addReview(review3);  // 3 estrellas
+  @Nested
+  class HashCode {
 
-    // Eliminar una reseña y verificar el nuevo promedio
-    product.removeReview(review1);  // 4 estrellas
-    int expectedAverageAfterRemoval = (5 + 3) / 2; // 4
-    assertEquals(expectedAverageAfterRemoval, product.getAverageRating(), "El promedio de calificación no se actualizó correctamente");
+    @Test
+    void when_sameId_then_sameHashCode() {
+      final Product sameIdProduct = new Product(target.getId(), "Different Name", "Different Brand", category, "#000000");
+
+      assertThat(target).hasSameHashCodeAs(sameIdProduct);
+    }
+
+    @Test
+    void when_differentId_then_differentHashCode() {
+      final Product differentIdProduct = new Product(new EntityId(UUID.randomUUID()), "Same Name", "Same Brand", category, "#FFFFFF");
+
+      assertThat(target.hashCode()).isNotEqualTo(differentIdProduct.hashCode());
+    }
   }
-
-  @Test
-  void when_removeReviewThatDoesNotExist_then_doNothing() {
-    // Crear una review que no ha sido añadida
-    Review nonExistentReview = new Review(new EntityId(UUID.randomUUID()), new EntityId(UUID.randomUUID()), product, 4, "No existe");
-
-    // Intentar eliminarla
-    product.removeReview(nonExistentReview);
-
-    // Verificar que la lista de reseñas sigue vacía
-    assertTrue(product.getReviews().isEmpty());
-  }
-
-  @Test
-  void when_noReviews_then_averageRatingIsZero() {
-    assertEquals(0, product.getAverageRating(), "El promedio debería ser 0 cuando no hay reseñas");
-  }
-
-  @Test
-  void testHashCode() {
-    Product sameProduct = new Product(product.getId(), product.getName(), product.getBrand(), product.getCategory(), product.getColorHex());
-    assertEquals(product.hashCode(), sameProduct.hashCode(), "El hashCode debería ser igual para productos con el mismo ID");
-  }
-
 }

@@ -19,11 +19,11 @@ public class ProductUserRelation {
   @Setter
   private EntityId reviewId;
 
-  public ProductUserRelation(@NonNull EntityId id, @NonNull EntityId productId, @NonNull EntityId userId) {
+  public ProductUserRelation(@NonNull EntityId id, @NonNull EntityId productId, @NonNull EntityId userId, EntityId reviewId) {
     this.id = id;
     this.productId = productId;
     this.userId = userId;
-    this.reviewId = null;
+    this.reviewId = reviewId;
   }
 
   @Override

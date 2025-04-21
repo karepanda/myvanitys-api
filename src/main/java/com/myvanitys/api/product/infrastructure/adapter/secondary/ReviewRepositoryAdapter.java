@@ -1,99 +1,190 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.port.secondary.ReviewRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
+import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
+import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaReviewRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.AllArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Adapter implementation of the ReviewRepository port from the domain This adapter connects the domain with the JPA persistence
- * infrastructure
+ * Adapter implementation of the ReviewRepository port from the domain. This adapter connects the domain with the JPA persistence
+ * infrastructure.
  */
 @Component
+@AllArgsConstructor
 public class ReviewRepositoryAdapter implements ReviewRepository {
 
   private final JpaReviewRepository jpaReviewRepository;
 
   private final JpaProductUserRepository jpaProductUserRepository;
 
+  private final JpaProductRepository jpaProductRepository;
+
   private final ReviewMapper reviewMapper;
 
-  @Autowired
-  public ReviewRepositoryAdapter(
-      JpaReviewRepository jpaReviewRepository,
-      JpaProductUserRepository jpaProductUserRepository,
-      ReviewMapper reviewMapper) {
-    this.jpaReviewRepository = jpaReviewRepository;
-    this.jpaProductUserRepository = jpaProductUserRepository;
-    this.reviewMapper = reviewMapper;
-  }
+  private final ProductMapper productMapper;
 
   @Override
   @Transactional
   public Review save(Review review) {
-    // Buscar la relación producto-usuario existente
-    ProductUserEntity productUserEntity = jpaProductUserRepository.findByProductIdAndUserId(
-        review.getProduct().getId().getValue(),
-        review.getUserId().getValue());
+    try {
+      // Get IDs
+      UUID productId = review.getProduct().getId().getValue();
+      UUID userId = review.getUserId().getValue();
 
-    // Convertir la review a entidad
-    ReviewEntity entity = reviewMapper.toEntity(review);
+      // Find existing product-user relationship
+      Optional<ProductUserEntity> productUserEntityOpt = jpaProductUserRepository.findByProductIdAndUserId(
+          productId, userId);
 
-    // Asignar la relación producto-usuario a la entidad review
-    entity.setProductUserEntity(productUserEntity);
+      // Check if the product-user relationship exists
+      if (productUserEntityOpt.isEmpty()) {
+        throw new EntityNotFoundException("Product-User relation not found for product id: "
+            + productId + " and user id: " + userId);
+      }
 
-    // Guardar la entidad
-    ReviewEntity savedEntity = jpaReviewRepository.save(entity);
+      // Convert review to entity
+      ReviewEntity entity = reviewMapper.toEntity(review);
 
-    // Convertir de vuelta al dominio
-    return reviewMapper.toDomain(savedEntity);
+      // Set timestamps
+      Instant now = Instant.now();
+      if (entity.getCreatedAt() == null) {
+        entity.setCreatedAt(now);
+      }
+      entity.setUpdatedAt(now);
+
+      // Assign product-user relationship to review entity
+      entity.setProductUserEntity(productUserEntityOpt.get());
+
+      // Save entity
+      ReviewEntity savedEntity = jpaReviewRepository.save(entity);
+
+      // Retrieve product from domain
+      Product product = review.getProduct();
+
+      // Convert back to domain using the existing product
+      return reviewMapper.toDomain(savedEntity, product);
+    } catch (DataAccessException e) {
+      throw new DatabaseException("Error saving review", e);
+    }
   }
 
   @Override
   public Optional<Review> findById(EntityId reviewId) {
-    UUID uuid = reviewId.getValue();
-    return jpaReviewRepository.findById(uuid)
-        .map(reviewMapper::toDomain);
+    try {
+      UUID uuid = reviewId.getValue();
+      Optional<ReviewEntity> reviewEntityOpt = jpaReviewRepository.findById(uuid);
+
+      if (reviewEntityOpt.isEmpty()) {
+        return Optional.empty();
+      }
+
+      ReviewEntity reviewEntity = reviewEntityOpt.get();
+      UUID productId = reviewEntity.getProductUserEntity().getProductId();
+
+      // Get the product
+      return jpaProductRepository.findById(productId)
+          .map(productEntity -> {
+            Product product = productMapper.toDomain(productEntity);
+            return reviewMapper.toDomain(reviewEntity, product);
+          });
+    } catch (DataAccessException e) {
+      throw new DatabaseException("Error finding review", e);
+    }
   }
 
   @Override
   @Transactional
   public void deleteById(EntityId reviewId) {
-    UUID uuid = reviewId.getValue();
-    jpaReviewRepository.deleteById(uuid);
+    try {
+      UUID uuid = reviewId.getValue();
+      jpaReviewRepository.deleteById(uuid);
+    } catch (DataAccessException e) {
+      throw new DatabaseException("Error deleting review", e);
+    }
   }
 
   @Override
   public List<Review> findByProductId(EntityId productId) {
-    UUID uuid = productId.getValue();
-    return jpaReviewRepository.findByProductUserEntityProductId(uuid).stream()
-        .map(reviewMapper::toDomain)
-        .toList();
+    try {
+      UUID uuid = productId.getValue();
+      List<ReviewEntity> reviewEntities = jpaReviewRepository.findByProductUserEntityProductId(uuid);
+
+      if (reviewEntities.isEmpty()) {
+        return List.of();
+      }
+
+      // Retrieve product once
+      Optional<Product> productOpt = jpaProductRepository.findById(uuid)
+          .map(productMapper::toDomain);
+
+      if (productOpt.isEmpty()) {
+        throw new EntityNotFoundException("Product not found with id: " + uuid);
+      }
+
+      Product product = productOpt.get();
+
+      // Convert all reviews
+      return reviewEntities.stream()
+          .map(entity -> reviewMapper.toDomain(entity, product))
+          .toList();
+    } catch (DataAccessException e) {
+      throw new DatabaseException("Error finding reviews by product", e);
+    }
   }
 
   @Override
   public List<Review> findByUserId(EntityId userId) {
-    UUID uuid = userId.getValue();
-    return jpaReviewRepository.findByProductUserEntityUserId(uuid).stream()
-        .map(reviewMapper::toDomain)
-        .toList();
+    try {
+      UUID uuid = userId.getValue();
+      List<ReviewEntity> reviewEntities = jpaReviewRepository.findByProductUserEntityUserId(uuid);
+
+      if (reviewEntities.isEmpty()) {
+        return List.of();
+      }
+
+      // For each review, fetch the corresponding product
+      return reviewEntities.stream()
+          .map(entity -> {
+            UUID productId = entity.getProductUserEntity().getProductId();
+            return jpaProductRepository.findById(productId)
+                .map(productEntity -> {
+                  Product product = productMapper.toDomain(productEntity);
+                  return reviewMapper.toDomain(entity, product);
+                })
+                .orElseThrow(() -> new EntityNotFoundException(
+                    "Product not found for review: " + entity.getReviewId()));
+          })
+          .toList();
+    } catch (DataAccessException e) {
+      throw new DatabaseException("Error finding reviews by user", e);
+    }
   }
 
   @Override
   public boolean existsByReviewIdAndUserId(EntityId reviewId, EntityId userId) {
-    UUID reviewUuid = reviewId.getValue();
-    UUID userUuid = userId.getValue();
-    return jpaReviewRepository.existsByReviewIdAndProductUserEntityUserId(reviewUuid, userUuid);
+    try {
+      UUID reviewUuid = reviewId.getValue();
+      UUID userUuid = userId.getValue();
+      return jpaReviewRepository.existsByReviewIdAndProductUserEntityUserId(reviewUuid, userUuid);
+    } catch (DataAccessException e) {
+      throw new DatabaseException("Error checking if review exists", e);
+    }
   }
 }

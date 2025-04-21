@@ -1,10 +1,14 @@
 package com.myvanitys.api.product.infrastructure.persistence.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -14,35 +18,29 @@ import org.springframework.stereotype.Repository;
 public interface JpaProductUserRepository extends JpaRepository<ProductUserEntity, UUID> {
 
   /**
-   * Find all product-user relationships for a user
-   *
-   * @param userId the user ID
-   * @return list of product-user relationships
+   * Find product-user relationships by product ID
+   */
+  List<ProductUserEntity> findByProductId(UUID productId);
+
+  /**
+   * Find product-user relationships by user ID
    */
   List<ProductUserEntity> findByUserId(UUID userId);
 
   /**
-   * Delete all relationships for a product
-   *
-   * @param productId the product ID
+   * Find a specific relationship between a product and a user
    */
-  void deleteByProductId(UUID productId);
+  Optional<ProductUserEntity> findByProductIdAndUserId(UUID productId, UUID userId);
 
   /**
    * Check if a relationship exists between a product and a user
-   *
-   * @param productId the product ID
-   * @param userId the user ID
-   * @return true if the relationship exists
    */
   boolean existsByProductIdAndUserId(UUID productId, UUID userId);
 
   /**
-   * Find a specific product-user relationship
-   *
-   * @param productId the product ID
-   * @param userId the user ID
-   * @return the product-user entity if found
+   * Delete all relationships for a product
    */
-  ProductUserEntity findByProductIdAndUserId(UUID productId, UUID userId);
+  @Modifying
+  @Query("DELETE FROM ProductUserEntity pu WHERE pu.productId = :productId")
+  void deleteByProductId(@Param("productId") UUID productId);
 }

@@ -1,9 +1,9 @@
 package com.myvanitys.api.product.domain.valueobject;
 
-import lombok.Getter;
-
 import java.util.Objects;
 import java.util.UUID;
+
+import lombok.Getter;
 
 @Getter
 public final class EntityId {
@@ -19,7 +19,7 @@ public final class EntityId {
     this.value = Objects.requireNonNull(value, "Id value cannot be null");
   }
 
-    @Override
+  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;

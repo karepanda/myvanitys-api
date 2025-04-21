@@ -1,6 +1,7 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
@@ -29,13 +30,17 @@ public class ProductUserRepositoryAdapter implements ProductUserRepository {
     UUID productUuid = productId.getValue();
     UUID userUuid = userId.getValue();
 
-    ProductUserEntity entity = ProductUserEntity.builder()
-        .productUserId(UUID.randomUUID())
-        .productId(productUuid)
-        .userId(userUuid)
-        .build();
+    // First check if this relationship already exists
+    if (!jpaProductUserRepository.existsByProductIdAndUserId(productUuid, userUuid)) {
 
-    jpaProductUserRepository.save(entity);
+      ProductUserEntity entity = ProductUserEntity.builder()
+          .productUserId(UUID.randomUUID())
+          .productId(productUuid)
+          .userId(userUuid)
+          .build();
+
+      jpaProductUserRepository.save(entity);
+    }
   }
 
   @Override
@@ -69,5 +74,20 @@ public class ProductUserRepositoryAdapter implements ProductUserRepository {
         .map(ProductUserEntity::getProductId)
         .map(EntityId::new)
         .toList();
+  }
+
+  @Override
+  public List<ProductUserEntity> findByProductId(UUID productId) {
+    return jpaProductUserRepository.findByProductId(productId);
+  }
+
+  @Override
+  public List<ProductUserEntity> findByUserId(UUID userId) {
+    return jpaProductUserRepository.findByUserId(userId);
+  }
+
+  @Override
+  public Optional<ProductUserEntity> findByProductIdAndUserId(UUID productId, UUID userId) {
+    return jpaProductUserRepository.findByProductIdAndUserId(productId, userId);
   }
 }
