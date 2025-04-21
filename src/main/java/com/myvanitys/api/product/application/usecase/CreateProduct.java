@@ -1,30 +1,54 @@
 package com.myvanitys.api.product.application.usecase;
 
+import java.util.UUID;
+
+import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
+import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
+import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
+import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @AllArgsConstructor
 public class CreateProduct implements CreateProductUseCase {
 
-  protected JpaProductRepository productRepository;
+  protected ProductRepository productRepository;
 
-  protected JpaProductRepository reviewRepository;
+  protected CategoryRepository categoryRepository;
 
-  protected JpaProductUserRepository productUserRepository;
+  protected ProductUserRepository productUserRepository;
 
   @Override
+  @Transactional
   public Product execute(CreateProductCommand command) {
 
-    //        productRepository.save();
-    //        productUserRepository.save();
-    //        reviewRepository.save();
+    // Load category
+    Category category = categoryRepository.findById(command.categoryId())
+        .orElseThrow(() -> ValidationException.withError("categoryId",
+            "Category not found with ID: " + command.categoryId()));
 
-    return null;
+    //  Create product
+    EntityId productId = new EntityId(UUID.randomUUID());
+    Product product = new Product(
+        productId,
+        command.name(),
+        command.brand(),
+        category,
+        command.colorHex()
+    );
+
+    Product savedProduct = productRepository.save(product);
+
+    // Associate the product with the user who creates it
+    productUserRepository.saveProductUserRelationship(savedProduct.getId(), command.userId());
+
+    return savedProduct;
   }
 }

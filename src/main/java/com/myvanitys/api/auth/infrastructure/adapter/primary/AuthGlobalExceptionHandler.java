@@ -1,4 +1,4 @@
-package com.myvanitys.api.auth.infrastructure.adapter.primary.exception;
+package com.myvanitys.api.auth.infrastructure.adapter.primary;
 
 import java.net.URI;
 
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
-public class GlobalExceptionHandler {
+public class AuthGlobalExceptionHandler {
 
   private static final URI VALIDATION_ERROR_TYPE = URI.create("https://api.myvanitys.com/problems/validation-error");
 

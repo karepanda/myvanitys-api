@@ -3,6 +3,7 @@ package com.myvanitys.api.product.domain.model;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.Getter;
 import lombok.NonNull;
@@ -27,6 +28,7 @@ public class Review {
    */
   public Review(EntityId id, @NonNull EntityId userId, @NonNull Product product, int rating, @NonNull String comment) {
     validateRating(rating);
+    validateComment(comment);
 
     this.id = id;
     this.userId = userId;
@@ -37,12 +39,6 @@ public class Review {
 
   /**
    * Factory method to create a new review
-   *
-   * @param userId The user ID
-   * @param product The product
-   * @param rating The rating
-   * @param comment The comment
-   * @return A new Review instance
    */
   public static Review create(
       @NonNull EntityId userId,
@@ -61,13 +57,6 @@ public class Review {
 
   /**
    * Factory method to create a review from a product-user relation
-   *
-   * @param id The review ID
-   * @param productUserRelation The existing product-user relation
-   * @param rating The rating
-   * @param comment The comment
-   * @param product The product associated with the review
-   * @return A new Review instance
    */
   public static Review createFromRelation(
       EntityId id,
@@ -90,6 +79,7 @@ public class Review {
    */
   public void updateDetails(int rating, @NonNull String comment) {
     validateRating(rating);
+    validateComment(comment);
 
     this.rating = rating;
     this.comment = comment;
@@ -100,7 +90,16 @@ public class Review {
    */
   private void validateRating(int rating) {
     if (rating < 1 || rating > 5) {
-      throw new IllegalArgumentException("Rating must be between 1 and 5");
+      throw ValidationException.withError("rating", "Rating must be between 1 and 5");
+    }
+  }
+
+  /**
+   * Validates that the comment is not empty
+   */
+  private void validateComment(String comment) {
+    if (comment == null || comment.isBlank()) {
+      throw ValidationException.withError("comment", "Comment cannot be empty");
     }
   }
 
