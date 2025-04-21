@@ -3,6 +3,7 @@ package com.myvanitys.api.product.infrastructure.adapter.primary;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -25,6 +26,7 @@ import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
+import com.myvanitys.api.product.infrastructure.adapter.primary.service.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -56,6 +58,14 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     public ProductResponseMapper productResponseMapper() {
       return mock(ProductResponseMapper.class);
     }
+
+    @Bean
+    @Primary
+    public TokenService tokenService() {
+      return mock(TokenService.class);
+    }
+
+
   }
 
   @BeforeEach
@@ -71,6 +81,9 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
   @Autowired
   private ProductResponseMapper productResponseMapper;
+
+  @Autowired
+  private TokenService tokenService;
 
   // Constants for required headers
   private static final String ACCEPT_LANGUAGE = "en-US";
@@ -118,6 +131,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     // Instead of creating the query object here, let's just mock the behavior
     when(findProductUserUseCase.query(any(FindProductUserQuery.class))).thenReturn(domainProducts);
     when(productResponseMapper.toResponseList(domainProducts)).thenReturn(responseProducts);
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
@@ -125,7 +139,9 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .header("X-Request-ID", requestId.toString())
             .header("X-Flow-ID", flowId.toString())
             .header("Accept-Language", acceptLanguage)
-            .header("User-Agent", userAgent))
+            .header("User-Agent", userAgent)
+            .header("Authorization", "Bearer 4/P7q7W91"))
+
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(2)))
         .andExpect(jsonPath("$[0].name").value("Product 1"))
@@ -191,6 +207,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     // Configure mock to throw exception
     when(findProductUserUseCase.query(any(FindProductUserQuery.class)))
         .thenThrow(new RuntimeException("Internal service error"));
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
@@ -198,7 +215,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .header("X-Request-ID", requestId.toString())
             .header("X-Flow-ID", flowId.toString())
             .header("Accept-Language", ACCEPT_LANGUAGE)
-            .header("User-Agent", USER_AGENT))
+            .header("User-Agent", USER_AGENT)
+            .header("Authorization", "Bearer 4/P7q7W91"))
         .andExpect(status().isInternalServerError());
   }
 
@@ -214,6 +232,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
         .thenReturn(Collections.emptyList());
     when(productResponseMapper.toResponseList(anyList()))
         .thenReturn(Collections.emptyList());
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
@@ -221,7 +240,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .header("X-Request-ID", requestId.toString())
             .header("X-Flow-ID", flowId.toString())
             .header("Accept-Language", ACCEPT_LANGUAGE)
-            .header("User-Agent", USER_AGENT))
+            .header("User-Agent", USER_AGENT)
+            .header("Authorization", "Bearer 4/P7q7W91"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(0)));
   }
