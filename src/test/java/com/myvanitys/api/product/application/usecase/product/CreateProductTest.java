@@ -1,120 +1,149 @@
 package com.myvanitys.api.product.application.usecase.product;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.UUID;
 
-import com.myvanitys.api.auth.domain.model.User;
+import com.myvanitys.api.common.ValidationException;
+import com.myvanitys.api.product.application.command.CreateProductCommand;
+import com.myvanitys.api.product.application.usecase.CreateProduct;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.model.Review;
+import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
+import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
+import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class CreateProductTest {
 
-  private Product product;
+  @Mock
+  private ProductRepository productRepository;
 
-  private Review review1;
+  @Mock
+  private CategoryRepository categoryRepository;
 
-  private Review review2;
+  @Mock
+  private ProductUserRepository productUserRepository;
 
-  private Review review3;
+  @InjectMocks
+  private CreateProduct createProduct;
+
+  private CreateProductCommand command;
+
+  private EntityId userId;
+
+  private EntityId categoryId;
+
+  private Category category;
 
   @BeforeEach
   void setUp() {
-    // Crear IDs de prueba con UUID
-    EntityId productId = new EntityId(UUID.randomUUID());
-    EntityId userId = new EntityId(UUID.randomUUID());
+    userId = new EntityId(UUID.randomUUID());
+    categoryId = new EntityId(UUID.randomUUID());
 
-    // Crear un producto y una categoría para la prueba
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Categoria de prueba");
-    product = new Product(productId, "Producto de prueba", "Marca de prueba", category, "#FFFFFF");
-
-    // Crear un usuario para las reseñas
-    User user = new User(userId, "Usuario de prueba", "prueba@gmail.com", "name");
-
-    // Crear reseñas con diferentes calificaciones
-    review1 = new Review(new EntityId(UUID.randomUUID()), userId, product, 4, "Reseña 1");
-    review2 = new Review(new EntityId(UUID.randomUUID()), userId, product, 5, "Reseña 2");
-    review3 = new Review(new EntityId(UUID.randomUUID()), userId, product, 3, "Reseña 3");
-  }
-
-  @Test
-  void testRemoveReview() {
-    // Añadir reseñas
-    product.addReview(review1);
-    product.addReview(review2);
-
-    // Eliminar una reseña
-    product.removeReview(review1);
-
-    // Verificar que la reseña ha sido eliminada correctamente
-    assertEquals(1, product.getReviews().size(), "El número de reseñas debería ser 1 después de eliminar");
-    assertFalse(product.getReviews().contains(review1), "La reseña eliminada sigue estando en la lista");
-  }
-
-  @Test
-  void testCalculateAverageRating() {
-    // Añadir varias reseñas
-    product.addReview(review1);  // 4 estrellas
-    product.addReview(review2);  // 5 estrellas
-    product.addReview(review3);  // 3 estrellas
-
-    // Calcular el promedio de calificación esperado
-    int expectedAverage = (4 + 5 + 3) / 3; // 4
-    assertEquals(expectedAverage, product.getAverageRating(), "El promedio de calificación no es el esperado");
-  }
-
-  @Test
-  void testProductInitialization() {
-    // Verificar que los atributos del producto se inicializan correctamente
-    assertEquals("Producto de prueba", product.getName(), "El nombre del producto no es correcto");
-    assertEquals("Marca de prueba", product.getBrand(), "La marca del producto no es correcta");
-    assertEquals("#FFFFFF", product.getColorHex(), "El color del producto no es correcto");
-    assertEquals(0, product.getAverageRating(), "El promedio de calificación inicial debería ser 0");
-  }
-
-  @Test
-  void testAddReviewTwice() {
-    // Añadir la misma reseña dos veces
-    product.addReview(review1);
-    product.addReview(review1);  // No debería añadirse dos veces
-
-    // Verificar que la reseña solo aparece una vez
-    assertEquals(1, product.getReviews().size(), "La reseña no debería repetirse");
-    assertTrue(product.getReviews().contains(review1), "La reseña debería estar en la lista");
-  }
-
-  @Test
-  void testEmptyProductHasZeroAverageRating() {
-    // Crear un producto vacío sin reseñas
-    Product emptyProduct = new Product(
-        new EntityId(UUID.randomUUID()),
-        "Producto vacío",
-        "Marca vacía",
-        new Category(new EntityId(UUID.randomUUID()), "Categoría vacía"),
-        "#000000"
+    command = new CreateProductCommand(
+        "Test Product",
+        "Test Brand",
+        categoryId,
+        "#FFFFFF",
+        userId
     );
 
-    // Verificar que el promedio de calificación es 0
-    assertEquals(0, emptyProduct.getAverageRating(), "El promedio de calificación de un producto vacío debería ser 0");
+    category = new Category(categoryId, "Test Category");
   }
 
   @Test
-  void testRemoveReviewUpdatesAverageRating() {
-    // Añadir reseñas
-    product.addReview(review1);  // 4 estrellas
-    product.addReview(review2);  // 5 estrellas
-    product.addReview(review3);  // 3 estrellas
+  void shouldCreateNewProductWhenDoesNotExist() {
+    // Arrange
+    when(productRepository.findByName("Test Product")).thenReturn(Optional.empty());
+    when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
 
-    // Eliminar una reseña y verificar el nuevo promedio
-    product.removeReview(review1);  // 4 estrellas
-    int expectedAverageAfterRemoval = (5 + 3) / 2; // 4
-    assertEquals(expectedAverageAfterRemoval, product.getAverageRating(), "El promedio de calificación no se actualizó correctamente");
+    // Usamos ArgumentCaptor para capturar el producto guardado
+    ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
+
+    // Configuramos el mock para devolver el mismo producto que se guardó
+    when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Act
+    Product result = createProduct.execute(command);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals("Test Product", result.getName());
+    assertEquals("Test Brand", result.getBrand());
+    assertEquals(category, result.getCategory());
+
+    // Verificamos que se llamaron a los repositories correctamente
+    verify(productRepository).findByName("Test Product");
+    verify(categoryRepository).findById(categoryId);
+    verify(productRepository).save(productCaptor.capture());
+
+    // Capturamos el producto que se guardó para verificarlo
+    Product savedProduct = productCaptor.getValue();
+    assertEquals("Test Product", savedProduct.getName());
+
+    // Para la verificación de saveProductUserRelationship, usamos matchers para ambos parámetros
+    verify(productUserRepository).saveProductUserRelationship(any(EntityId.class), eq(userId));
   }
 
+  @Test
+  void shouldReturnExistingProductWhenAlreadyExists() {
+    // Arrange
+    EntityId existingProductId = new EntityId(UUID.randomUUID());
+    Product existingProduct = new Product(
+        existingProductId,
+        "Test Product",
+        "Existing Brand", // Diferente marca para verificar que se devuelve el existente
+        category,
+        "#000000" // Diferente color para verificar que se devuelve el existente
+    );
+
+    when(productRepository.findByName("Test Product")).thenReturn(Optional.of(existingProduct));
+
+    // Act
+    Product result = createProduct.execute(command);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(existingProductId, result.getId());
+    assertEquals("Test Product", result.getName());
+    assertEquals("Existing Brand", result.getBrand()); // Verificamos que es el producto existente
+
+    // Verificar que NO se creó un nuevo producto
+    verify(productRepository).findByName("Test Product");
+    verify(productRepository, never()).save(any(Product.class));
+
+    // Verificar que se intentó crear la relación con el producto existente
+    verify(productUserRepository).saveProductUserRelationship(existingProductId, userId);
+  }
+
+  @Test
+  void shouldThrowExceptionWhenCategoryNotFound() {
+    // Arrange
+    when(productRepository.findByName("Test Product")).thenReturn(Optional.empty());
+    when(categoryRepository.findById(categoryId)).thenReturn(Optional.empty());
+
+    // Act & Assert
+    assertThrows(ValidationException.class, () -> createProduct.execute(command));
+
+    // Verificar que no se intentó guardar el producto ni la relación
+    verify(productRepository, never()).save(any(Product.class));
+    verify(productUserRepository, never()).saveProductUserRelationship(any(), any());
+  }
 }

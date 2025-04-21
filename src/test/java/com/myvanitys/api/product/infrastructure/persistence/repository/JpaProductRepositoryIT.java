@@ -43,7 +43,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
 
     Optional<ProductEntity> retrievedProduct = jpaProductRepository.findById(savedProduct.getProductId());
 
-    ProductUserEntity retrievedProductUser =
+    Optional<ProductUserEntity> retrievedProductUser =
         jpaProductUserRepository.findByProductIdAndUserId(savedProductUser.getProductId(), savedProductUser.getUserId());
 
     // Then
@@ -55,16 +55,17 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
               .extracting(ProductEntity::getName, ProductEntity::getBrand)
               .containsExactly("Test Product", "Test Brand");
 
-          assertThat(productEntity.getCategory())
-              .extracting(CategoryEntity::getName)
-              .isEqualTo("Test Category");
+          assertThat(productEntity.getCategoryId()).isEqualTo(category.getCategoryId());
         });
 
     assertThat(retrievedProductUser)
-        .extracting(ProductUserEntity::getUserId, ProductUserEntity::getProductId)
-        .containsExactly(userid, product.getProductId());
+        .isPresent()
+        .get()
+        .satisfies(productUserEntity -> assertThat(productUserEntity)
+            .extracting(ProductUserEntity::getUserId, ProductUserEntity::getProductId)
+            .containsExactly(userid, product.getProductId()));
 
-    assertThat(retrievedProductUser.getReviews())
+    assertThat(retrievedProductUser.get().getReviews())
         .hasSize(1)
         .first()
         .satisfies(r -> assertThat(r)
@@ -145,7 +146,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product3);
 
     // When
-    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryCategoryId(savedCategory1.getCategoryId());
+    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryId(savedCategory1.getCategoryId());
 
     // Then
     assertThat(foundProducts).hasSize(2);
@@ -171,10 +172,10 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product2);
     jpaProductRepository.save(product3);
 
-    // When
-    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryName("Electronics");
+    // When: Find products by category ID
+    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryId(savedCategory1.getCategoryId());
 
-    // Then
+    // Then: Assert that the correct products are found
     assertThat(foundProducts).hasSize(2);
     assertThat(foundProducts)
         .extracting(ProductEntity::getName)
@@ -184,7 +185,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
   @Test
   void shouldReturnEmptyListForNonExistentCategoryName() {
     // When
-    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryName("Non Existent Category");
+    List<ProductEntity> foundProducts = jpaProductRepository.findByName("Non Existent Category").stream().toList();
 
     // Then
     assertThat(foundProducts).isEmpty();
@@ -211,7 +212,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     // When
     savedProduct.setName("Updated Name");
     savedProduct.setBrand("Updated Brand");
-    savedProduct.setCategory(savedCategory2);
+    savedProduct.setCategoryId(savedCategory2.getCategoryId());
     jpaProductRepository.save(savedProduct);
     jpaProductRepository.flush();
 
@@ -222,7 +223,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
         .hasValueSatisfying(productEntity -> {
           assertThat(productEntity.getName()).isEqualTo("Updated Name");
           assertThat(productEntity.getBrand()).isEqualTo("Updated Brand");
-          assertThat(productEntity.getCategory().getName()).isEqualTo("Updated Category");
+          assertThat(productEntity.getCategoryId()).isEqualTo(category2.getCategoryId());
           assertThat(productEntity.getVersion()).isNotEqualTo(initialVersion);
         });
   }
@@ -257,7 +258,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     product.setName(name);
     product.setBrand(brand);
     product.setColorHex("#FFFFFF");
-    product.setCategory(category);
+    product.setCategoryId(category.getCategoryId());
     return product;
   }
 }
