@@ -1,14 +1,18 @@
-# Usa una imagen base de OpenJDK 21
-FROM openjdk:21-jdk-slim as builder
+FROM eclipse-temurin:21-jre-alpine
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el JAR empaquetado desde el directorio target de tu proyecto local
-COPY boot/target/boot-0.0.1-SNAPSHOT.jar /app/myvanitys-api.jar
+# Copy the JAR file built by Maven
+COPY target/*.jar app.jar
 
-# Exponer el puerto en el que tu aplicación va a escuchar
+# Environment variables that can be overridden
+ENV DB_NAME=db
+ENV DB_USER=user
+ENV DB_PASSWORD=password
+ENV SPRING_PROFILES_ACTIVE=prod
+
+# Port to expose (change if your app uses a different port)
 EXPOSE 8080
 
-# Comando para ejecutar el JAR
-ENTRYPOINT ["java", "-jar", "myvanitys-api.jar"]
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
