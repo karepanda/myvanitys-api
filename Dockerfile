@@ -5,11 +5,15 @@ WORKDIR /app
 # Copy the JAR file built by Maven
 COPY target/*.jar app.jar
 
-# Environment variables that can be overridden
-ENV DB_NAME=db
-ENV DB_USER=user
-ENV DB_PASSWORD=password
+# Environment variables que se necesitan
 ENV SPRING_PROFILES_ACTIVE=prod
+# Variables adicionales requeridas
+ENV GOOGLE_CLIENT_ID=changeme
+ENV GOOGLE_CLIENT_SECRET=changeme
+ENV OAUTH_REDIRECT_URI=https://myvanitys.com/callback
+ENV JWT_SECRET=changeme
+# Las variables de PostgreSQL son proporcionadas automáticamente por Railway:
+# PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, DATABASE_URL
 
 # Port to expose (change if your app uses a different port)
 EXPOSE 8080
