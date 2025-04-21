@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class ProductMapper {
 
   /**
-   * Convierte de ProductEntity a Product del dominio. La categoría debe ser proporcionada externamente si es necesaria.
+   * Converts a ProductEntity to a domain Product. The category must be provided externally if needed.
    */
   public Product toDomain(ProductEntity productEntity, Category category) {
     if (productEntity == null) {
@@ -38,8 +38,8 @@ public class ProductMapper {
   }
 
   /**
-   * Sobrecarga para cuando no se dispone de la categoría. El objeto Product se creará sin categoría y será responsabilidad del código
-   * cliente asignarla posteriormente si es necesario.
+   * Overload for cases where the category is not available. The Product will be created without a category, and it is the client's
+   * responsibility to assign it later if needed.
    */
   public Product toDomain(ProductEntity productEntity) {
     if (productEntity == null) {
@@ -52,13 +52,13 @@ public class ProductMapper {
         id,
         productEntity.getName(),
         productEntity.getBrand(),
-        null, // Sin categoría
+        null, // No category
         productEntity.getColorHex()
     );
   }
 
   /**
-   * Convierte de Product a ProductEntity
+   * Converts a domain Product to a ProductEntity.
    */
   public ProductEntity toEntity(Product product) {
     if (product == null) {
@@ -79,7 +79,7 @@ public class ProductMapper {
   }
 
   /**
-   * Métodos para convertir listas
+   * Methods for converting lists.
    */
   public List<Product> toDomainList(List<ProductEntity> productEntities) {
     if (productEntities == null) {
@@ -106,7 +106,7 @@ public class ProductMapper {
   }
 
   /**
-   * Convierte un ProductEntity a Product con todas sus relaciones
+   * Converts a ProductEntity to a Product with all its relationships.
    */
   public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers, Category category) {
     Product product = toDomain(productEntity, category);
@@ -116,7 +116,7 @@ public class ProductMapper {
         ProductUserRelation relation = toProductUserRelation(pu);
         product.getUserRelations().add(relation);
 
-        // Reviews Mapping
+        // Reviews mapping
         if (pu.getReviews() != null && !pu.getReviews().isEmpty()) {
           for (ReviewEntity reviewEntity : pu.getReviews()) {
             Review review = toReview(reviewEntity, product);
@@ -130,14 +130,14 @@ public class ProductMapper {
   }
 
   /**
-   * Sobrecarga para cuando no se dispone de la categoría
+   * Overload for when the category is not available.
    */
   public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers) {
     return toDomainWithRelations(productEntity, productUsers, null);
   }
 
   /**
-   * Convierte de ProductUserEntity a ProductUserRelation
+   * Converts a ProductUserEntity to a ProductUserRelation.
    */
   public ProductUserRelation toProductUserRelation(ProductUserEntity productUserEntity) {
     if (productUserEntity == null) {
@@ -146,7 +146,7 @@ public class ProductMapper {
 
     EntityId reviewId = null;
     if (productUserEntity.getReviews() != null && !productUserEntity.getReviews().isEmpty()) {
-      // Si hay reviews, tomamos el ID de la primera
+      // If there are reviews, use the ID of the first one
       reviewId = new EntityId(productUserEntity.getReviews().get(0).getReviewId());
     }
 
@@ -159,7 +159,7 @@ public class ProductMapper {
   }
 
   /**
-   * Convierte de ReviewEntity a Review
+   * Converts a ReviewEntity to a domain Review.
    */
   public Review toReview(ReviewEntity reviewEntity, Product product) {
     if (reviewEntity == null || product == null) {
@@ -176,7 +176,7 @@ public class ProductMapper {
   }
 
   /**
-   * Convierte de Review a ReviewEntity
+   * Converts a domain Review to a ReviewEntity.
    */
   public ReviewEntity toReviewEntity(Review review, ProductUserEntity productUserEntity) {
     if (review == null || productUserEntity == null) {

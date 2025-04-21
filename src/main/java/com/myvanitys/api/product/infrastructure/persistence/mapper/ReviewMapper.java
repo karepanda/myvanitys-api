@@ -9,33 +9,33 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper para convertir entre Review del dominio y ReviewEntity de JPA
+ * Mapper to convert between domain Review and JPA ReviewEntity.
  */
 @Component
 public class ReviewMapper {
 
   /**
-   * Convierte una ReviewEntity a un objeto Review del dominio
+   * Converts a ReviewEntity to a domain Review object.
    *
-   * @param entity La entidad a convertir
-   * @param product El producto asociado a la review
-   * @return El objeto de dominio Review
+   * @param entity The entity to convert
+   * @param product The product associated with the review
+   * @return The domain Review object
    */
   public Review toDomain(ReviewEntity entity, Product product) {
     if (entity == null) {
       return null;
     }
 
-    // Validar que el producto no sea nulo
+    // Ensure the product is not null
     if (product == null) {
       throw new IllegalArgumentException("Product cannot be null for review conversion");
     }
 
-    // Obtener los IDs necesarios
+    // Extract necessary IDs
     EntityId reviewId = new EntityId(entity.getReviewId());
     EntityId userId = new EntityId(entity.getProductUserEntity().getUserId());
 
-    // Crear y retornar el objeto de dominio
+    // Build and return the domain object
     return new Review(
         reviewId,
         userId,
@@ -46,26 +46,26 @@ public class ReviewMapper {
   }
 
   /**
-   * Convierte un objeto Review del dominio a una ReviewEntity
+   * Converts a domain Review object to a ReviewEntity.
    *
-   * @param domain El objeto de dominio a convertir
-   * @return La entidad ReviewEntity
+   * @param domain The domain object to convert
+   * @return The corresponding ReviewEntity
    */
   public ReviewEntity toEntity(Review domain) {
     if (domain == null) {
       return null;
     }
 
-    // Obtener el UUID de la review
+    // Extract the UUID of the review
     UUID reviewId = domain.getId() != null ? domain.getId().getValue() : null;
 
-    // Crear la entidad
+    // Build the entity
     return ReviewEntity.builder()
         .reviewId(reviewId)
         .rating(domain.getRating())
         .comment(domain.getComment())
-        // No establecemos la relación productUserEntity aquí
-        // porque se maneja en el adaptador
+        // The productUserEntity relation is not set here
+        // since it is handled in the adapter layer
         .build();
   }
 }

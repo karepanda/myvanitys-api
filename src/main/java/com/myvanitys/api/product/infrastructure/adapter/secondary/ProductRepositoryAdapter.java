@@ -42,16 +42,16 @@ public class ProductRepositoryAdapter implements ProductRepository {
   @Override
   public Product save(Product product) {
     try {
-      // Verificar que la categoría existe antes de guardar el producto
+      // Check if the category exists before saving the product
       UUID categoryId = product.getCategory().categoryId().getValue();
       if (!jpaCategoryRepository.existsById(categoryId)) {
         throw new RepositoryResourceNotFoundException("Category not found with ID: " + categoryId);
       }
 
-      // Convertir producto a entidad
+      // Convert product to entity
       ProductEntity entity = productMapper.toEntity(product);
 
-      // Establecer campos de auditoría si es una nueva entidad
+      // Set audit fields if it's a new entity
       if (entity.getCreatedAt() == null) {
         Instant now = Instant.now();
         entity.setCreatedAt(now);
@@ -60,10 +60,10 @@ public class ProductRepositoryAdapter implements ProductRepository {
         entity.setUpdatedAt(Instant.now());
       }
 
-      // Guardar la entidad
+      // Save the entity
       ProductEntity savedEntity = jpaProductRepository.save(entity);
 
-      // Devolver el producto con su categoría
+      // Return the product with its category
       return productMapper.toDomain(savedEntity, product.getCategory());
     } catch (DataAccessException e) {
       log.error("Error saving product: {}", e.getMessage(), e);
@@ -83,7 +83,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
       UUID uuid = productId.getValue();
       return jpaProductRepository.findById(uuid)
           .map(productEntity -> {
-            // Cargar la categoría asociada
+            // Load the associated category
             Category category = getCategoryForProduct(productEntity);
             return productMapper.toDomain(productEntity, category);
           });
@@ -98,7 +98,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
     try {
       return jpaProductRepository.findByName(productName)
           .map(productEntity -> {
-            // Cargar la categoría
+            // Load the category
             Category category = getCategoryForProduct(productEntity);
             return productMapper.toDomain(productEntity, category);
           });
@@ -116,10 +116,10 @@ public class ProductRepositoryAdapter implements ProductRepository {
             UUID categoryId = categoryEntity.getCategoryId();
             List<ProductEntity> products = jpaProductRepository.findByCategoryId(categoryId);
 
-            // Convertir la categoría a objeto de dominio
+            // Convert the category to domain object
             Category category = categoryMapper.toDomain(categoryEntity);
 
-            // Mapear cada producto con la misma categoría
+            // Map each product with the same category
             return products.stream()
                 .map(productEntity -> productMapper.toDomain(productEntity, category))
                 .toList();
@@ -134,26 +134,26 @@ public class ProductRepositoryAdapter implements ProductRepository {
   @Override
   public List<Product> findByUserId(UUID userId) {
     try {
-      // Obtener las IDs de productos asociados al usuario
+      // Get product IDs associated with the user
       List<EntityId> productIds = productUserRepository.findProductIdsByUserId(new EntityId(userId));
 
-      // Si no hay productos, devolver lista vacía
+      // Return empty list if no products found
       if (productIds.isEmpty()) {
         return Collections.emptyList();
       }
 
-      // Convertir EntityId a UUID para la consulta
+      // Convert EntityId to UUID for query
       List<UUID> productUuids = productIds.stream()
           .map(EntityId::getValue)
           .toList();
 
-      // Obtener las entidades de productos
+      // Fetch product entities
       List<ProductEntity> productEntities = jpaProductRepository.findAllById(productUuids);
 
-      // Convertir a objetos de dominio cargando sus categorías
+      // Convert to domain objects including their categories
       return productEntities.stream()
           .map(productEntity -> {
-            // Cargar la categoría para cada producto
+            // Load the category for each product
             Category category = getCategoryForProduct(productEntity);
             return productMapper.toDomain(productEntity, category);
           })
@@ -177,7 +177,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
   }
 
   /**
-   * Método auxiliar para obtener la categoría de un producto
+   * Helper method to get a product's category
    */
   private Category getCategoryForProduct(ProductEntity productEntity) {
     try {

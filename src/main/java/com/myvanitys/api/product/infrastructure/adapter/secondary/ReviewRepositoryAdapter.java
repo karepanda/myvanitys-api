@@ -24,8 +24,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Adapter implementation of the ReviewRepository port from the domain This adapter connects the domain with the JPA persistence
- * infrastructure
+ * Adapter implementation of the ReviewRepository port from the domain. This adapter connects the domain with the JPA persistence
+ * infrastructure.
  */
 @Component
 @AllArgsConstructor
@@ -45,40 +45,40 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
   @Transactional
   public Review save(Review review) {
     try {
-      // Obtener IDs
+      // Get IDs
       UUID productId = review.getProduct().getId().getValue();
       UUID userId = review.getUserId().getValue();
 
-      // Buscar la relación producto-usuario existente
+      // Find existing product-user relationship
       Optional<ProductUserEntity> productUserEntityOpt = jpaProductUserRepository.findByProductIdAndUserId(
           productId, userId);
 
-      // Verificar si existe la relación producto-usuario
+      // Check if the product-user relationship exists
       if (productUserEntityOpt.isEmpty()) {
         throw new EntityNotFoundException("Product-User relation not found for product id: "
             + productId + " and user id: " + userId);
       }
 
-      // Convertir la review a entidad
+      // Convert review to entity
       ReviewEntity entity = reviewMapper.toEntity(review);
 
-      // Establecer timestamps
+      // Set timestamps
       Instant now = Instant.now();
       if (entity.getCreatedAt() == null) {
         entity.setCreatedAt(now);
       }
       entity.setUpdatedAt(now);
 
-      // Asignar la relación producto-usuario a la entidad review
+      // Assign product-user relationship to review entity
       entity.setProductUserEntity(productUserEntityOpt.get());
 
-      // Guardar la entidad
+      // Save entity
       ReviewEntity savedEntity = jpaReviewRepository.save(entity);
 
-      // Recuperar el producto
-      Product product = review.getProduct(); // Ya tenemos el producto del dominio
+      // Retrieve product from domain
+      Product product = review.getProduct();
 
-      // Convertir de vuelta al dominio usando el producto existente
+      // Convert back to domain using the existing product
       return reviewMapper.toDomain(savedEntity, product);
     } catch (DataAccessException e) {
       throw new DatabaseException("Error saving review", e);
@@ -98,7 +98,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       ReviewEntity reviewEntity = reviewEntityOpt.get();
       UUID productId = reviewEntity.getProductUserEntity().getProductId();
 
-      // Obtener el producto
+      // Get the product
       return jpaProductRepository.findById(productId)
           .map(productEntity -> {
             Product product = productMapper.toDomain(productEntity);
@@ -130,7 +130,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
         return List.of();
       }
 
-      // Obtener el producto una sola vez
+      // Retrieve product once
       Optional<Product> productOpt = jpaProductRepository.findById(uuid)
           .map(productMapper::toDomain);
 
@@ -140,7 +140,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
 
       Product product = productOpt.get();
 
-      // Convertir todas las reviews
+      // Convert all reviews
       return reviewEntities.stream()
           .map(entity -> reviewMapper.toDomain(entity, product))
           .toList();
@@ -159,7 +159,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
         return List.of();
       }
 
-      // Para cada review, necesitamos buscar el producto correspondiente
+      // For each review, fetch the corresponding product
       return reviewEntities.stream()
           .map(entity -> {
             UUID productId = entity.getProductUserEntity().getProductId();
