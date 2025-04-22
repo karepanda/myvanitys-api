@@ -52,17 +52,17 @@ public class UserRepositoryAdapter implements UserRepository {
     if (user.getId() != null) {
       entity.setUserId(user.getId().getValue());
     }
-    entity.setEmail(user.getEmail());
-    entity.setName(user.getName());
     // We use token instead of authorizationId
     entity.setToken(user.getAuthorizationId());
+    entity.setEmail(user.getEmail());
+    entity.setName(user.getName());
     // There is no pictureUrl in the entity
     // We don't need to set createdAt or updatedAt, they are handled via @PrePersist/@PreUpdate
     return entity;
   }
 
   private User mapToDomain(UserEntity entity) {
-    return new User(new EntityId(entity.getUserId()), entity.getEmail(), entity.getName(), entity.getToken());
+    return new User(new EntityId(entity.getUserId()), entity.getToken(), entity.getEmail(), entity.getName());
   }
 }
 
