@@ -44,57 +44,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Create Maven settings.xml
-        run: |
-          mkdir -p .mvn
-          cat > .mvn/settings.xml << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-            <servers>
-              <server>
-                <id>github</id>
-                <username>${env.GITHUB_USERNAME}</username>
-                <password>${env.GITHUB_TOKEN}</password>
-              </server>
-            </servers>
-
-            <profiles>
-              <profile>
-                <id>default-profile</id>
-                <repositories>
-                  <repository>
-                    <id>central</id>
-                    <url>https://repo.maven.apache.org/maven2</url>
-                  </repository>
-                </repositories>
-              </profile>
-
-              <profile>
-                <id>myvanitys</id>
-                <repositories>
-                  <repository>
-                    <id>github</id>
-                    <url>https://maven.pkg.github.com/karepanda/myvanitys-api-spec</url>
-                    <releases>
-                      <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                      <enabled>true</enabled>
-                    </snapshots>
-                  </repository>
-                </repositories>
-              </profile>
-            </profiles>
-
-            <activeProfiles>
-              <activeProfile>default-profile</activeProfile>
-              <activeProfile>myvanitys</activeProfile>
-            </activeProfiles>
-          </settings>
-          EOF
-
       - name: Build with Maven
         run: mvn -s .mvn/settings.xml clean package
         env:
@@ -153,109 +102,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Create Maven settings.xml
-        run: |
-          mkdir -p .mvn
-          cat > .mvn/settings.xml << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-            <servers>
-              <server>
-                <id>github</id>
-                <username>${env.GITHUB_USERNAME}</username>
-                <password>${env.GITHUB_TOKEN}</password>
-              </server>
-            </servers>
-
-            <profiles>
-              <profile>
-                <id>default-profile</id>
-                <repositories>
-                  <repository>
-                    <id>central</id>
-                    <url>https://repo.maven.apache.org/maven2</url>
-                  </repository>
-                </repositories>
-              </profile>
-
-              <profile>
-                <id>myvanitys</id>
-                <repositories>
-                  <repository>
-                    <id>github</id>
-                    <url>https://maven.pkg.github.com/karepanda/myvanitys-api-spec</url>
-                    <releases>
-                      <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                      <enabled>true</enabled>
-                    </snapshots>
-                  </repository>
-                </repositories>
-              </profile>
-            </profiles>
-
-            <activeProfiles>
-              <activeProfile>default-profile</activeProfile>
-              <activeProfile>myvanitys</activeProfile>
-            </activeProfiles>
-          </settings>
-          EOF
-
       - name: Build with Maven
         run: mvn -s .mvn/settings.xml clean package
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
-
-      - name: Create entrypoint.sh if not exists
-        run: |
-          if [ ! -f entrypoint.sh ]; then
-            cat > entrypoint.sh << 'EOF'
-            #!/bin/bash
-            set -e
-
-            # Extraer host y puerto de DATABASE_URL
-            if [[ -n "$DATABASE_URL" ]]; then
-              DB_HOST=$(echo $DATABASE_URL | sed -E 's/^.*:\/\/(.*):([0-9]+)\/.*$/\1/')
-              DB_PORT=$(echo $DATABASE_URL | sed -E 's/^.*:\/\/(.*):([0-9]+)\/.*$/\2/')
-            else
-              DB_HOST=$PGHOST
-              DB_PORT=$PGPORT
-            fi
-
-            # Esperar a que la base de datos esté disponible
-            echo "Esperando que la base de datos esté disponible en $DB_HOST:$DB_PORT..."
-            until nc -z $DB_HOST $DB_PORT; do
-              echo "Base de datos no disponible, esperando..."
-              sleep 2
-            done
-            echo "Base de datos disponible, continuando..."
-
-            # Ejecutar migraciones de Flyway
-            echo "Ejecutando migraciones de base de datos con Flyway..."
-            flyway -url="${FLYWAY_URL}" \
-                   -user="${FLYWAY_USER}" \
-                   -password="${FLYWAY_PASSWORD}" \
-                   -locations="${FLYWAY_LOCATIONS}" \
-                   migrate
-
-            # Verificar resultado de Flyway
-            if [ $? -eq 0 ]; then
-              echo "Migraciones ejecutadas correctamente"
-            else
-              echo "Error al ejecutar migraciones con Flyway"
-              exit 1
-            fi
-
-            # Iniciar la aplicación Spring Boot
-            echo "Iniciando la aplicación..."
-            exec java ${JAVA_OPTS} -jar /app/app.jar
-            EOF
-            chmod +x entrypoint.sh
-          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -293,3 +144,4 @@ jobs:
           railway up
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
