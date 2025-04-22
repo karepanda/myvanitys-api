@@ -17,7 +17,7 @@
   </parent>
   <groupId>com.myvanitys</groupId>
   <artifactId>api</artifactId>
-  <version>0.0.7</version>
+  <version>0.0.9</version>
   <name>my-vanitys-api</name>
   <description>my-vanitys-api</description>
 
