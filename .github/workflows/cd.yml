@@ -136,21 +136,30 @@ jobs:
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
-      - name: Set variables and deploy
+      - name: Smart Deploy to Railway
         run: |
           # Verificar versión de Railway CLI
           railway --version
 
-          # Obtener la lista de comandos disponibles
-          railway --help
+          # Ver proyectos disponibles y buscar myvanitys-api
+          echo "Listando proyectos disponibles..."
+          railway list --json > projects.json
 
-          # Obtener ayuda específica para el comando service
-          railway service --help
+          # Determinar si myvanitys-api ya existe
+          if grep -q "myvanitys-api" projects.json; then
+            echo "Proyecto myvanitys-api encontrado, vinculando..."
+            railway link myvanitys-api
+          else
+            echo "Proyecto myvanitys-api no encontrado, creando uno nuevo..."
+            railway init --name myvanitys-api
+          fi
 
-          # Utilizar el nuevo formato para actualizar la imagen Docker
-          echo "Actualizando imagen en Railway..."
-          # Intentar con la nueva sintaxis
-          railway service --image ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
+          # Añadir o actualizar servicio con imagen Docker
+          echo "Configurando servicio con imagen Docker..."
+          railway add --image ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }} || true
 
+          # Desplegar
           echo "Desplegando aplicación..."
           railway up
+
+          echo "Despliegue completado."
