@@ -158,5 +158,64 @@ class CategoryRepositoryAdapterTest {
     }
   }
 
+  @Nested
+  class findByNameNotFound {
+    
+    @Test
+    void shouldReturnEmptyOptionalWhenCategoryNameNotFound() {
+      // Given
+      String name = "Non Existent Category";
+      when(jpaCategoryRepository.findByName(name)).thenReturn(Optional.empty());
 
+      // When
+      Optional<Category> foundCategory = target.findByName(name);
+
+      // Then
+      assertThat(foundCategory).isEmpty();
+      verify(jpaCategoryRepository).findByName(name);
+    }
+  }
+
+  @Nested
+  class findAllEmpty {
+    
+    @Test
+    void shouldReturnEmptyListWhenNoCategoriesExist() {
+      // Given
+      when(jpaCategoryRepository.findAll()).thenReturn(List.of());
+
+      // When
+      List<Category> categories = target.findAll();
+
+      // Then
+      assertThat(categories).isEqualTo(List.of());
+      verify(jpaCategoryRepository).findAll();
+    }
+  }
+
+  @Nested
+  class mappingBehavior {
+    
+    @Test
+    void shouldCorrectlyMapEntityToDomain() {
+      // Given
+      CategoryEntity newEntity = new CategoryEntity();
+      newEntity.setCategoryId(UUID.randomUUID());
+      newEntity.setName("New Category");
+      
+      Category expectedCategory = new Category(
+          new EntityId(newEntity.getCategoryId()),
+          newEntity.getName()
+      );
+      
+      when(categoryMapper.toDomain(newEntity)).thenReturn(expectedCategory);
+
+      // When
+      Category mappedCategory = categoryMapper.toDomain(newEntity);
+
+      // Then
+      assertThat(mappedCategory).isEqualTo(expectedCategory);
+      verify(categoryMapper).toDomain(newEntity);
+    }
+  }
 }

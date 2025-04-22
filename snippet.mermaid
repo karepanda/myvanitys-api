@@ -1,58 +1,59 @@
 erDiagram
-    CategoryEntity ||--o{ ProductEntity : "tiene"
-    ProductEntity ||--o{ ProductUserEntity : "tiene"
-    ProductEntity ||--o{ ReviewEntity : "tiene"
-    ProductUserEntity }o--|| UserEntity : "pertenece"
+    CategoryEntity ||--o{ ProductEntity : "contains"
+    ProductEntity ||--o{ ProductUserEntity : "has"
+    ProductEntity ||--o{ ReviewEntity : "has"
+    ProductUserEntity }o--|| UserEntity : "belongs_to"
+    UserEntity ||--o{ ReviewEntity : "writes"
 
     CategoryEntity {
-        UUID categoryId PK
-        String name
+        UUID categoryId PK "Primary Key"
+        String name "NOT NULL"
         String description
-        Long version
-        Date createdAt
-        Date updatedAt
+        Long version "NOT NULL"
+        Date createdAt "NOT NULL"
+        Date updatedAt "NOT NULL"
     }
 
     ProductEntity {
-        UUID productId PK
-        UUID categoryId FK
-        Long version
-        String name
-        String brand
+        UUID productId PK "Primary Key"
+        UUID categoryId FK "Foreign Key"
+        String name "NOT NULL"
+        String brand "NOT NULL"
         String colorHex
-        Date createdAt
-        Date updatedAt
+        Long version "NOT NULL"
+        Date createdAt "NOT NULL"
+        Date updatedAt "NOT NULL"
     }
 
     ProductUserEntity {
-        UUID productUserId PK
-        UUID productId FK
-        UUID userId FK
-        Boolean isFavorite
-        Date createdAt
-        Date updatedAt
-        Long version
+        UUID productUserId PK "Primary Key"
+        UUID productId FK "Foreign Key"
+        UUID userId FK "Foreign Key"
+        Boolean isFavorite "NOT NULL"
+        Long version "NOT NULL"
+        Date createdAt "NOT NULL"
+        Date updatedAt "NOT NULL"
     }
 
     ReviewEntity {
-        UUID reviewId PK
-        UUID productId FK
-        UUID userId FK
-        Integer rating
+        UUID reviewId PK "Primary Key"
+        UUID productId FK "Foreign Key"
+        UUID userId FK "Foreign Key"
+        Integer rating "NOT NULL"
         String comment
-        Boolean isVerified
-        Long version
-        Date createdAt
-        Date updatedAt
+        Boolean isVerified "NOT NULL"
+        Long version "NOT NULL"
+        Date createdAt "NOT NULL"
+        Date updatedAt "NOT NULL"
     }
 
     UserEntity {
-        UUID userId PK
-        String username
-        String email
-        String password
-        Boolean isActive
-        Long version
-        Date createdAt
-        Date updatedAt
+        UUID userId PK "Primary Key"
+        String username "NOT NULL, UNIQUE"
+        String email "NOT NULL, UNIQUE"
+        String password "NOT NULL"
+        Boolean isActive "NOT NULL"
+        Long version "NOT NULL"
+        Date createdAt "NOT NULL"
+        Date updatedAt "NOT NULL"
     }
