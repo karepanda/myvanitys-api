@@ -5,6 +5,10 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
     paths:
       - '**/*.java'
       - '**/pom.xml'
