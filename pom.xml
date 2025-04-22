@@ -17,7 +17,7 @@
   </parent>
   <groupId>com.myvanitys</groupId>
   <artifactId>api</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
   <name>my-vanitys-api</name>
   <description>my-vanitys-api</description>
 
@@ -195,6 +195,11 @@
       <version>0.12.6</version>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jacoco</groupId>
+      <artifactId>jacoco-maven-plugin</artifactId>
+      <version>0.8.13</version>
+    </dependency>
 
   </dependencies>
 
@@ -266,6 +271,25 @@
                 <include>**/*IT.java</include>
               </includes>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.13</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
