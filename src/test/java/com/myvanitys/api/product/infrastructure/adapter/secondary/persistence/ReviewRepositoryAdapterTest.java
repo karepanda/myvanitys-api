@@ -15,6 +15,7 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.secondary.ReviewRepositoryAdapter;
+import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
@@ -31,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewRepositoryAdapterTest {
@@ -120,6 +122,45 @@ class ReviewRepositoryAdapterTest {
       ReviewEntity capturedEntity = entityCaptor.getValue();
       assertThat(capturedEntity.getProductUserEntity()).isEqualTo(productUserEntity);
     }
+
+  @Test
+  void when_savingReviewThrowsDataAccessException_then_throwDatabaseException() {
+    // Arrange
+    final UUID productId = UUID.randomUUID();
+    final UUID userId = UUID.randomUUID();
+    final UUID reviewId = UUID.randomUUID();
+
+    final Product product = new Product(
+        new EntityId(productId),
+        "Test Product",
+        "Test Brand",
+        new Category(new EntityId(UUID.randomUUID()), "Test Category"),
+        "#FFFFFF");
+
+    final Review review = new Review(
+        new EntityId(reviewId),
+        new EntityId(userId),
+        product,
+        5,
+        "Great product"
+    );
+
+    final ProductUserEntity productUserEntity = ProductUserEntity.builder()
+        .productUserId(UUID.randomUUID())
+        .productId(productId)
+        .userId(userId)
+        .build();
+
+    when(jpaProductUserRepository.findByProductIdAndUserId(productId, userId))
+        .thenReturn(Optional.of(productUserEntity));
+    when(reviewMapper.toEntity(review))
+        .thenThrow(new DataAccessException("Test exception") {});
+
+    // Act & Assert
+    assertThatThrownBy(() -> target.save(review))
+        .isInstanceOf(DatabaseException.class)
+        .hasMessageContaining("Error saving review");
+}
 
     @Test
     void when_productUserRelationNotFound_then_throwEntityNotFoundException() {
@@ -212,6 +253,21 @@ class ReviewRepositoryAdapterTest {
       assertThat(result).isPresent();
       assertThat(result.get()).isEqualTo(expectedReview);
     }
+
+@Test
+void when_findByIdThrowsDataAccessException_then_throwDatabaseException() {
+    // Arrange
+    final UUID reviewId = UUID.randomUUID();
+    final EntityId reviewEntityId = new EntityId(reviewId);
+
+    when(jpaReviewRepository.findById(reviewId))
+        .thenThrow(new DataAccessException("Test exception") {});
+
+    // Act & Assert
+    assertThatThrownBy(() -> target.findById(reviewEntityId))
+        .isInstanceOf(DatabaseException.class)
+        .hasMessageContaining("Error finding review");
+}
 
     @Test
     void when_reviewDoesNotExist_then_returnEmptyOptional() {
@@ -313,6 +369,29 @@ class ReviewRepositoryAdapterTest {
       assertThat(result).hasSize(2);
       assertThat(result).containsExactly(review1, review2);
     }
+
+@Test
+void when_findByProductIdAndProductNotFound_then_throwEntityNotFoundException() {
+    // Arrange
+    final UUID productId = UUID.randomUUID();
+    final EntityId productEntityId = new EntityId(productId);
+    
+    final ReviewEntity reviewEntity = ReviewEntity.builder()
+        .reviewId(UUID.randomUUID())
+        .rating(4)
+        .comment("Good product")
+        .build();
+
+    when(jpaReviewRepository.findByProductUserEntityProductId(productId))
+        .thenReturn(List.of(reviewEntity));
+    when(jpaProductRepository.findById(productId))
+        .thenReturn(Optional.empty());
+
+    // Act & Assert
+    assertThatThrownBy(() -> target.findByProductId(productEntityId))
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessageContaining("Product not found with id: " + productId);
+}
 
     @Test
     void when_noReviewsExist_then_returnEmptyList() {
