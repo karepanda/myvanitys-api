@@ -141,15 +141,16 @@ jobs:
           # Verificar versión de Railway CLI
           railway --version
 
-          # Intentar verificar comandos disponibles
-          railway variables --help
+          # Obtener la lista de comandos disponibles
+          railway --help
 
-          # Ya que las variables ya están configuradas en Railway, 
-          # no intentaremos configurarlas nuevamente
+          # Obtener ayuda específica para el comando service
+          railway service --help
 
-          # Actualizar la imagen y desplegar
+          # Utilizar el nuevo formato para actualizar la imagen Docker
           echo "Actualizando imagen en Railway..."
-          railway service update --image ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
+          # Intentar con la nueva sintaxis
+          railway service --image ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
 
           echo "Desplegando aplicación..."
           railway up
