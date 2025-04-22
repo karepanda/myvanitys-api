@@ -2,12 +2,13 @@
 name: CD Workflow
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - main
-    paths:
-      - '**/*.java'
-      - '**/pom.xml'
+    # Ejecutar solo cuando el PR se haya mergeado
+    if: github.event.pull_request.merged == true
 
 # Agregar permisos para permitir crear y subir tags
 permissions:
