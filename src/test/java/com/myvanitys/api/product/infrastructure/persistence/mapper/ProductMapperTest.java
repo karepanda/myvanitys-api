@@ -1,13 +1,13 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
@@ -35,6 +35,36 @@ class ProductMapperTest {
     productId = UUID.randomUUID();
     categoryId = UUID.randomUUID();
   }
+
+@Test
+void toDomain_shouldReturnNullWhenProductEntityIsNull() {
+    // Act
+    Product result = productMapper.toDomain(null);
+
+    // Assert
+    assertNull(result);
+}
+
+@Test
+void toDomain_withoutCategory_shouldMapProductEntityToProduct() {
+    // Arrange
+    ProductEntity productEntity = new ProductEntity();
+    productEntity.setProductId(productId);
+    productEntity.setName("Test Product");
+    productEntity.setBrand("Test Brand");
+    productEntity.setColorHex("#FFFFFF");
+
+    // Act
+    Product result = productMapper.toDomain(productEntity);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(productId, result.getId().getValue());
+    assertEquals("Test Product", result.getName());
+    assertEquals("Test Brand", result.getBrand());
+    assertEquals("#FFFFFF", result.getColorHex());
+    assertNull(result.getCategory());
+}
 
   @Test
   void toDomain_shouldMapProductEntityToProduct() {
@@ -64,6 +94,15 @@ class ProductMapperTest {
     assertEquals(category, result.getCategory());
   }
 
+@Test
+void toEntity_shouldReturnNullWhenProductIsNull() {
+    // Act
+    ProductEntity result = productMapper.toEntity(null);
+
+    // Assert
+    assertNull(result);
+}
+
   @Test
   void toEntity_shouldMapProductToProductEntity() {
     // Arrange
@@ -86,6 +125,99 @@ class ProductMapperTest {
     assertEquals(categoryId, result.getCategoryId());
 
   }
+
+@Test
+void toDomainList_shouldReturnEmptyListWhenInputIsNull() {
+    // Act
+    List<Product> result = productMapper.toDomainList(null);
+
+    // Assert
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
+}
+
+@Test
+void toDomainList_shouldMapListOfProductEntities() {
+    // Arrange
+    ProductEntity entity1 = new ProductEntity();
+    entity1.setProductId(UUID.randomUUID());
+    entity1.setName("Product 1");
+    entity1.setBrand("Brand 1");
+
+    ProductEntity entity2 = new ProductEntity();
+    entity2.setProductId(UUID.randomUUID());
+    entity2.setName("Product 2");
+    entity2.setBrand("Brand 2");
+
+    // Act
+    List<Product> result = productMapper.toDomainList(List.of(entity1, entity2));
+
+    // Assert
+    assertEquals(2, result.size());
+    assertEquals(entity1.getName(), result.get(0).getName());
+    assertEquals(entity2.getName(), result.get(1).getName());
+}
+
+@Test
+void toEntityList_shouldReturnEmptyListWhenInputIsNull() {
+    // Act
+    List<ProductEntity> result = productMapper.toEntityList(null);
+
+    // Assert
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
+}
+
+@Test
+void toProductUserRelation_shouldReturnNullWhenInputIsNull() {
+    // Act
+    ProductUserRelation result = productMapper.toProductUserRelation(null);
+
+    // Assert
+    assertNull(result);
+}
+
+@Test
+void toReview_shouldReturnNullWhenInputIsNull() {
+    // Act
+    Review result = productMapper.toReview(null, new Product(new EntityId(UUID.randomUUID()), "Test", "Brand", null, "#000000"));
+
+    // Assert
+    assertNull(result);
+}
+
+@Test
+void toReviewEntity_shouldReturnNullWhenInputIsNull() {
+    // Act
+    ReviewEntity result = productMapper.toReviewEntity(null, new ProductUserEntity());
+
+    // Assert
+    assertNull(result);
+}
+
+@Test
+void toReviewEntity_shouldMapReviewToReviewEntity() {
+    // Arrange
+    UUID reviewId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    Product product = new Product(new EntityId(productId), "Test Product", "Brand", null, "#000000");
+    Review review = new Review(new EntityId(reviewId), new EntityId(userId), product, 4, "Good product");
+    
+    ProductUserEntity productUserEntity = new ProductUserEntity();
+    productUserEntity.setProductUserId(UUID.randomUUID());
+    productUserEntity.setProductId(productId);
+    productUserEntity.setUserId(userId);
+
+    // Act
+    ReviewEntity result = productMapper.toReviewEntity(review, productUserEntity);
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(reviewId, result.getReviewId());
+    assertEquals(4, result.getRating());
+    assertEquals("Good product", result.getComment());
+    assertEquals(productUserEntity, result.getProductUserEntity());
+}
 
   @Test
   void toDomainWithRelations_shouldMapProductWithReviewsAndRelations() {
