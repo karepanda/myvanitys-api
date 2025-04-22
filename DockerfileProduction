@@ -5,15 +5,20 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
+# Argumentos para las credenciales de GitHub
+ARG GITHUB_USERNAME
+ARG GITHUB_TOKEN
+
 # Copiar primero el pom.xml para aprovechar cache de Maven
 COPY pom.xml .
 COPY .mvn .mvn
-# Descarga dependencias (se cachean si pom.xml no cambia)
-RUN mvn dependency:go-offline -s .mvn/settings.xml
+
+# Descargar dependencias con credenciales pasadas como argumentos
+RUN mvn dependency:go-offline -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
 
 # Copiar código fuente y compilar
 COPY src src
-RUN mvn package -DskipTests -s .mvn/settings.xml
+RUN mvn package -DskipTests -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
 
 # Stage 2: Runtime stage
 FROM eclipse-temurin:21.0.2_13-jre-alpine

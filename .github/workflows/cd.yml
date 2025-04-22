@@ -45,7 +45,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build with Maven
-        run: mvn -s .mvn/settings.xml clean package
+        run: mvn -s .mvn/settings.xml clean package -Dgithub.username=${{ github.actor }} -Dgithub.token=${{ secrets.PACKAGES_TOKEN }}
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
@@ -103,7 +103,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn -s .mvn/settings.xml clean package
+        run: mvn -s .mvn/settings.xml clean package -Dgithub.username=${{ github.actor }} -Dgithub.token=${{ secrets.PACKAGES_TOKEN }}
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
@@ -125,6 +125,9 @@ jobs:
           file: ./DockerfileProduction
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
+          build-args: |
+            GITHUB_USERNAME=${{ github.actor }}
+            GITHUB_TOKEN=${{ secrets.PACKAGES_TOKEN }}
 
       - name: Install Railway CLI
         run: npm i -g @railway/cli
@@ -144,4 +147,3 @@ jobs:
           railway up
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
