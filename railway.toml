@@ -1,0 +1,19 @@
+[build]
+# Usamos el DockerfileProduction para construir la imagen
+builder = "DOCKERFILE"
+dockerfilePath = "DockerfileProduction"
+
+[deploy]
+# Configuración para restarts
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+numReplicas = 1
+
+# Configuramos health checks para asegurar que la aplicación está saludable
+healthcheckPath = "/myvanitys/actuator/health"
+healthcheckTimeout = 10
+healthcheckInterval = 30
+
+# Variables de entorno importantes que no deben ser sobrescritas por el sistema
+[variables]
+SPRING_PROFILES_ACTIVE = "prod"
