@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.infrastructure.adapter.secondary.persistence;
+package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.verify;

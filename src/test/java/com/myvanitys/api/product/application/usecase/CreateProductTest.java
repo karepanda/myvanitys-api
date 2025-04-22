@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.application.usecase.product;
+package com.myvanitys.api.product.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,7 +14,6 @@ import java.util.UUID;
 
 import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
-import com.myvanitys.api.product.application.usecase.CreateProduct;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;

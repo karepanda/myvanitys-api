@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.infrastructure.adapter.secondary.persistence;
+package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
