@@ -129,10 +129,17 @@ jobs:
             GITHUB_USERNAME=${{ github.actor }}
             GITHUB_TOKEN=${{ secrets.PACKAGES_TOKEN }}
 
-      - name: Setup Railway
-        uses: railwayapp/setup-railway@v1
-        with:
-          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Install Railway CLI manually
+        run: |
+          # Instalar Railway CLI
+          npm i -g @railway/cli
+
+          # Crear archivo de configuración de Railway
+          mkdir -p ~/.railway
+          echo "{\"token\":\"${{ secrets.RAILWAY_TOKEN }}\"}" > ~/.railway/config.json
+
+          # Verificar instalación
+          railway --version
 
       - name: Deploy to Railway
         run: |
