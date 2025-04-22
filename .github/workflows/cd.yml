@@ -137,6 +137,9 @@ jobs:
           # Verificar la versión de Railway CLI
           railway --version
 
+          # Autenticar usando el token
+          echo "${{ secrets.RAILWAY_TOKEN }}" | railway login --browserless
+
           # Vincular con Railway
           railway link
 
