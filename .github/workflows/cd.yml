@@ -134,21 +134,28 @@ jobs:
 
       - name: Deploy to Railway
         run: |
-          # Verificar la versión de Railway CLI
-          railway --version
+          # Crear archivo de token directamente
+          mkdir -p ~/.railway
+          echo "{\"token\":\"${{ secrets.RAILWAY_TOKEN }}\"}" > ~/.railway/config.json
+          chmod 600 ~/.railway/config.json
 
-          # Vincular con Railway
-          railway link
+          # Verificar que podemos acceder a Railway
+          railway whoami
 
-          # Configurar variables de entorno en Railway (sintaxis actualizada)
-          railway variables GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          railway variables GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          railway variables OAUTH_REDIRECT_URI=${{ secrets.OAUTH_REDIRECT_URI }}
-          railway variables JWT_SECRET=${{ secrets.JWT_SECRET }}
-          railway variables SPRING_PROFILES_ACTIVE=prod
+          # Establecer variables de entorno esenciales
+          echo "Configurando variables de entorno esenciales..."
+          railway variables GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+          railway variables GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
+          railway variables OAUTH_REDIRECT_URI="${{ secrets.OAUTH_REDIRECT_URI }}"
+          railway variables JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          railway variables SPRING_PROFILES_ACTIVE="prod"
 
-          # Desplegar la imagen Docker
+          # Actualizar la imagen en Railway
+          echo "Actualizando imagen en Railway..."
           railway service update --image ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
+
+          # Desplegar
+          echo "Desplegando aplicación..."
           railway up
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
