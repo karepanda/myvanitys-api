@@ -1,4 +1,5 @@
 ---
+---
 name: CD Workflow
 
 on:
@@ -134,15 +135,20 @@ jobs:
 
       - name: Deploy to Railway
         run: |
-          # Configurar variables de entorno adicionales en Railway
-          railway variables set GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          railway variables set GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          railway variables set OAUTH_REDIRECT_URI=${{ secrets.OAUTH_REDIRECT_URI }}
-          railway variables set JWT_SECRET=${{ secrets.JWT_SECRET }}
-          railway variables set SPRING_PROFILES_ACTIVE=prod
+          # Verificar la versión de Railway CLI
+          railway --version
 
-          # Link Docker image and deploy
+          # Vincular con Railway
           railway link
+
+          # Configurar variables de entorno en Railway (sintaxis actualizada)
+          railway variables GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          railway variables GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          railway variables OAUTH_REDIRECT_URI=${{ secrets.OAUTH_REDIRECT_URI }}
+          railway variables JWT_SECRET=${{ secrets.JWT_SECRET }}
+          railway variables SPRING_PROFILES_ACTIVE=prod
+
+          # Desplegar la imagen Docker
           railway service update --image ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
           railway up
         env:
