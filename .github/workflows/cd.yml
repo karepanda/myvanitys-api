@@ -129,29 +129,45 @@ jobs:
             GITHUB_USERNAME=${{ github.actor }}
             GITHUB_TOKEN=${{ secrets.PACKAGES_TOKEN }}
 
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli
+      - name: Setup Railway
+        uses: railwayapp/setup-railway@v1
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy to Railway
         run: |
-          # Verificar la versión de Railway CLI
-          railway --version
+          # Variables de entorno que necesitamos establecer
+          echo "Configurando variables de entorno para la aplicación..."
 
-          # Autenticar usando el token
-          echo "${{ secrets.RAILWAY_TOKEN }}" | railway login --browserless
+          # Verificar si las variables ya existen y si son iguales a las que queremos establecer
+          # para evitar actualizaciones innecesarias y errores
+          railway variables --json > current_vars.json
 
-          # Vincular con Railway
-          railway link
+          # Configurar variables que necesitamos
+          for VAR_NAME in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET OAUTH_REDIRECT_URI JWT_SECRET SPRING_PROFILES_ACTIVE; do
+            VAR_VALUE=""
+            case "$VAR_NAME" in
+              "GOOGLE_CLIENT_ID") VAR_VALUE="${{ secrets.GOOGLE_CLIENT_ID }}" ;;
+              "GOOGLE_CLIENT_SECRET") VAR_VALUE="${{ secrets.GOOGLE_CLIENT_SECRET }}" ;;
+              "OAUTH_REDIRECT_URI") VAR_VALUE="${{ secrets.OAUTH_REDIRECT_URI }}" ;;
+              "JWT_SECRET") VAR_VALUE="${{ secrets.JWT_SECRET }}" ;;
+              "SPRING_PROFILES_ACTIVE") VAR_VALUE="prod" ;;
+            esac
 
-          # Configurar variables de entorno en Railway (sintaxis actualizada)
-          railway variables GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          railway variables GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          railway variables OAUTH_REDIRECT_URI=${{ secrets.OAUTH_REDIRECT_URI }}
-          railway variables JWT_SECRET=${{ secrets.JWT_SECRET }}
-          railway variables SPRING_PROFILES_ACTIVE=prod
+            # Solo actualizar si el valor debe cambiar
+            grep -q "\"$VAR_NAME\":\"$VAR_VALUE\"" current_vars.json 2>/dev/null
+            if [ $? -ne 0 ]; then
+              echo "Actualizando $VAR_NAME..."
+              railway variables "$VAR_NAME"="$VAR_VALUE"
+            else
+              echo "$VAR_NAME ya está configurado con el valor correcto"
+            fi
+          done
 
-          # Desplegar la imagen Docker
+          # Actualizar la imagen en Railway
+          echo "Actualizando imagen en Railway..."
           railway service update --image ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
+
+          # Desplegar
+          echo "Desplegando aplicación..."
           railway up
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
