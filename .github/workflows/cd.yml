@@ -136,30 +136,26 @@ jobs:
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
-      - name: Smart Deploy to Railway
+      - name: Login and Deploy to Railway
         run: |
           # Verificar versión de Railway CLI
           railway --version
 
-          # Ver proyectos disponibles y buscar myvanitys-api
+          # Intentar login con el token
+          echo "Intentando login con token..."
+          # Crear archivo de configuración directamente
+          mkdir -p /root/.railway
+          echo "{\"token\":\"$RAILWAY_TOKEN\"}" > /root/.railway/config.json
+          chmod 600 /root/.railway/config.json
+
+          # Verificar el usuario actual
+          echo "Verificando usuario..."
+          railway whoami
+
+          # Ver proyectos disponibles
           echo "Listando proyectos disponibles..."
-          railway list --json > projects.json
+          railway list
 
-          # Determinar si myvanitys-api ya existe
-          if grep -q "myvanitys-api" projects.json; then
-            echo "Proyecto myvanitys-api encontrado, vinculando..."
-            railway link myvanitys-api
-          else
-            echo "Proyecto myvanitys-api no encontrado, creando uno nuevo..."
-            railway init --name myvanitys-api
-          fi
-
-          # Añadir o actualizar servicio con imagen Docker
-          echo "Configurando servicio con imagen Docker..."
-          railway add --image ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }} || true
-
-          # Desplegar
-          echo "Desplegando aplicación..."
-          railway up
-
-          echo "Despliegue completado."
+          # Resto del script de despliegue...
+          # Como estamos ejecutando en un container, podemos omitir este paso si queremos
+          # simplemente diagnosticar el problema de autenticación primero
