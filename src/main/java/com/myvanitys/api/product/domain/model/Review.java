@@ -5,74 +5,33 @@ import java.util.UUID;
 
 import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 
 @Getter
 @ToString
+@AllArgsConstructor
 public class Review {
 
   private final EntityId id;
 
   private final EntityId userId;
 
-  private final Product product;
+  private final EntityId productUserEntity;
 
   private int rating;
 
   private String comment;
 
-  /**
-   * Creates a new review with validation
-   */
-  public Review(EntityId id, @NonNull EntityId userId, @NonNull Product product, int rating, @NonNull String comment) {
-    validateRating(rating);
-    validateComment(comment);
-
-    this.id = id;
-    this.userId = userId;
-    this.product = product;
-    this.rating = rating;
-    this.comment = comment;
+  public static Review create(@NonNull EntityId userId,
+                              @NonNull EntityId productUserEntity,
+                              int rating,
+                              @NonNull String comment) {
+    return new Review(new EntityId(UUID.randomUUID()), userId, productUserEntity, rating, comment);
   }
 
-  /**
-   * Factory method to create a new review
-   */
-  public static Review create(
-      @NonNull EntityId userId,
-      @NonNull Product product,
-      int rating,
-      @NonNull String comment) {
-
-    return new Review(
-        new EntityId(UUID.randomUUID()),
-        userId,
-        product,
-        rating,
-        comment
-    );
-  }
-
-  /**
-   * Factory method to create a review from a product-user relation
-   */
-  public static Review createFromRelation(
-      EntityId id,
-      @NonNull ProductUserRelation productUserRelation,
-      int rating,
-      @NonNull String comment,
-      @NonNull Product product) {
-
-    return new Review(
-        id,
-        productUserRelation.getUserId(),
-        product,
-        rating,
-        comment
-    );
-  }
 
   /**
    * Updates review details with validation

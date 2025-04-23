@@ -14,7 +14,6 @@ import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.adapter.secondary.ReviewRepositoryAdapter;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
@@ -64,22 +63,19 @@ class ReviewRepositoryAdapterTest {
       final UUID productId = UUID.randomUUID();
       final UUID userId = UUID.randomUUID();
       final UUID reviewId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
 
       final EntityId productEntityId = new EntityId(productId);
       final EntityId userEntityId = new EntityId(userId);
       final EntityId reviewEntityId = new EntityId(reviewId);
+      final EntityId productUserEntityId = new EntityId(productUserId);
 
-      final Product product = new Product(
-          productEntityId,
-          "Test Product",
-          "Test Brand",
-          new Category(new EntityId(UUID.randomUUID()), "Test Category"),
-          "#FFFFFF");
+
 
       final Review review = new Review(
           reviewEntityId,
           userEntityId,
-          product,
+          productEntityId,
           5,
           "Great product"
       );
@@ -107,7 +103,7 @@ class ReviewRepositoryAdapterTest {
           .thenReturn(Optional.of(productUserEntity));
       when(reviewMapper.toEntity(review)).thenReturn(reviewEntity);
       when(jpaReviewRepository.save(reviewEntity)).thenReturn(savedEntity);
-      when(reviewMapper.toDomain(savedEntity, product)).thenReturn(review);
+      when(reviewMapper.toDomain(savedEntity, productUserEntityId)).thenReturn(review);
 
       // Act
       final Review result = target.save(review);
@@ -129,18 +125,12 @@ class ReviewRepositoryAdapterTest {
     final UUID productId = UUID.randomUUID();
     final UUID userId = UUID.randomUUID();
     final UUID reviewId = UUID.randomUUID();
-
-    final Product product = new Product(
-        new EntityId(productId),
-        "Test Product",
-        "Test Brand",
-        new Category(new EntityId(UUID.randomUUID()), "Test Category"),
-        "#FFFFFF");
+    final UUID productUserId = UUID.randomUUID();
 
     final Review review = new Review(
         new EntityId(reviewId),
         new EntityId(userId),
-        product,
+        new EntityId(productUserId),
         5,
         "Great product"
     );
@@ -168,22 +158,16 @@ class ReviewRepositoryAdapterTest {
       final UUID productId = UUID.randomUUID();
       final UUID userId = UUID.randomUUID();
       final UUID reviewId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
 
-      final EntityId productEntityId = new EntityId(productId);
       final EntityId userEntityId = new EntityId(userId);
       final EntityId reviewEntityId = new EntityId(reviewId);
-
-      final Product product = new Product(
-          productEntityId,
-          "Test Product",
-          "Test Brand",
-          new Category(new EntityId(UUID.randomUUID()), "Test Category"),
-          "#FFFFFF");
+      final EntityId productUserEntityId = new EntityId(productUserId);
 
       final Review review = new Review(
           reviewEntityId,
           userEntityId,
-          product,
+          productUserEntityId,
           5,
           "Great product"
       );
@@ -205,7 +189,10 @@ class ReviewRepositoryAdapterTest {
       // Arrange
       final UUID reviewId = UUID.randomUUID();
       final UUID productId = UUID.randomUUID();
+      final UUID productUserID = UUID.randomUUID();
+
       final EntityId reviewEntityId = new EntityId(reviewId);
+      final EntityId productUserEntityId = new EntityId(productUserID);
 
       final ProductUserEntity productUserEntity = ProductUserEntity.builder()
           .productUserId(UUID.randomUUID())
@@ -236,7 +223,7 @@ class ReviewRepositoryAdapterTest {
       final Review expectedReview = new Review(
           reviewEntityId,
           new EntityId(UUID.randomUUID()),
-          product,
+          productUserEntityId,
           4,
           "Good product"
       );
@@ -244,7 +231,7 @@ class ReviewRepositoryAdapterTest {
       when(jpaReviewRepository.findById(reviewId)).thenReturn(Optional.of(reviewEntity));
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(productEntity));
       when(productMapper.toDomain(productEntity)).thenReturn(product);
-      when(reviewMapper.toDomain(reviewEntity, product)).thenReturn(expectedReview);
+      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(expectedReview);
 
       // Act
       final Optional<Review> result = target.findById(reviewEntityId);
@@ -311,6 +298,8 @@ void when_findByIdThrowsDataAccessException_then_throwDatabaseException() {
       final UUID productId = UUID.randomUUID();
       final EntityId productEntityId = new EntityId(productId);
 
+      final EntityId productUserEntityId = new EntityId(UUID.randomUUID());
+
       final ReviewEntity reviewEntity1 = ReviewEntity.builder()
           .reviewId(UUID.randomUUID())
           .rating(4)
@@ -343,7 +332,7 @@ void when_findByIdThrowsDataAccessException_then_throwDatabaseException() {
       final Review review1 = new Review(
           new EntityId(reviewEntity1.getReviewId()),
           new EntityId(UUID.randomUUID()),
-          product,
+          productUserEntityId,
           4,
           "Good product"
       );
@@ -351,7 +340,7 @@ void when_findByIdThrowsDataAccessException_then_throwDatabaseException() {
       final Review review2 = new Review(
           new EntityId(reviewEntity2.getReviewId()),
           new EntityId(UUID.randomUUID()),
-          product,
+          productUserEntityId,
           5,
           "Excellent product"
       );
@@ -359,8 +348,8 @@ void when_findByIdThrowsDataAccessException_then_throwDatabaseException() {
       when(jpaReviewRepository.findByProductUserEntityProductId(productId)).thenReturn(reviewEntities);
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(productEntity));
       when(productMapper.toDomain(productEntity)).thenReturn(product);
-      when(reviewMapper.toDomain(reviewEntity1, product)).thenReturn(review1);
-      when(reviewMapper.toDomain(reviewEntity2, product)).thenReturn(review2);
+      when(reviewMapper.toDomain(reviewEntity1, productUserEntityId)).thenReturn(review1);
+      when(reviewMapper.toDomain(reviewEntity2, productUserEntityId)).thenReturn(review2);
 
       // Act
       final List<Review> result = target.findByProductId(productEntityId);
@@ -420,6 +409,8 @@ void when_findByProductIdAndProductNotFound_then_throwEntityNotFoundException() 
 
       final UUID productId1 = UUID.randomUUID();
       final UUID productId2 = UUID.randomUUID();
+
+        final EntityId productUserEntityId = new EntityId(UUID.randomUUID());
 
       // Crear instancias de ProductUserEntity
       final ProductUserEntity productUserEntity1 = ProductUserEntity.builder()
@@ -483,7 +474,7 @@ void when_findByProductIdAndProductNotFound_then_throwEntityNotFoundException() 
       final Review review1 = new Review(
           new EntityId(reviewEntity1.getReviewId()),
           userEntityId,
-          product1,
+          productUserEntityId,
           3,
           "Average product"
       );
@@ -491,7 +482,7 @@ void when_findByProductIdAndProductNotFound_then_throwEntityNotFoundException() 
       final Review review2 = new Review(
           new EntityId(reviewEntity2.getReviewId()),
           userEntityId,
-          product2,
+          productUserEntityId,
           2,
           "Below average product"
       );
@@ -506,8 +497,8 @@ void when_findByProductIdAndProductNotFound_then_throwEntityNotFoundException() 
       when(productMapper.toDomain(productEntity2)).thenReturn(product2);
 
       // Configurar mapper para reviews
-      when(reviewMapper.toDomain(reviewEntity1, product1)).thenReturn(review1);
-      when(reviewMapper.toDomain(reviewEntity2, product2)).thenReturn(review2);
+      when(reviewMapper.toDomain(reviewEntity1, productUserEntityId)).thenReturn(review1);
+      when(reviewMapper.toDomain(reviewEntity2, productUserEntityId)).thenReturn(review2);
 
       // Act
       final List<Review> result = target.findByUserId(userEntityId);

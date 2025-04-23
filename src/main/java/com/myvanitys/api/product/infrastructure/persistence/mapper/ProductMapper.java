@@ -117,7 +117,7 @@ public class ProductMapper {
 
           // Map reviews if they exist
           Optional.ofNullable(pu.getReviews()).ifPresent(reviews -> reviews.forEach(reviewEntity -> {
-            Review review = toReview(reviewEntity, product);
+            Review review = toReview(reviewEntity, new EntityId(pu.getProductUserId()));
             product.addReview(review);
           }));
         }));
@@ -157,15 +157,15 @@ public class ProductMapper {
   /**
    * Converts a ReviewEntity to a domain Review.
    */
-  public Review toReview(ReviewEntity reviewEntity, Product product) {
-    if (reviewEntity == null || product == null) {
+  public Review toReview(ReviewEntity reviewEntity, EntityId productUserEntity) {
+    if (reviewEntity == null || productUserEntity == null) {
       return null;
     }
 
     return new Review(
         new EntityId(reviewEntity.getReviewId()),
         new EntityId(reviewEntity.getProductUserEntity().getUserId()),
-        product,
+        productUserEntity,
         reviewEntity.getRating(),
         reviewEntity.getComment()
     );

@@ -1,11 +1,9 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 import java.util.UUID;
 
-import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
@@ -24,15 +22,13 @@ class ReviewMapperTest {
 
     private UUID reviewId;
     private UUID userId;
-    private Product mockProduct;
+    private UUID productUserId;
     private ProductUserEntity productUserEntity;
 
     @BeforeEach
     void setUp() {
         reviewId = UUID.randomUUID();
         userId = UUID.randomUUID();
-        mockProduct = mock(Product.class);
-        
         productUserEntity = new ProductUserEntity();
         productUserEntity.setUserId(userId);
     }
@@ -40,21 +36,23 @@ class ReviewMapperTest {
     @Test
     void toDomain_shouldMapReviewEntityToReview() {
         // Arrange
+        productUserId = UUID.randomUUID();
+        EntityId productUserEntityId = new EntityId(productUserId);
         ReviewEntity reviewEntity = ReviewEntity.builder()
                 .reviewId(reviewId)
+                .productUserEntity(productUserEntity)
                 .rating(5)
                 .comment("Excelente producto")
-                .productUserEntity(productUserEntity)
                 .build();
 
         // Act
-        Review result = reviewMapper.toDomain(reviewEntity, mockProduct);
+        Review result = reviewMapper.toDomain(reviewEntity, productUserEntityId);
 
         // Assert
         assertNotNull(result);
         assertEquals(reviewId, result.getId().getValue());
         assertEquals(userId, result.getUserId().getValue());
-        assertEquals(mockProduct, result.getProduct());
+        assertEquals(productUserId, result.getProductUserEntity().getValue());
         assertEquals(5, result.getRating());
         assertEquals("Excelente producto", result.getComment());
     }
@@ -62,7 +60,9 @@ class ReviewMapperTest {
     @Test
     void toDomain_shouldReturnNullWhenEntityIsNull() {
         // Act
-        Review result = reviewMapper.toDomain(null, mockProduct);
+        productUserId = UUID.randomUUID();
+        EntityId productUserEntityId = new EntityId(productUserId);
+        Review result = reviewMapper.toDomain(null, productUserEntityId);
 
         // Assert
         assertNull(result);
@@ -84,10 +84,12 @@ class ReviewMapperTest {
     @Test
     void toEntity_shouldMapReviewToReviewEntity() {
         // Arrange
+        productUserId = UUID.randomUUID();
+        EntityId productUserEntityId = new EntityId(productUserId);
         Review review = new Review(
                 new EntityId(reviewId),
                 new EntityId(userId),
-                mockProduct,
+                productUserEntityId,
                 4,
                 "Buen producto"
         );

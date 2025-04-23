@@ -46,7 +46,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
   public Review save(Review review) {
     try {
       // Get IDs
-      UUID productId = review.getProduct().getId().getValue();
+      UUID productId = review.getProductUserEntity().getValue();
       UUID userId = review.getUserId().getValue();
 
       // Find existing product-user relationship
@@ -76,10 +76,10 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       ReviewEntity savedEntity = jpaReviewRepository.save(entity);
 
       // Retrieve product from domain
-      Product product = review.getProduct();
+      EntityId productUserEntity = review.getProductUserEntity();
 
       // Convert back to domain using the existing product
-      return reviewMapper.toDomain(savedEntity, product);
+      return reviewMapper.toDomain(savedEntity, productUserEntity);
     } catch (DataAccessException e) {
       throw new DatabaseException("Error saving review", e);
     }
@@ -101,8 +101,9 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       // Get the product
       return jpaProductRepository.findById(productId)
           .map(productEntity -> {
-            Product product = productMapper.toDomain(productEntity);
-            return reviewMapper.toDomain(reviewEntity, product);
+            // Convert product entity to domain
+            EntityId productUserEntity = new EntityId(reviewEntity.getProductUserEntity().getProductUserId());
+            return reviewMapper.toDomain(reviewEntity, productUserEntity);
           });
     } catch (DataAccessException e) {
       throw new DatabaseException("Error finding review", e);
@@ -139,10 +140,11 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       }
 
       Product product = productOpt.get();
+      EntityId productUserEntity = new EntityId(product.getId().getValue());
 
       // Convert all reviews
       return reviewEntities.stream()
-          .map(entity -> reviewMapper.toDomain(entity, product))
+          .map(entity -> reviewMapper.toDomain(entity, productUserEntity))
           .toList();
     } catch (DataAccessException e) {
       throw new DatabaseException("Error finding reviews by product", e);
@@ -165,8 +167,8 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
             UUID productId = entity.getProductUserEntity().getProductId();
             return jpaProductRepository.findById(productId)
                 .map(productEntity -> {
-                  Product product = productMapper.toDomain(productEntity);
-                  return reviewMapper.toDomain(entity, product);
+                  EntityId productUserEntity = new EntityId(entity.getProductUserEntity().getProductUserId());
+                  return reviewMapper.toDomain(entity, productUserEntity);
                 })
                 .orElseThrow(() -> new EntityNotFoundException(
                     "Product not found for review: " + entity.getReviewId()));

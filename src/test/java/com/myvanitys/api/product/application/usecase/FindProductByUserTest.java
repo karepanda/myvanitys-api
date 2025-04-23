@@ -90,5 +90,96 @@ class FindProductByUserTest {
 
             assertThrows(ProductNotFoundException.class, () -> target.query(query));
         }
+
+        @Test
+        void verify_mockInteractions_whenProductsAreFound() {
+            // Arrange
+            EntityId userId = new EntityId(UUID.randomUUID());
+            final FindProductUserQuery query = new FindProductUserQuery(userId);
+            final ProductEntity productEntity = createProductEntity("11111111-1111-1111-1111-111111111111");
+            final Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+            final Product domainProduct = new Product(
+                new EntityId(UUID.randomUUID()),
+                "Test Product",
+                "Test Brand",
+                category,
+                "#000000"
+            );
+
+            when(jpaProductRepository.findByUserId(userId.getValue()))
+                .thenReturn(List.of(productEntity));
+            when(productMapper.toDomain(productEntity)).thenReturn(domainProduct);
+
+            // Act
+            target.query(query);
+
+            // Assert
+            verify(jpaProductRepository, times(1)).findByUserId(userId.getValue());
+            verify(productMapper, times(1)).toDomain(productEntity);
+            verifyNoMoreInteractions(jpaProductRepository, productMapper);
+        }
+
+        @Test
+        void verify_productProperties_whenProductIsFound() {
+            // Arrange
+            EntityId userId = new EntityId(UUID.randomUUID());
+            final FindProductUserQuery query = new FindProductUserQuery(userId);
+            final ProductEntity productEntity = createProductEntity("11111111-1111-1111-1111-111111111111");
+            
+            final EntityId categoryId = new EntityId(UUID.randomUUID());
+            final Category category = new Category(categoryId, "Test Category");
+            
+            final Product expectedProduct = new Product(
+                new EntityId(UUID.fromString("11111111-1111-1111-1111-111111111111")),
+                "Test Product",
+                "Test Brand",
+                category,
+                "#FF0000"
+            );
+
+            when(jpaProductRepository.findByUserId(userId.getValue()))
+                .thenReturn(List.of(productEntity));
+            when(productMapper.toDomain(productEntity)).thenReturn(expectedProduct);
+
+            // Act
+            List<Product> result = target.query(query);
+
+            // Assert
+            assertThat(result).hasSize(1);
+            Product actualProduct = result.getFirst();
+            assertAll(
+                () -> assertEquals(expectedProduct.getName(), actualProduct.getName()),
+                () -> assertEquals(expectedProduct.getBrand(), actualProduct.getBrand()),
+                () -> assertEquals(expectedProduct.getCategory(), actualProduct.getCategory()),
+                () -> assertEquals(expectedProduct.getColorHex(), actualProduct.getColorHex())
+            );
+        }
+
+        @Test
+        void verify_exceptionIsThrown_whenProductMapperReturnsNull() {
+            // Arrange
+            EntityId userId = new EntityId(UUID.randomUUID());
+            final FindProductUserQuery query = new FindProductUserQuery(userId);
+            final ProductEntity productEntity = createProductEntity("11111111-1111-1111-1111-111111111111");
+
+            when(jpaProductRepository.findByUserId(userId.getValue()))
+                .thenReturn(List.of(productEntity));
+            when(productMapper.toDomain(productEntity)).thenReturn(null);
+
+            // Act & Assert
+            assertThrows(ProductNotFoundException.class, () -> target.query(query));
+        }
+
+        @Test
+        void verify_emptyList_whenRepositoryReturnsNull() {
+            // Arrange
+            EntityId userId = new EntityId(UUID.randomUUID());
+            final FindProductUserQuery query = new FindProductUserQuery(userId);
+
+            when(jpaProductRepository.findByUserId(userId.getValue())).thenReturn(null);
+
+            // Act & Assert
+            assertThrows(ProductNotFoundException.class, () -> target.query(query));
+        }
     }
 }

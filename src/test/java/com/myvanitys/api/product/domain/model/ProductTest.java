@@ -29,15 +29,14 @@ class ProductTest {
 
   @BeforeEach
   void setUp() {
-    EntityId productId = new EntityId(UUID.randomUUID());
+    EntityId productUserId = new EntityId(UUID.randomUUID());
     EntityId userId = new EntityId(UUID.randomUUID());
     category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
 
-    target = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
 
-    review1 = new Review(new EntityId(UUID.randomUUID()), userId, target, 4, "Review 1");
-    review2 = new Review(new EntityId(UUID.randomUUID()), userId, target, 5, "Review 2");
-    review3 = new Review(new EntityId(UUID.randomUUID()), userId, target, 3, "Review 3");
+    review1 = new Review(new EntityId(UUID.randomUUID()), userId, productUserId, 4, "Review 1");
+    review2 = new Review(new EntityId(UUID.randomUUID()), userId, productUserId, 5, "Review 2");
+    review3 = new Review(new EntityId(UUID.randomUUID()), userId, productUserId, 3, "Review 3");
   }
 
   @Nested

@@ -2,7 +2,7 @@ package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
 import java.util.UUID;
 
-import com.myvanitys.api.product.domain.model.Product;
+
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
@@ -18,16 +18,16 @@ public class ReviewMapper {
    * Converts a ReviewEntity to a domain Review object.
    *
    * @param entity The entity to convert
-   * @param product The product associated with the review
+   * @param  productUserId associated with the review
    * @return The domain Review object
    */
-  public Review toDomain(ReviewEntity entity, Product product) {
+  public Review toDomain(ReviewEntity entity, EntityId productUserId) {
     if (entity == null) {
       return null;
     }
 
     // Ensure the product is not null
-    if (product == null) {
+    if (productUserId == null) {
       throw new IllegalArgumentException("Product cannot be null for review conversion");
     }
 
@@ -39,7 +39,7 @@ public class ReviewMapper {
     return new Review(
         reviewId,
         userId,
-        product,
+        productUserId,
         entity.getRating(),
         entity.getComment()
     );

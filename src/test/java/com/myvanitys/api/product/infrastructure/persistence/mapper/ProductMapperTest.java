@@ -27,6 +27,7 @@ class ProductMapperTest {
   private ProductMapperImpl productMapper;
 
   private UUID productId;
+  private UUID productUserId;
 
   private UUID categoryId;
 
@@ -34,6 +35,7 @@ class ProductMapperTest {
   void setUp() {
     productId = UUID.randomUUID();
     categoryId = UUID.randomUUID();
+    productUserId = UUID.randomUUID();
   }
 
 @Test
@@ -180,7 +182,7 @@ void toProductUserRelation_shouldReturnNullWhenInputIsNull() {
 @Test
 void toReview_shouldReturnNullWhenInputIsNull() {
     // Act
-    Review result = productMapper.toReview(null, new Product(new EntityId(UUID.randomUUID()), "Test", "Brand", null, "#000000"));
+    Review result = productMapper.toReview(null, new EntityId());
 
     // Assert
     assertNull(result);
@@ -200,8 +202,7 @@ void toReviewEntity_shouldMapReviewToReviewEntity() {
     // Arrange
     UUID reviewId = UUID.randomUUID();
     UUID userId = UUID.randomUUID();
-    Product product = new Product(new EntityId(productId), "Test Product", "Brand", null, "#000000");
-    Review review = new Review(new EntityId(reviewId), new EntityId(userId), product, 4, "Good product");
+    Review review = new Review(new EntityId(reviewId), new EntityId(userId), new EntityId(productUserId), 4, "Good product");
     
     ProductUserEntity productUserEntity = new ProductUserEntity();
     productUserEntity.setProductUserId(UUID.randomUUID());
