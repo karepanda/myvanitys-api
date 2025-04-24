@@ -29,7 +29,11 @@ public class Review {
                               @NonNull EntityId productUserEntity,
                               int rating,
                               @NonNull String comment) {
-    return new Review(new EntityId(UUID.randomUUID()), userId, productUserEntity, rating, comment);
+    Review review = new Review(new EntityId(UUID.randomUUID()), userId, productUserEntity, rating, comment);
+    review.validateRating(rating);
+    review.validateComment(comment);
+    return review;
+
   }
 
 

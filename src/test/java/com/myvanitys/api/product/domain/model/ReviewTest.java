@@ -23,11 +23,9 @@ class ReviewTest {
 
   private EntityId productUserId;
 
-    private EntityId reviewId;
-
-  @BeforeEach
+    @BeforeEach
   void setUp() {
-    reviewId = new EntityId(UUID.randomUUID());
+        EntityId reviewId = new EntityId(UUID.randomUUID());
     userId = new EntityId(UUID.randomUUID());
     EntityId productId = new EntityId(UUID.randomUUID());
     productUserId = new EntityId(UUID.randomUUID());
@@ -41,7 +39,7 @@ class ReviewTest {
   void testReviewInitialization() {
     assertNotNull(review1.getId());
     assertEquals(userId, review1.getUserId());
-    assertEquals(productUserRelation, review1.getProductUserEntity());
+    assertEquals(productUserRelation.getId(), review1.getProductUserEntity());
     assertEquals(5, review1.getRating());
     assertEquals("Excellent product", review1.getComment());
   }
@@ -64,40 +62,21 @@ class ReviewTest {
     Review review = Review.create(userId, productUserId, 4, "Good product");
     assertNotNull(review.getId());
     assertEquals(userId, review.getUserId());
-    assertEquals(productUserRelation, review.getProductUserEntity());
+    assertEquals(productUserRelation.getId(), review.getProductUserEntity());
     assertEquals(4, review.getRating());
     assertEquals("Good product", review.getComment());
   }
 
-//  @Test
-//  void testCreateReviewFromRelation() {
-//    ProductUserRelation relation = new ProductUserRelation(
-//        new EntityId(UUID.randomUUID()),
-//            productUserId,
-//            userId,
-//        null  // No review associated yet
-//    );
-//
-//    Review review = Review.createFromRelation(reviewId, relation, 3, "Acceptable", productUserRelation);
-//
-//    assertNotNull(review.getId());
-//    assertEquals(reviewId, review.getId());
-//    assertEquals(userId, review.getUserId());
-//    assertEquals(productUserRelation, review.getProductUserEntity());
-//    assertEquals(3, review.getRating());
-//    assertEquals("Acceptable", review.getComment());
-//  }
-
   @Test
   void testValidateRatingThrowsValidationExceptionForInvalidValues() {
-    ValidationException exception = assertThrows(ValidationException.class, () ->
-        new Review(reviewId, userId, productUserId, 0, "Invalid rating"));
-    assertTrue(exception.getErrors().stream()
-        .anyMatch(error -> error.field().equals("rating") &&
-            error.message().equals("Rating must be between 1 and 5")));
+    assertThrows(ValidationException.class, () ->
+        Review.create(userId, productUserId, 0, "Invalid rating"));
 
-    exception = assertThrows(ValidationException.class, () ->
-        new Review(reviewId, userId, productUserId, 6, "Invalid rating"));
+    assertThrows(ValidationException.class, () ->
+        Review.create(userId, productUserId, 6, "Invalid rating"));
+        
+    ValidationException exception = assertThrows(ValidationException.class, () ->
+        Review.create(userId, productUserId, -1, "Invalid rating"));
     assertTrue(exception.getErrors().stream()
         .anyMatch(error -> error.field().equals("rating") &&
             error.message().equals("Rating must be between 1 and 5")));
@@ -105,11 +84,64 @@ class ReviewTest {
 
   @Test
   void testValidateCommentThrowsValidationExceptionForEmptyComment() {
+    // Prueba string vacío
     ValidationException exception = assertThrows(ValidationException.class, () ->
-        new Review(reviewId, userId, productUserId, 5, ""));
+        Review.create(userId, productUserId, 5, ""));
     assertTrue(exception.getErrors().stream()
         .anyMatch(error -> error.field().equals("comment") &&
             error.message().equals("Comment cannot be empty")));
+
+    // Prueba string con espacios en blanco
+    exception = assertThrows(ValidationException.class, () ->
+        Review.create(userId, productUserId, 5, "   "));
+    assertTrue(exception.getErrors().stream()
+        .anyMatch(error -> error.field().equals("comment") &&
+            error.message().equals("Comment cannot be empty")));
+  }
+
+  @Test
+  void testCreateReviewWithNullValues() {
+    assertThrows(NullPointerException.class, () ->
+        Review.create(null, productUserId, 5, "Valid comment"));
+
+    assertThrows(NullPointerException.class, () ->
+        Review.create(userId, null, 5, "Valid comment"));
+
+    assertThrows(NullPointerException.class, () ->
+        Review.create(userId, productUserId, 5, null));
+  }
+
+  @Test
+  void testUpdateDetailsWithInvalidValues() {
+    Review review = Review.create(userId, productUserId, 5, "Initial comment");
+
+    // Prueba rating inválido
+    ValidationException exception = assertThrows(ValidationException.class, () ->
+        review.updateDetails(0, "Valid comment"));
+    assertTrue(exception.getErrors().stream()
+        .anyMatch(error -> error.field().equals("rating") &&
+            error.message().equals("Rating must be between 1 and 5")));
+
+    // Prueba comentario inválido
+    exception = assertThrows(ValidationException.class, () ->
+        review.updateDetails(4, ""));
+    assertTrue(exception.getErrors().stream()
+        .anyMatch(error -> error.field().equals("comment") &&
+            error.message().equals("Comment cannot be empty")));
+
+    // Verificar que los valores originales no cambiaron
+    assertEquals(5, review.getRating());
+    assertEquals("Initial comment", review.getComment());
+  }
+
+  @Test 
+  void testCreateWithValidRatingBoundaryValues() {
+    // Prueba valores límite válidos (1 y 5)
+    Review review1 = Review.create(userId, productUserId, 1, "Valid comment");
+    assertEquals(1, review1.getRating());
+
+    Review review5 = Review.create(userId, productUserId, 5, "Valid comment");
+    assertEquals(5, review5.getRating());
   }
 
   @Test
