@@ -40,7 +40,7 @@ class ReviewMapperTest {
         EntityId productUserEntityId = new EntityId(productUserId);
         ReviewEntity reviewEntity = ReviewEntity.builder()
                 .reviewId(reviewId)
-                .productUserEntity(productUserEntity)
+                .productUserId(productUserId)
                 .rating(5)
                 .comment("Excelente producto")
                 .build();
@@ -52,7 +52,7 @@ class ReviewMapperTest {
         assertNotNull(result);
         assertEquals(reviewId, result.getId().getValue());
         assertEquals(userId, result.getUserId().getValue());
-        assertEquals(productUserId, result.getProductUserEntity().getValue());
+        assertEquals(productUserId, result.getProductUserId().getValue());
         assertEquals(5, result.getRating());
         assertEquals("Excelente producto", result.getComment());
     }

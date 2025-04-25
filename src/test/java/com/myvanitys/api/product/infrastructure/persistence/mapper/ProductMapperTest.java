@@ -28,7 +28,6 @@ class ProductMapperTest {
 
   private UUID productId;
   private UUID productUserId;
-
   private UUID categoryId;
 
   @BeforeEach
@@ -191,7 +190,7 @@ void toReview_shouldReturnNullWhenInputIsNull() {
 @Test
 void toReviewEntity_shouldReturnNullWhenInputIsNull() {
     // Act
-    ReviewEntity result = productMapper.toReviewEntity(null, new ProductUserEntity());
+    ReviewEntity result = productMapper.toReviewEntity(null, productUserId);
 
     // Assert
     assertNull(result);
@@ -210,14 +209,14 @@ void toReviewEntity_shouldMapReviewToReviewEntity() {
     productUserEntity.setUserId(userId);
 
     // Act
-    ReviewEntity result = productMapper.toReviewEntity(review, productUserEntity);
+    ReviewEntity result = productMapper.toReviewEntity(review, productUserId);
 
     // Assert
     assertNotNull(result);
     assertEquals(reviewId, result.getReviewId());
     assertEquals(4, result.getRating());
     assertEquals("Good product", result.getComment());
-    assertEquals(productUserEntity, result.getProductUserEntity());
+    assertEquals(productUserId, result.getProductUserId());
 }
 
   @Test
@@ -243,7 +242,7 @@ void toReviewEntity_shouldMapReviewToReviewEntity() {
     reviewEntity.setReviewId(UUID.randomUUID());
     reviewEntity.setRating(5);
     reviewEntity.setComment("Great product!");
-    reviewEntity.setProductUserEntity(productUserEntity);
+    reviewEntity.setProductUserId(productUserId);
 
     productUserEntity.setReviews(List.of(reviewEntity));
 

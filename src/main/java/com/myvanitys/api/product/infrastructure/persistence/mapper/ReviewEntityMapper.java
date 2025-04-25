@@ -11,17 +11,19 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class})
 public abstract class ReviewEntityMapper {
 
-  public ProductUserRelation toProductUserRelation(ReviewEntity reviewEntity) {
+
+
+  public ProductUserRelation toProductUserRelation(ProductUserRelation productUserRelation) {
     // Check if reviewId exists. If it does not exist, we do not map the relationship.
-    if (reviewEntity.getReviewId() == null) {
+    if (productUserRelation.getReviewId() == null) {
       return null;
     }
 
     return new ProductUserRelation(
-        new EntityId(UUID.randomUUID()),  // This is the ID of the relationship, not of the review
-        new EntityId(reviewEntity.getProductUserEntity().getProductId()), // productId
-        new EntityId(reviewEntity.getProductUserEntity().getUserId()),    // userId
-        new EntityId(reviewEntity.getReviewId())  // ReviewId of the existing entity
+        new EntityId(productUserRelation.getId().getValue()),
+        new EntityId(productUserRelation.getProductId().getValue()),
+        new EntityId(productUserRelation.getUserId().getValue()),
+        new EntityId(productUserRelation.getReviewId().getValue())
     );
   }
 
@@ -32,10 +34,10 @@ public abstract class ReviewEntityMapper {
     productUserEntity.setUserId(productUserRelation.getUserId().getValue());
 
     return ReviewEntity.builder()
-        .productUserEntity(productUserEntity)
+        .reviewId(UUID.randomUUID())
         .rating(rating)
         .comment(comment)
-        .reviewId(UUID.randomUUID())
+        .productUserId(productUserEntity.getProductUserId())
         .build();
   }
 }
