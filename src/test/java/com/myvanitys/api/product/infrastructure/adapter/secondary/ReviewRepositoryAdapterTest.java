@@ -92,7 +92,7 @@ class ReviewRepositoryAdapterTest {
       when(jpaProductUserRepository.findByProductIdAndUserId(productId, userId))
           .thenReturn(Optional.of(productUserEntity));
       when(reviewMapper.toEntity(review)).thenReturn(reviewEntity);
-      when(jpaReviewRepository.save(any(ReviewEntity.class))).thenReturn(reviewEntity);
+      when(jpaReviewRepository.save(reviewEntity)).thenReturn(reviewEntity);
       when(reviewMapper.toDomain(any(ReviewEntity.class), any(EntityId.class))).thenReturn(review);
 
       // Act
@@ -100,7 +100,7 @@ class ReviewRepositoryAdapterTest {
 
       // Assert
       assertThat(result).isEqualTo(review);
-      verify(jpaReviewRepository).save(any(ReviewEntity.class));
+      verify(jpaReviewRepository).save(reviewEntity);
     }
 
     @Test
