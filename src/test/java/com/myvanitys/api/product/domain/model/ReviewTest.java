@@ -39,14 +39,14 @@ class ReviewTest {
   void testReviewInitialization() {
     assertNotNull(review1.getId());
     assertEquals(userId, review1.getUserId());
-    assertEquals(productUserRelation.getId(), review1.getProductUserEntity());
+    assertEquals(productUserRelation.getId(), review1.getProductUserId());
     assertEquals(5, review1.getRating());
     assertEquals("Excellent product", review1.getComment());
   }
 
   @Test
   void testEqualsAndHashCode() {
-    Review review2 = new Review(review1.getId(), review1.getUserId(), review1.getProductUserEntity(), 5, "Different comment");
+    Review review2 = new Review(review1.getId(), review1.getUserId(), review1.getProductUserId(), 5, "Different comment");
     assertEquals(review1, review2);  // Equality is based only on ID
     assertEquals(review1.hashCode(), review2.hashCode());
   }
@@ -62,7 +62,7 @@ class ReviewTest {
     Review review = Review.create(userId, productUserId, 4, "Good product");
     assertNotNull(review.getId());
     assertEquals(userId, review.getUserId());
-    assertEquals(productUserRelation.getId(), review.getProductUserEntity());
+    assertEquals(productUserRelation.getId(), review.getProductUserId());
     assertEquals(4, review.getRating());
     assertEquals("Good product", review.getComment());
   }

@@ -19,7 +19,7 @@ public class Review {
 
   private final EntityId userId;
 
-  private final EntityId productUserEntity;
+  private final EntityId productUserId;
 
   private int rating;
 

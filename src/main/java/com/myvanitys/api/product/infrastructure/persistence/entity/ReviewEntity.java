@@ -39,9 +39,8 @@ public class ReviewEntity {
   @Column(name = "comment", nullable = false)
   private String comment;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "product_user_id", nullable = false)
-  private ProductUserEntity productUserEntity;
+  @Column(name = "product_user_id", nullable = false)
+  private UUID productUserId;
 
   @Column
   private Instant createdAt;

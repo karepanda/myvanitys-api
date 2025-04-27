@@ -3,6 +3,7 @@ package com.myvanitys.api.product.infrastructure.persistence.mapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
@@ -164,7 +165,7 @@ public class ProductMapper {
 
     return new Review(
         new EntityId(reviewEntity.getReviewId()),
-        new EntityId(reviewEntity.getProductUserEntity().getUserId()),
+        new EntityId(reviewEntity.getProductUserId()),
         productUserEntity,
         reviewEntity.getRating(),
         reviewEntity.getComment()
@@ -174,8 +175,8 @@ public class ProductMapper {
   /**
    * Converts a domain Review to a ReviewEntity.
    */
-  public ReviewEntity toReviewEntity(Review review, ProductUserEntity productUserEntity) {
-    if (review == null || productUserEntity == null) {
+  public ReviewEntity toReviewEntity(Review review, UUID productUserId) {
+    if (review == null || productUserId == null) {
       return null;
     }
 
@@ -183,7 +184,7 @@ public class ProductMapper {
         .reviewId(review.getId().getValue())
         .rating(review.getRating())
         .comment(review.getComment())
-        .productUserEntity(productUserEntity)
+        .productUserId(productUserId)
         .build();
   }
 }

@@ -10,7 +10,6 @@ import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.port.secondary.ReviewRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
@@ -45,19 +44,6 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
   @Transactional
   public Review save(Review review) {
     try {
-      // Get IDs
-      UUID productId = review.getProductUserEntity().getValue();
-      UUID userId = review.getUserId().getValue();
-
-      // Find existing product-user relationship
-      Optional<ProductUserEntity> productUserEntityOpt = jpaProductUserRepository.findByProductIdAndUserId(
-          productId, userId);
-
-      // Check if the product-user relationship exists
-      if (productUserEntityOpt.isEmpty()) {
-        throw new EntityNotFoundException("Product-User relation not found for product id: "
-            + productId + " and user id: " + userId);
-      }
 
       // Convert review to entity
       ReviewEntity entity = reviewMapper.toEntity(review);
@@ -70,13 +56,13 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       entity.setUpdatedAt(now);
 
       // Assign product-user relationship to review entity
-      entity.setProductUserEntity(productUserEntityOpt.get());
+      entity.setProductUserId(UUID.randomUUID());
 
       // Save entity
       ReviewEntity savedEntity = jpaReviewRepository.save(entity);
 
       // Retrieve product from domain
-      EntityId productUserEntity = review.getProductUserEntity();
+      EntityId productUserEntity = review.getProductUserId();
 
       // Convert back to domain using the existing product
       return reviewMapper.toDomain(savedEntity, productUserEntity);

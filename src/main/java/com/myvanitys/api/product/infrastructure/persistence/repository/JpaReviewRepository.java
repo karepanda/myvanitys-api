@@ -32,14 +32,4 @@ public interface JpaReviewRepository extends JpaRepository<ReviewEntity, UUID> {
    * Checks if a review exists with the given ID and is associated with a specific user
    */
   boolean existsByReviewIdAndProductUserEntityUserId(UUID reviewId, UUID userId);
-
-  /**
-   * Find reviews by rating
-   */
-  List<ReviewEntity> findByRating(int rating);
-
-  /**
-   * Find reviews by product ID and rating greater than or equal to value
-   */
-  List<ReviewEntity> findByProductUserEntityProductIdAndRatingGreaterThanEqual(UUID productId, int rating);
 }
