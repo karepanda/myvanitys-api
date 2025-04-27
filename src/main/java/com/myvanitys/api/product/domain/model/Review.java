@@ -1,70 +1,163 @@
 package com.myvanitys.api.product.domain.model;
 
+import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
-import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
+import com.myvanitys.api.product.domain.valueobject.Timestamp;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 
+/**
+ * Domain entity for product reviews
+ */
 @Getter
 @ToString
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Review {
 
   private final EntityId id;
 
-  private final EntityId userId;
-
   private final EntityId productUserId;
 
-  private int rating;
+  private ReviewDetails details;
 
-  private String comment;
-
-  public static Review create(@NonNull EntityId userId,
-                              @NonNull EntityId productUserEntity,
-                              int rating,
-                              @NonNull String comment) {
-    Review review = new Review(new EntityId(UUID.randomUUID()), userId, productUserEntity, rating, comment);
-    review.validateRating(rating);
-    review.validateComment(comment);
-    return review;
-
-  }
-
+  // ---------- CREATION METHODS ----------
 
   /**
-   * Updates review details with validation
+   * Factory method for creating a new review with provided details Should only be used by the Product aggregate
+   */
+  static Review createFor(@NonNull EntityId productUserId, ReviewDetails details) {
+    return new Review(EntityId.newId(), productUserId, details);
+  }
+
+  /**
+   * Factory method for creating a new review with specific parameters Should only be used by the Product aggregate
+   */
+  static Review createFor(@NonNull EntityId productUserId, int rating, @NonNull String comment) {
+    return createFor(productUserId, ReviewDetails.create(rating, comment));
+  }
+
+  /**
+   * Factory method for creating a new review with all timestamps explicitly defined Should only be used by the Product aggregate
+   */
+  static Review createFor(@NonNull EntityId productUserId, int rating, @NonNull String comment,
+      Instant createdAt, Instant updatedAt) {
+    return createFor(productUserId,
+        ReviewDetails.of(rating, comment, createdAt, updatedAt, null));
+  }
+
+  // ---------- RECONSTRUCTION METHODS (FOR PERSISTENCE) ----------
+
+  /**
+   * Factory method for creating a review with an existing ID and details Should only be used by infrastructure mappers when reconstructing
+   * from the database
+   */
+  public static Review createWithExistingId(EntityId id, @NonNull EntityId productUserId, ReviewDetails details) {
+    return new Review(id, productUserId, details);
+  }
+
+  /**
+   * Factory method for creating a review with an existing ID and all timestamps Should only be used by infrastructure mappers when
+   * reconstructing from the database
+   */
+  public static Review createWithExistingId(EntityId id, @NonNull EntityId productUserId,
+      int rating, @NonNull String comment, Instant createdAt, Instant updatedAt, Instant deletedAt) {
+    return createWithExistingId(id, productUserId,
+        ReviewDetails.of(rating, comment, createdAt, updatedAt, deletedAt));
+  }
+
+  // ---------- UPDATE METHODS ----------
+
+  /**
+   * Updates review details, preserving existing timestamps except for updatedAt
    */
   public void updateDetails(int rating, @NonNull String comment) {
-    validateRating(rating);
-    validateComment(comment);
-
-    this.rating = rating;
-    this.comment = comment;
+    this.details = this.details.withUpdates(rating, comment);
   }
 
   /**
-   * Validates that the rating is between 1 and 5
+   * Updates review details with a complete new set of details Use with caution, as it will override all timestamps
    */
-  private void validateRating(int rating) {
-    if (rating < 1 || rating > 5) {
-      throw ValidationException.withError("rating", "Rating must be between 1 and 5");
-    }
+  public void updateDetails(ReviewDetails newDetails) {
+    this.details = newDetails;
+  }
+
+  // ---------- DELETE METHODS ----------
+
+  /**
+   * Marks this review as deleted with the current timestamp
+   */
+  public void markAsDeleted() {
+    this.details = this.details.markAsDeleted();
   }
 
   /**
-   * Validates that the comment is not empty
+   * Marks this review as deleted with a specific timestamp
    */
-  private void validateComment(String comment) {
-    if (comment == null || comment.isBlank()) {
-      throw ValidationException.withError("comment", "Comment cannot be empty");
+  public void markAsDeleted(Instant deletedAt) {
+    if (deletedAt == null || this.details.isDeleted()) {
+      return; // No action if already deleted or null timestamp
     }
+
+    this.details = new ReviewDetails(
+        this.details.rating(),
+        this.details.comment(),
+        this.details.createdAt(),
+        this.details.updatedAt(),
+        Timestamp.of(deletedAt)
+    );
   }
+
+  /**
+   * Checks if this review is deleted
+   */
+  public boolean isDeleted() {
+    return this.details.isDeleted();
+  }
+
+  // ---------- GETTER CONVENIENCE METHODS ----------
+
+  /**
+   * Gets the rating
+   */
+  public int getRating() {
+    return details.rating();
+  }
+
+  /**
+   * Gets the comment
+   */
+  public String getComment() {
+    return details.comment();
+  }
+
+  /**
+   * Gets the creation date as Instant
+   */
+  public Instant getCreatedAt() {
+    return details.createdAt().asInstant();
+  }
+
+  /**
+   * Gets the last update date as Instant
+   */
+  public Instant getUpdatedAt() {
+    return details.updatedAt().asInstant();
+  }
+
+  /**
+   * Gets the deletion date as Instant, or null if not deleted
+   */
+  public Instant getDeletedAt() {
+    return details.deletedAt() != null ? details.deletedAt().asInstant() : null;
+  }
+
+  // ---------- EQUALS/HASHCODE ----------
 
   @Override
   public boolean equals(Object o) {
@@ -80,6 +173,6 @@ public class Review {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(id);
+    return Objects.hash(id);
   }
 }

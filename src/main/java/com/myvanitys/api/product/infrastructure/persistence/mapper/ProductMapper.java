@@ -3,13 +3,13 @@ package com.myvanitys.api.product.infrastructure.persistence.mapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
@@ -158,25 +158,31 @@ public class ProductMapper {
   /**
    * Converts a ReviewEntity to a domain Review.
    */
-  public Review toReview(ReviewEntity reviewEntity, EntityId productUserEntity) {
-    if (reviewEntity == null || productUserEntity == null) {
+  public Review toReview(ReviewEntity reviewEntity, EntityId productUserId) {
+    if (reviewEntity == null || productUserId == null) {
       return null;
     }
 
-    return new Review(
-        new EntityId(reviewEntity.getReviewId()),
-        new EntityId(reviewEntity.getProductUserId()),
-        productUserEntity,
+    // Crear el value object ReviewDetails
+    ReviewDetails reviewDetails = ReviewDetails.of(
         reviewEntity.getRating(),
-        reviewEntity.getComment()
+        reviewEntity.getComment(),
+        reviewEntity.getCreatedAt()
+    );
+
+    // Usar el método factory con ID existente para recrear la review desde la base de datos
+    return Review.createWithExistingId(
+        new EntityId(reviewEntity.getReviewId()),
+        productUserId,
+        reviewDetails
     );
   }
 
   /**
    * Converts a domain Review to a ReviewEntity.
    */
-  public ReviewEntity toReviewEntity(Review review, UUID productUserId) {
-    if (review == null || productUserId == null) {
+  public ReviewEntity toReviewEntity(Review review) {
+    if (review == null) {
       return null;
     }
 
@@ -184,7 +190,8 @@ public class ProductMapper {
         .reviewId(review.getId().getValue())
         .rating(review.getRating())
         .comment(review.getComment())
-        .productUserId(productUserId)
+        .createdAt(review.getCreatedAt())
+        .productUserId(review.getProductUserId().getValue())
         .build();
   }
 }
