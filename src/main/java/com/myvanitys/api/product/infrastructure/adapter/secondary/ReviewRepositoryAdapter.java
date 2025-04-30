@@ -14,7 +14,6 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaReviewRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
@@ -31,8 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReviewRepositoryAdapter implements ReviewRepository {
 
   private final JpaReviewRepository jpaReviewRepository;
-
-  private final JpaProductUserRepository jpaProductUserRepository;
 
   private final JpaProductRepository jpaProductRepository;
 
@@ -82,13 +79,13 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       }
 
       ReviewEntity reviewEntity = reviewEntityOpt.get();
-      UUID productId = reviewEntity.getProductUserEntity().getProductId();
+      UUID productId = reviewEntity.getProductUserId();
 
       // Get the product
       return jpaProductRepository.findById(productId)
           .map(productEntity -> {
             // Convert product entity to domain
-            EntityId productUserEntity = new EntityId(reviewEntity.getProductUserEntity().getProductUserId());
+            EntityId productUserEntity = new EntityId(reviewEntity.getProductUserId());
             return reviewMapper.toDomain(reviewEntity, productUserEntity);
           });
     } catch (DataAccessException e) {
@@ -150,10 +147,10 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       // For each review, fetch the corresponding product
       return reviewEntities.stream()
           .map(entity -> {
-            UUID productId = entity.getProductUserEntity().getProductId();
+            UUID productId = entity.getProductUserId();
             return jpaProductRepository.findById(productId)
                 .map(productEntity -> {
-                  EntityId productUserEntity = new EntityId(entity.getProductUserEntity().getProductUserId());
+                  EntityId productUserEntity = new EntityId(entity.getProductUserId());
                   return reviewMapper.toDomain(entity, productUserEntity);
                 })
                 .orElseThrow(() -> new EntityNotFoundException(
