@@ -10,10 +10,7 @@ public record AddReviewToProductCommand(@NonNull EntityId userId, @NonNull Entit
                                         ReviewDetails reviewDetails) {
 
   public AddReviewToProductCommand(EntityId userId, EntityId productId, int rating, String comment, Instant createdAt) {
-    this(userId, productId, ReviewDetails.of(rating, comment, createdAt));
+    this(userId, productId, ReviewDetails.of(rating, comment, createdAt, createdAt, null));
   }
 
-  public AddReviewToProductCommand(EntityId userId, EntityId productId, int rating, String comment) {
-    this(userId, productId, ReviewDetails.of(rating, comment));
-  }
 }
