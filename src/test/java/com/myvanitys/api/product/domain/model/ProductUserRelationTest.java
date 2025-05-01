@@ -27,7 +27,9 @@ class ProductUserRelationTest {
     productId = new EntityId(UUID.randomUUID());
     userId = new EntityId(UUID.randomUUID());
     reviewId = new EntityId(UUID.randomUUID());
-    relation = new ProductUserRelation(id, productId, userId, null);  // Se agrega null para reviewId
+
+    // Usar reconstruct en lugar del constructor
+    relation = ProductUserRelation.reconstruct(id, productId, userId, null);
   }
 
   @Test
@@ -40,7 +42,8 @@ class ProductUserRelationTest {
 
   @Test
   void shouldInitializeWithReviewId() {
-    ProductUserRelation relationWithReview = new ProductUserRelation(id, productId, userId, reviewId);
+    // Usar reconstruct en lugar del constructor
+    ProductUserRelation relationWithReview = ProductUserRelation.reconstruct(id, productId, userId, reviewId);
 
     assertThat(relationWithReview.getId()).isEqualTo(id);
     assertThat(relationWithReview.getProductId()).isEqualTo(productId);
@@ -52,16 +55,19 @@ class ProductUserRelationTest {
   void shouldSetReviewId() {
     assertThat(relation.getReviewId()).isNull();
 
-    relation.setReviewId(reviewId);
+    // Usar linkToReview en lugar de setReviewId
+    relation.linkToReview(reviewId);
 
     assertThat(relation.getReviewId()).isEqualTo(reviewId);
   }
 
   @Test
   void equalsAndHashCodeShouldWorkBasedOnUserIdAndProductId() {
-    ProductUserRelation sameRelation = new ProductUserRelation(
+    // Usar reconstruct en lugar del constructor
+    ProductUserRelation sameRelation = ProductUserRelation.reconstruct(
         new EntityId(UUID.randomUUID()), productId, userId, new EntityId(UUID.randomUUID()));
-    ProductUserRelation differentRelation = new ProductUserRelation(
+
+    ProductUserRelation differentRelation = ProductUserRelation.reconstruct(
         new EntityId(UUID.randomUUID()), new EntityId(UUID.randomUUID()), new EntityId(UUID.randomUUID()), null);
 
     assertThat(relation)
@@ -80,13 +86,46 @@ class ProductUserRelationTest {
 
   @Test
   void shouldThrowExceptionWhenRequiredFieldsAreNull() {
-    assertThatThrownBy(() -> new ProductUserRelation(null, productId, userId, reviewId))
+    // Usar reconstruct en lugar del constructor
+    assertThatThrownBy(() -> ProductUserRelation.reconstruct(null, productId, userId, reviewId))
         .isInstanceOf(NullPointerException.class);
 
-    assertThatThrownBy(() -> new ProductUserRelation(id, null, userId, reviewId))
+    assertThatThrownBy(() -> ProductUserRelation.reconstruct(id, null, userId, reviewId))
         .isInstanceOf(NullPointerException.class);
 
-    assertThatThrownBy(() -> new ProductUserRelation(id, productId, null, reviewId))
+    assertThatThrownBy(() -> ProductUserRelation.reconstruct(id, productId, null, reviewId))
         .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void shouldCreateNewRelation() {
+    // Test para el método create
+    ProductUserRelation newRelation = ProductUserRelation.create(productId, userId);
+
+    assertThat(newRelation.getId()).isNotNull();
+    assertThat(newRelation.getProductId()).isEqualTo(productId);
+    assertThat(newRelation.getUserId()).isEqualTo(userId);
+    assertThat(newRelation.getReviewId()).isNull();
+  }
+
+  @Test
+  void shouldCheckIfRelationHasReview() {
+    // Probar el método hasReview
+    assertThat(relation.hasReview()).isFalse();
+
+    relation.linkToReview(reviewId);
+
+    assertThat(relation.hasReview()).isTrue();
+  }
+
+  @Test
+  void shouldUnlinkReview() {
+    relation.linkToReview(reviewId);
+    assertThat(relation.getReviewId()).isEqualTo(reviewId);
+
+    relation.unlinkReview();
+
+    assertThat(relation.getReviewId()).isNull();
+    assertThat(relation.hasReview()).isFalse();
   }
 }

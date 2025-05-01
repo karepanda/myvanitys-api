@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 
-import com.myvanitys.api.common.ValidationException;
+import com.myvanitys.api.product.domain.exception.ReviewValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,61 +33,6 @@ class ReviewDetailsTest {
   }
 
   @Nested
-  class Constructor {
-
-    @Test
-    void when_allParametersProvided_then_createsInstanceWithValues() {
-      // Given
-      final Timestamp createdAt = Timestamp.of(yesterday);
-      final Timestamp updatedAt = Timestamp.of(now);
-      final Timestamp deletedAt = Timestamp.of(tomorrow);
-
-      // When
-      final ReviewDetails result = new ReviewDetails(rating, comment, createdAt, updatedAt, deletedAt);
-
-      // Then
-      assertThat(result.rating()).isEqualTo(rating);
-      assertThat(result.comment()).isEqualTo(comment);
-      assertThat(result.createdAt()).isEqualTo(createdAt);
-      assertThat(result.updatedAt()).isEqualTo(updatedAt);
-      assertThat(result.deletedAt()).isEqualTo(deletedAt);
-    }
-
-    @Test
-    void when_nullCreatedAt_then_usesCurrentTime() {
-      // When
-      final ReviewDetails result = new ReviewDetails(rating, comment, null, Timestamp.of(now), null);
-
-      // Then
-      assertThat(result.createdAt()).isNotNull();
-    }
-
-    @Test
-    void when_invalidRating_then_throwsValidationException() {
-      // When/Then
-      assertThatThrownBy(() -> new ReviewDetails(0, comment, null, null, null))
-          .isInstanceOf(ValidationException.class)
-          .hasMessageContaining("Rating must be between 1 and 5");
-
-      assertThatThrownBy(() -> new ReviewDetails(6, comment, null, null, null))
-          .isInstanceOf(ValidationException.class)
-          .hasMessageContaining("Rating must be between 1 and 5");
-    }
-
-    @Test
-    void when_emptyComment_then_throwsValidationException() {
-      // When/Then
-      assertThatThrownBy(() -> new ReviewDetails(rating, "", null, null, null))
-          .isInstanceOf(ValidationException.class)
-          .hasMessageContaining("Comment cannot be empty");
-
-      assertThatThrownBy(() -> new ReviewDetails(rating, "   ", null, null, null))
-          .isInstanceOf(ValidationException.class)
-          .hasMessageContaining("Comment cannot be empty");
-    }
-  }
-
-  @Nested
   class Create {
 
     @Test
@@ -109,7 +54,7 @@ class ReviewDetailsTest {
     void when_invalidRating_then_throwsValidationException() {
       // When/Then
       assertThatThrownBy(() -> ReviewDetails.create(0, comment))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Rating must be between 1 and 5");
     }
 
@@ -117,7 +62,7 @@ class ReviewDetailsTest {
     void when_emptyComment_then_throwsValidationException() {
       // When/Then
       assertThatThrownBy(() -> ReviewDetails.create(rating, ""))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Comment cannot be empty");
     }
   }
@@ -154,7 +99,7 @@ class ReviewDetailsTest {
     void when_invalidRating_then_throwsValidationException() {
       // When/Then
       assertThatThrownBy(() -> ReviewDetails.of(0, comment, null, null, null))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Rating must be between 1 and 5");
     }
 
@@ -162,7 +107,7 @@ class ReviewDetailsTest {
     void when_emptyComment_then_throwsValidationException() {
       // When/Then
       assertThatThrownBy(() -> ReviewDetails.of(rating, "", null, null, null))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Comment cannot be empty");
     }
   }
@@ -194,7 +139,7 @@ class ReviewDetailsTest {
     void when_invalidRating_then_throwsValidationException() {
       // When/Then
       assertThatThrownBy(() -> target.withUpdates(0, comment))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Rating must be between 1 and 5");
     }
 
@@ -202,7 +147,7 @@ class ReviewDetailsTest {
     void when_emptyComment_then_throwsValidationException() {
       // When/Then
       assertThatThrownBy(() -> target.withUpdates(rating, ""))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Comment cannot be empty");
     }
   }

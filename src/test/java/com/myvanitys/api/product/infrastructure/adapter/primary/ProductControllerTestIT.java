@@ -11,9 +11,12 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,6 +27,7 @@ import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
 import com.myvanitys.api.product.infrastructure.adapter.primary.service.TokenService;
@@ -64,8 +68,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     public TokenService tokenService() {
       return mock(TokenService.class);
     }
-
-
   }
 
   @BeforeEach
@@ -95,7 +97,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     // Given
     UUID requestId = UUID.randomUUID();
     UUID flowId = UUID.randomUUID();
-    UUID userId = UUID.randomUUID(); // Make sure this is properly initialized
+    UUID userId = UUID.randomUUID();
     String acceptLanguage = "en-US";
     String userAgent = "Mozilla/5.0 (Test)";
 
@@ -108,9 +110,37 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
     Category category2 = new Category(new EntityId(UUID.randomUUID()), "Test Category2");
+
+    // Crear relaciones de usuario para cada producto
+    EntityId productId1 = new EntityId(UUID.randomUUID());
+    EntityId productId2 = new EntityId(UUID.randomUUID());
+
+    Set<ProductUserRelation> relations1 = new HashSet<>();
+    relations1.add(ProductUserRelation.create(productId1, entityId));
+
+    Set<ProductUserRelation> relations2 = new HashSet<>();
+    relations2.add(ProductUserRelation.create(productId2, entityId));
+
+    // Usar métodos de fábrica para crear productos
     List<Product> domainProducts = Arrays.asList(
-        new Product(new EntityId(UUID.randomUUID()), "Product 1", "Brand 1", category, "#FF0000"),
-        new Product(new EntityId(UUID.randomUUID()), "Product 2", "Brand 2", category2, "#00FF00")
+        Product.reconstruct(
+            productId1,
+            "Product 1",
+            "Brand 1",
+            category,
+            "#FF0000",
+            new ArrayList<>(),  // Sin reviews
+            relations1          // Con relación al usuario
+        ),
+        Product.reconstruct(
+            productId2,
+            "Product 2",
+            "Brand 2",
+            category2,
+            "#00FF00",
+            new ArrayList<>(),  // Sin reviews
+            relations2          // Con relación al usuario
+        )
     );
 
     // Create API response objects
@@ -128,7 +158,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     );
 
     // Configure mocks
-    // Instead of creating the query object here, let's just mock the behavior
     when(findProductUserUseCase.query(any(FindProductUserQuery.class))).thenReturn(domainProducts);
     when(productResponseMapper.toResponseList(domainProducts)).thenReturn(responseProducts);
     when(tokenService.extractUserId(anyString())).thenReturn(userId);

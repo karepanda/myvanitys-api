@@ -4,18 +4,22 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
@@ -35,6 +39,9 @@ class FindProductByUserTest {
 
   @Mock
   private ProductMapper productMapper;
+
+  @Mock
+  private CategoryRepository categoryRepository; // Añadido
 
   @InjectMocks
   private FindProductByUser target;
@@ -57,18 +64,31 @@ class FindProductByUserTest {
       final Category category2 = new Category(new EntityId(UUID.randomUUID()), "Eye Makeup");
 
       // Creating domain product with specific IDs
-      final Product domain1 = new Product(
+      final Product domain1 = Product.reconstruct(
           new EntityId(UUID.fromString("765d310a-c838-429c-bd82-3172c2d7f49e")),
-          "Lipstick", "Maybelline", category1, "#FF0000");
-      final Product domain2 = new Product(
+          "Lipstick", "Maybelline", category1, "#FF0000",
+          null, // Sin reviews
+          null  // Sin relaciones usuario-producto
+      );
+
+      final Product domain2 = Product.reconstruct(
           new EntityId(UUID.fromString("cc2217f0-56c7-48f8-beb3-8da8f6f70f23")),
-          "Mascara", "L'Oreal", category2, "#000000");
+          "Mascara", "L'Oreal", category2, "#000000",
+          null, // Sin reviews
+          null  // Sin relaciones usuario-producto
+      );
 
       // Configure repository behavior
       when(jpaProductRepository.findByUserId(userId.getValue()))
           .thenReturn(List.of(productId1, productId2));
-      when(productMapper.toDomain(productId1)).thenReturn(domain1);
-      when(productMapper.toDomain(productId2)).thenReturn(domain2);
+
+      // Modificado para usar toDomain con categoría
+      when(productMapper.toDomain(eq(productId1), any(Category.class))).thenReturn(domain1);
+      when(productMapper.toDomain(eq(productId2), any(Category.class))).thenReturn(domain2);
+
+      // Añadidos mocks para CategoryRepository
+      when(categoryRepository.findById(any(EntityId.class)))
+          .thenReturn(Optional.of(category1), Optional.of(category2));
 
       // Act
       final List<Product> result = target.query(query);
@@ -76,19 +96,19 @@ class FindProductByUserTest {
       // Assert
       assertThat(result)
           .hasSize(2)
-          .containsExactlyInAnyOrder(domain1, domain2); // Cambiado a containsExactlyInAnyOrder
+          .containsExactlyInAnyOrder(domain1, domain2);
     }
 
     private ProductEntity createProductEntity(String id) {
       ProductEntity entity = new ProductEntity();
       entity.setProductId(UUID.fromString(id));
+      entity.setCategoryId(UUID.randomUUID()); // Añadido para asegurar que hay ID de categoría
       return entity;
     }
 
     @Test
     void when_userHasNoProducts_then_throwProductNotFoundException() {
       final EntityId userId = new EntityId(UUID.randomUUID());
-
       final FindProductUserQuery query = new FindProductUserQuery(userId);
 
       when(jpaProductRepository.findByUserId(userId.getValue())).thenReturn(List.of());
@@ -103,24 +123,30 @@ class FindProductByUserTest {
       final FindProductUserQuery query = new FindProductUserQuery(userId);
       final ProductEntity productEntity = createProductEntity("11111111-1111-1111-1111-111111111111");
       final Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
-      final Product domainProduct = new Product(
+
+      final Product domainProduct = Product.reconstruct(
           new EntityId(UUID.randomUUID()),
           "Test Product",
           "Test Brand",
           category,
-          "#000000"
+          "#000000",
+          null,
+          null
       );
 
       when(jpaProductRepository.findByUserId(userId.getValue()))
           .thenReturn(List.of(productEntity));
-      when(productMapper.toDomain(productEntity)).thenReturn(domainProduct);
+      when(categoryRepository.findById(any(EntityId.class)))
+          .thenReturn(Optional.of(category));
+      when(productMapper.toDomain(eq(productEntity), any(Category.class))).thenReturn(domainProduct);
 
       // Act
       target.query(query);
 
       // Assert
       verify(jpaProductRepository, times(1)).findByUserId(userId.getValue());
-      verify(productMapper, times(1)).toDomain(productEntity);
+      verify(categoryRepository, times(1)).findById(any(EntityId.class));
+      verify(productMapper, times(1)).toDomain(eq(productEntity), any(Category.class));
       verifyNoMoreInteractions(jpaProductRepository, productMapper);
     }
 
@@ -134,17 +160,21 @@ class FindProductByUserTest {
       final EntityId categoryId = new EntityId(UUID.randomUUID());
       final Category category = new Category(categoryId, "Test Category");
 
-      final Product expectedProduct = new Product(
+      final Product expectedProduct = Product.reconstruct(
           new EntityId(UUID.fromString("11111111-1111-1111-1111-111111111111")),
           "Test Product",
           "Test Brand",
           category,
-          "#FF0000"
+          "#FF0000",
+          null,
+          null
       );
 
       when(jpaProductRepository.findByUserId(userId.getValue()))
           .thenReturn(List.of(productEntity));
-      when(productMapper.toDomain(productEntity)).thenReturn(expectedProduct);
+      when(categoryRepository.findById(any(EntityId.class)))
+          .thenReturn(Optional.of(category));
+      when(productMapper.toDomain(eq(productEntity), any(Category.class))).thenReturn(expectedProduct);
 
       // Act
       List<Product> result = target.query(query);
@@ -166,10 +196,13 @@ class FindProductByUserTest {
       EntityId userId = new EntityId(UUID.randomUUID());
       final FindProductUserQuery query = new FindProductUserQuery(userId);
       final ProductEntity productEntity = createProductEntity("11111111-1111-1111-1111-111111111111");
+      final Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
 
       when(jpaProductRepository.findByUserId(userId.getValue()))
           .thenReturn(List.of(productEntity));
-      when(productMapper.toDomain(productEntity)).thenReturn(null);
+      when(categoryRepository.findById(any(EntityId.class)))
+          .thenReturn(Optional.of(category));
+      when(productMapper.toDomain(eq(productEntity), any(Category.class))).thenReturn(null);
 
       // Act & Assert
       assertThrows(ProductNotFoundException.class, () -> target.query(query));

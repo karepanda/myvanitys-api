@@ -105,12 +105,14 @@ class CreateProductTest {
   void shouldReturnExistingProductWhenAlreadyExists() {
     // Arrange
     EntityId existingProductId = new EntityId(UUID.randomUUID());
-    Product existingProduct = new Product(
+    Product existingProduct = Product.reconstruct(
         existingProductId,
         "Test Product",
         "Existing Brand", // Diferente marca para verificar que se devuelve el existente
         category,
-        "#000000" // Diferente color para verificar que se devuelve el existente
+        "#000000", // Diferente color para verificar que se devuelve el existente
+        null,       // Sin reviews
+        null        // Sin relaciones usuario-producto
     );
 
     when(productRepository.findByName("Test Product")).thenReturn(Optional.of(existingProduct));

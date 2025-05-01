@@ -11,15 +11,13 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class})
 public abstract class ReviewEntityMapper {
 
-
-
   public ProductUserRelation toProductUserRelation(ProductUserRelation productUserRelation) {
     // Check if reviewId exists. If it does not exist, we do not map the relationship.
     if (productUserRelation.getReviewId() == null) {
       return null;
     }
-
-    return new ProductUserRelation(
+    
+    return ProductUserRelation.reconstruct(
         new EntityId(productUserRelation.getId().getValue()),
         new EntityId(productUserRelation.getProductId().getValue()),
         new EntityId(productUserRelation.getUserId().getValue()),

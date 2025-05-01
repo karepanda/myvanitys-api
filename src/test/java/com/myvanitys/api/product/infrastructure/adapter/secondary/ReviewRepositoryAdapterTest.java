@@ -7,12 +7,16 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
@@ -256,9 +260,11 @@ class ReviewRepositoryAdapterTest {
     void when_reviewsExist_then_returnReviewList() {
       // Arrange
       final UUID productId = UUID.randomUUID();
+      final UUID userId = UUID.randomUUID();
       final UUID productUserId = UUID.randomUUID();
 
       final EntityId productEntityId = new EntityId(productId);
+      final EntityId userEntityId = new EntityId(userId);
       final EntityId reviewEntityId = new EntityId(UUID.randomUUID());
 
       final ReviewEntity reviewEntity1 = ReviewEntity.builder()
@@ -270,15 +276,31 @@ class ReviewRepositoryAdapterTest {
 
       final ProductEntity productEntity = ProductEntity.builder()
           .productId(productId)
+          .categoryId(UUID.randomUUID())
           .name("Test Product")
           .build();
 
-      final Product product = new Product(
+      // Crear relación producto-usuario
+      final ProductUserRelation relation = ProductUserRelation.create(
+          new EntityId(productId),
+          userEntityId
+      );
+
+      // Establecer colecciones con al menos una relación
+      final Set<ProductUserRelation> relations = new HashSet<>();
+      relations.add(relation);
+      Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+
+      // Usamos el método reconstruct con una relación usuario-producto
+      final Product product = Product.reconstruct(
           new EntityId(productId),
           "Test Product",
           "Test Brand",
-          new Category(new EntityId(UUID.randomUUID()), "Test Category"),
-          "#FFFFFF");
+          category,
+          "#FFFFFF",
+          new ArrayList<>(), // Lista vacía de reviews inicialmente
+          relations         // Conjunto con al menos una relación
+      );
 
       final ReviewDetails reviewDetails = ReviewDetails.create(5, "Great product");
 
@@ -288,7 +310,7 @@ class ReviewRepositoryAdapterTest {
           .thenReturn(List.of(reviewEntity1));
       when(jpaProductRepository.findById(productId))
           .thenReturn(Optional.of(productEntity));
-      when(productMapper.toDomain(productEntity))
+      when(productMapper.toDomain(productEntity, category))
           .thenReturn(product);
       when(reviewMapper.toDomain(any(), any()))
           .thenReturn(review);

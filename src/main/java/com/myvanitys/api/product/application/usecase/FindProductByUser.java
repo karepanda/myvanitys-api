@@ -1,11 +1,17 @@
 package com.myvanitys.api.product.application.usecase;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
+import com.myvanitys.api.product.domain.exception.CategoryNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,18 +26,35 @@ public class FindProductByUser implements FindProductUserUseCase {
 
   private final ProductMapper productMapper;
 
+  private final CategoryRepository categoryRepository;
+
   @Override
   @Transactional(readOnly = true)
   public List<Product> query(FindProductUserQuery query) {
-    List<Product> products = jpaProductRepository.findByUserId(query.userId().getValue())
-        .stream()
-        .map(productMapper::toDomain)
+    List<ProductEntity> productEntities = jpaProductRepository.findByUserId(query.userId().getValue());
+
+    // Manejar el caso null
+    if (productEntities == null || productEntities.isEmpty()) {
+      throw ProductNotFoundException.forUser(query.userId());
+    }
+
+    List<Product> products = productEntities.stream()
+        .map(entity -> {
+          // Cargar la categoría para cada producto
+          Category category = categoryRepository.findById(new EntityId(entity.getCategoryId()))
+              .orElseThrow(() -> new CategoryNotFoundException("Category not found for product: " + entity.getProductId()));
+
+          return productMapper.toDomain(entity, category);
+        })
+        .filter(Objects::nonNull) // Filtrar nulls por si acaso
         .toList();
 
+    // Verificar si la lista final está vacía (después de filtrar nulls)
     if (products.isEmpty()) {
       throw ProductNotFoundException.forUser(query.userId());
     }
 
     return products;
+
   }
 }

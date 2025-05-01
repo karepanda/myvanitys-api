@@ -1,7 +1,6 @@
 package com.myvanitys.api.product.application.usecase;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
@@ -11,7 +10,6 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,14 +42,7 @@ public class CreateProduct implements CreateProductUseCase {
             "Category not found with ID: " + command.categoryId()));
 
     // Create product
-    EntityId productId = new EntityId(UUID.randomUUID());
-    Product product = new Product(
-        productId,
-        command.name(),
-        command.brand(),
-        category,
-        command.colorHex()
-    );
+    Product product = Product.create(command.name(), command.brand(), category, command.colorHex());
 
     Product savedProduct = productRepository.save(product);
 
