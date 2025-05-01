@@ -14,22 +14,7 @@ import org.springframework.stereotype.Repository;
 public interface JpaReviewRepository extends JpaRepository<ReviewEntity, UUID> {
 
   /**
-   * Finds reviews by product user ID
-   */
-  List<ReviewEntity> findByProductUserEntityProductUserId(UUID productUserId);
-
-  /**
    * Finds reviews by product ID through the product user relationship
    */
-  List<ReviewEntity> findByProductUserEntityProductId(UUID productId);
-
-  /**
-   * Finds reviews by user ID through the product user relationship
-   */
-  List<ReviewEntity> findByProductUserEntityUserId(UUID userId);
-
-  /**
-   * Checks if a review exists with the given ID and is associated with a specific user
-   */
-  boolean existsByReviewIdAndProductUserEntityUserId(UUID reviewId, UUID userId);
+  List<ReviewEntity> findByProductUserId(UUID productUserId);
 }

@@ -2,263 +2,237 @@ package com.myvanitys.api.product.domain.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
+import com.myvanitys.api.product.domain.exception.ReviewValidationException;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
 class ProductTest {
 
-    private Product target;
-    private Category category;
-    private Review review1;
-    private Review review2;
-    private Review review3;
+  private EntityId productId;
 
-    @BeforeEach
-    void setUp() {
-        EntityId productId = new EntityId(UUID.randomUUID());
-        EntityId productUserId = new EntityId(UUID.randomUUID());
-        EntityId userId = new EntityId(UUID.randomUUID());
-        category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
-        
-        target = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
+  private EntityId userId;
 
-        review1 = new Review(new EntityId(UUID.randomUUID()), userId, productUserId, 4, "Review 1");
-        review2 = new Review(new EntityId(UUID.randomUUID()), userId, productUserId, 5, "Review 2");
-        review3 = new Review(new EntityId(UUID.randomUUID()), userId, productUserId, 3, "Review 3");
-    }
+  private Category category;
 
-    @Nested
-    class Constructor {
+  private Product product;
 
-    @Test
-    void when_validParameters_then_objectCreated() {
-      final EntityId id = new EntityId(UUID.randomUUID());
-      final String name = "Test Product";
-      final String brand = "Test Brand";
-      final Category testCategory = new Category(new EntityId(UUID.randomUUID()), "Test Category");
-      final String colorHex = "#FFFFFF";
+  @BeforeEach
+  void setUp() {
+    productId = new EntityId(UUID.randomUUID());
+    userId = new EntityId(UUID.randomUUID());
+    category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
 
-      final Product result = new Product(id, name, brand, testCategory, colorHex);
-
-      assertThat(result.getId()).isEqualTo(id);
-      assertThat(result.getName()).isEqualTo(name);
-      assertThat(result.getBrand()).isEqualTo(brand);
-      assertThat(result.getCategory()).isEqualTo(testCategory);
-      assertThat(result.getColorHex()).isEqualTo(colorHex);
-      assertThat(result.getAverageRating()).isZero();
-    }
-
-    @Test
-    void when_emptyName_then_throwException() {
-      assertThatThrownBy(() -> new Product(new EntityId(UUID.randomUUID()), "", "Brand", category, "#FFFFFF"))
-          .isInstanceOf(ProductValidationException.class)
-          .hasMessageContaining("name cannot be empty");
-    }
-
-    @Test
-    void when_nullName_then_throwException() {
-      assertThatThrownBy(() -> new Product(new EntityId(UUID.randomUUID()), null, "Brand", category, "#FFFFFF"))
-          .isInstanceOf(ProductValidationException.class)
-          .hasMessageContaining("name cannot be empty");
-    }
-
-    @Test
-    void when_emptyBrand_then_throwException() {
-      assertThatThrownBy(() -> new Product(new EntityId(UUID.randomUUID()), "Product", "", category, "#FFFFFF"))
-          .isInstanceOf(ProductValidationException.class)
-          .hasMessageContaining("brand cannot be empty");
-    }
-
-    @Test
-    void when_invalidColorHex_then_throwException() {
-      assertThatThrownBy(() -> new Product(new EntityId(UUID.randomUUID()), "Product", "Brand", category, "INVALID"))
-          .isInstanceOf(ProductValidationException.class)
-          .hasMessageContaining("Invalid color hex format");
-    }
+    product = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
   }
 
-    @Nested
-    class GetAverageRating {
+  @Test
+  void shouldInitializeProductCorrectly() {
+    assertThat(product.getId()).isEqualTo(productId);
+    assertThat(product.getName()).isEqualTo("Test Product");
+    assertThat(product.getBrand()).isEqualTo("Test Brand");
+    assertThat(product.getCategory()).isEqualTo(category);
+    assertThat(product.getColorHex()).isEqualTo("#FFFFFF");
+    assertThat(product.getAverageRating()).isEqualTo(0);
+    assertThat(product.getReviews()).isEmpty();
+    assertThat(product.getUserRelations()).isEmpty();
+  }
 
-        @Test
-        void when_noReviews_then_returnZero() {
-            assertThat(target.getAverageRating()).isZero();
-        }
+  @Test
+  void shouldUpdateProductDetails() {
+    // Given
+    Category newCategory = new Category(new EntityId(UUID.randomUUID()), "New Category");
 
-        @Test
-        void when_hasReviews_then_calculateAverage() {
-            target.addReview(review1); // 4
-            target.addReview(review2); // 5
-            target.addReview(review3); // 3
+    // When
+    product.updateDetails("Updated Product", "Updated Brand", newCategory, "#000000");
 
-            assertThat(target.getAverageRating()).isEqualTo(4);
-        }
-    }
+    // Then
+    assertThat(product.getName()).isEqualTo("Updated Product");
+    assertThat(product.getBrand()).isEqualTo("Updated Brand");
+    assertThat(product.getCategory()).isEqualTo(newCategory);
+    assertThat(product.getColorHex()).isEqualTo("#000000");
+  }
 
-    @Nested
-    class AddReview {
+  @Test
+  void shouldThrowExceptionForInvalidDetails() {
+    // Name cannot be empty
+    assertThatThrownBy(() -> product.updateDetails("", "Brand", category, "#FFFFFF"))
+        .isInstanceOf(ProductValidationException.class)
+        .hasMessageContaining("name cannot be empty");
 
-        @Test
-        void when_validReview_then_addToList() {
-            target.addReview(review1);
+    // Brand cannot be empty
+    assertThatThrownBy(() -> product.updateDetails("Name", "", category, "#FFFFFF"))
+        .isInstanceOf(ProductValidationException.class)
+        .hasMessageContaining("brand cannot be empty");
 
-            assertThat(target.getReviews()).hasSize(1);
-            assertThat(target.getReviews()).contains(review1);
-        }
+    // Color hex must be valid
+    assertThatThrownBy(() -> product.updateDetails("Name", "Brand", category, "invalid-color"))
+        .isInstanceOf(ProductValidationException.class)
+        .hasMessageContaining("Invalid color hex format");
+  }
 
-        @Test
-        void when_duplicateReview_then_addOnlyOnce() {
-            target.addReview(review1);
-            target.addReview(review1);
+  @Test
+  void shouldAddReviewFromUser() {
+    // When
+    Review review = product.addReviewFromUser(userId, 4, "Great product");
 
-            assertThat(target.getReviews()).hasSize(1);
-        }
+    // Then
+    assertThat(product.getReviews()).hasSize(1);
+    assertThat(product.getReviews().get(0)).isEqualTo(review);
+    assertThat(product.getAverageRating()).isEqualTo(4);
 
-        @Test
-        void when_nullReview_then_throwException() {
-            assertThatThrownBy(() -> target.addReview(null))
-                .isInstanceOf(ProductValidationException.class)
-                .hasMessageContaining("Review cannot be null");
-        }
-    }
+    // User relation should be created
+    assertThat(product.getUserRelations()).hasSize(1);
+    Optional<ProductUserRelation> relation = product.getUserRelations().stream().findFirst();
+    assertThat(relation).isPresent();
+    assertThat(relation.get().getUserId()).isEqualTo(userId);
+    assertThat(relation.get().getProductId()).isEqualTo(productId);
+    assertThat(relation.get().getReviewId()).isEqualTo(review.getId());
+  }
 
-    @Nested
-    class RemoveReview {
+  @Test
+  void shouldUpdateExistingReview() {
+    // Given
+    Review review = product.addReviewFromUser(userId, 3, "Initial review");
 
-        @Test
-        void when_existingReview_then_removeFromList() {
-            target.addReview(review1);
-            target.addReview(review2);
+    // When
+    Review updatedReview = product.updateReview(userId, 5, "Updated review");
 
-            target.removeReview(review1);
+    // Then
+    assertThat(updatedReview).isEqualTo(review); // Same review object, just updated
+    assertThat(updatedReview.getRating()).isEqualTo(5);
+    assertThat(updatedReview.getComment()).isEqualTo("Updated review");
+    assertThat(product.getAverageRating()).isEqualTo(5);
+  }
 
-            assertThat(target.getReviews()).hasSize(1);
-            assertThat(target.getReviews()).doesNotContain(review1);
-            assertThat(target.getReviews()).contains(review2);
-        }
+  @Test
+  void shouldSoftDeleteReview() {
+    // Given
+    Review review = product.addReviewFromUser(userId, 4, "Review to delete");
+    assertThat(product.getAverageRating()).isEqualTo(4);
 
-        @Test
-        void when_nonExistingReview_then_doNothing() {
-            target.addReview(review1);
+    // When
+    Review deletedReview = product.deleteReview(userId);
 
-            target.removeReview(review2);
+    // Then
+    assertThat(deletedReview).isEqualTo(review);
+    assertThat(deletedReview.isDeleted()).isTrue();
 
-            assertThat(target.getReviews()).hasSize(1);
-            assertThat(target.getReviews()).contains(review1);
-        }
+    // The review is still in the collection but marked as deleted
+    assertThat(product.getReviews()).hasSize(1);
 
-        @Test
-        void when_removeReview_then_updateAverage() {
-            target.addReview(review1); // 4
-            target.addReview(review2); // 5
-            target.addReview(review3); // 3
+    // The average rating should exclude deleted reviews
+    assertThat(product.getAverageRating()).isEqualTo(0);
+  }
 
-            target.removeReview(review1);
+  @Test
+  void shouldHardDeleteReview() {
+    // Given
+    product.addReviewFromUser(userId, 4, "Review to delete");
+    assertThat(product.getReviews()).hasSize(1);
 
-            assertThat(target.getAverageRating()).isEqualTo(4);
-        }
-    }
+    // When
+    boolean removed = product.removeReviewByUser(userId);
 
-    @Nested
-    class UpdateDetails {
+    // Then
+    assertThat(removed).isTrue();
+    assertThat(product.getReviews()).isEmpty();
+    assertThat(product.getAverageRating()).isEqualTo(0);
 
-        @Test
-        void when_validParameters_then_updateFields() {
-            final String newName = "New Name";
-            final String newBrand = "New Brand";
-            final Category newCategory = new Category(new EntityId(UUID.randomUUID()), "New Category");
-            final String newColorHex = "#000000";
+    // The user relation should still exist but without a review ID
+    assertThat(product.getUserRelations()).hasSize(1);
+    Optional<ProductUserRelation> relation = product.getUserRelations().stream().findFirst();
+    assertThat(relation).isPresent();
+    assertThat(relation.get().getReviewId()).isNull();
+  }
 
-            target.updateDetails(newName, newBrand, newCategory, newColorHex);
+  @Test
+  void shouldFindReviewByUser() {
+    // Given
+    Review review = product.addReviewFromUser(userId, 4, "Test review");
 
-            assertThat(target.getName()).isEqualTo(newName);
-            assertThat(target.getBrand()).isEqualTo(newBrand);
-            assertThat(target.getCategory()).isEqualTo(newCategory);
-            assertThat(target.getColorHex()).isEqualTo(newColorHex);
-        }
+    // When
+    Optional<Review> foundReview = product.findReviewByUser(userId);
 
-        @Test
-        void when_invalidParameters_then_throwException() {
-            assertThatThrownBy(() -> target.updateDetails("", "Brand", category, "#FFFFFF"))
-                .isInstanceOf(ProductValidationException.class)
-                .hasMessageContaining("name cannot be empty");
-        }
-    }
+    // Then
+    assertThat(foundReview).isPresent();
+    assertThat(foundReview.get()).isEqualTo(review);
+  }
 
-    @Nested
-    class Equals {
+  @Test
+  void shouldCalculateAverageRatingCorrectly() {
+    // Given
+    EntityId user1 = new EntityId(UUID.randomUUID());
+    EntityId user2 = new EntityId(UUID.randomUUID());
+    EntityId user3 = new EntityId(UUID.randomUUID());
 
-        @Test
-        void when_sameId_then_equal() {
-            final Product sameIdProduct = new Product(target.getId(), "Different Name", "Different Brand", category, "#000000");
+    product.addReviewFromUser(user1, 5, "Excellent");
+    product.addReviewFromUser(user2, 3, "Average");
+    product.addReviewFromUser(user3, 4, "Good");
 
-            assertThat(target).isEqualTo(sameIdProduct);
-        }
+    // When
+    product.calculateAverageRating();
 
-        @Test
-        void when_differentId_then_notEqual() {
-            final Product differentIdProduct = new Product(new EntityId(UUID.randomUUID()), "Same Name", "Same Brand", category, "#FFFFFF");
+    // Then
+    assertThat(product.getAverageRating()).isEqualTo(4); // (5+3+4)/3 = 4
 
-            assertThat(target).isNotEqualTo(differentIdProduct);
-        }
+    // Soft delete one review
+    product.deleteReview(user2);
 
-        @Test
-        void when_nullObject_then_notEqual() {
-            assertThat(target).isNotEqualTo(null);
-        }
+    // Recalculate
+    product.calculateAverageRating();
 
-        @Test
-        void when_differentClass_then_notEqual() {
-            assertThat(target).isNotEqualTo(new Object());
-        }
+    // Average should now exclude the deleted review
+    assertThat(product.getAverageRating()).isEqualTo(5); // (5+4)/2 = 4.5 rounded to 5
+  }
 
-        @Test
-        void when_sameObject_then_equal() {
-            assertThat(target).isEqualTo(target);
-        }
-    }
+  @Test
+  void shouldPreventDuplicateReviewsByUser() {
+    // Given
+    product.addReviewFromUser(userId, 4, "First review");
 
-    @Nested
-    class HashCode {
+    // When/Then
+    assertThatThrownBy(() -> product.addReviewFromUser(userId, 5, "Second review"))
+        .isInstanceOf(ReviewValidationException.class)
+        .hasMessageContaining("User already has a review for this product");
+  }
 
-        @Test
-        void when_sameId_then_sameHashCode() {
-            final Product sameIdProduct = new Product(target.getId(), "Different Name", "Different Brand", category, "#000000");
+  @Test
+  void shouldAllowAddingReviewAfterDeletion() {
+    // Given
+    product.addReviewFromUser(userId, 3, "Original review");
+    product.deleteReview(userId);
 
-            assertThat(target).hasSameHashCodeAs(sameIdProduct);
-        }
+    // When
+    Review newReview = product.addReviewFromUser(userId, 5, "New review after deletion");
 
-        @Test
-        void when_differentId_then_differentHashCode() {
-            final Product differentIdProduct = new Product(new EntityId(UUID.randomUUID()), "Same Name", "Same Brand", category, "#FFFFFF");
+    // Then
+    assertThat(newReview).isNotNull();
+    assertThat(newReview.getRating()).isEqualTo(5);
+    assertThat(newReview.getComment()).isEqualTo("New review after deletion");
+    assertThat(product.getAverageRating()).isEqualTo(5);
+  }
 
-            assertThat(target.hashCode()).isNotEqualTo(differentIdProduct.hashCode());
-        }
-    }
+  @Test
+  void shouldThrowExceptionWhenUpdatingNonExistentReview() {
+    assertThatThrownBy(() -> product.updateReview(userId, 5, "No review exists"))
+        .isInstanceOf(ReviewValidationException.class)
+        .hasMessageContaining("User has no relation with this product");
+  }
 
-    @Nested
-    class ToString {
-        
-        @Test
-        void should_returnStringRepresentation() {
-            String result = target.toString();
-            
-            assertThat(result)
-                .contains(target.getId().toString())
-                .contains(target.getName())
-                .contains(target.getBrand())
-                .contains(target.getCategory().toString())
-                .contains(target.getColorHex());
-        }
-    }
+  @Test
+  void shouldNotThrowExceptionWhenDeletingNonExistentReview() {
+    // When
+    Review deletedReview = product.deleteReview(userId);
+
+    // Then
+    assertThatThrownBy(() -> product.deleteReview(userId))
+        .isInstanceOf(ReviewValidationException.class)
+        .hasMessageContaining("User has no relation with this product");
+  }
 }

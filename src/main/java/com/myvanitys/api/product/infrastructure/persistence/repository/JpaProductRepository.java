@@ -51,5 +51,8 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
       """)
   List<ProductUserEntity> findByUserIdWithReviews(@Param("userId") UUID userId);
 
+  @Query("SELECT p FROM ProductEntity p JOIN CategoryEntity c ON p.categoryId = c.categoryId WHERE c.name = :categoryName")
+  List<ProductEntity> findByCategoryName(@Param("categoryName") String categoryName);
+
 
 }

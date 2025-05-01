@@ -4,8 +4,6 @@ import java.util.Objects;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
 
 @Getter
 public class ProductUserRelation {
@@ -16,31 +14,59 @@ public class ProductUserRelation {
 
   private final EntityId userId;
 
-  @Setter
-  private EntityId reviewId;
-
-  public ProductUserRelation(@NonNull EntityId id, @NonNull EntityId productId, @NonNull EntityId userId, EntityId reviewId) {
-    this.id = id;
-    this.productId = productId;
-    this.userId = userId;
-    this.reviewId = reviewId;
+  // ---------- CONSTRUCTOR PRIVADO ----------
+  private ProductUserRelation(EntityId id, EntityId productId, EntityId userId) {
+    this.id = Objects.requireNonNull(id);
+    this.productId = Objects.requireNonNull(productId);
+    this.userId = Objects.requireNonNull(userId);
   }
+
+  // ---------- FACTORY METHODS ----------
+
+  /**
+   * Creates a new ProductUserRelation (new entity)
+   */
+  public static ProductUserRelation create(EntityId productId, EntityId userId) {
+    return new ProductUserRelation(EntityId.newId(), productId, userId);
+  }
+
+  /**
+   * Reconstructs a relation from persistence
+   */
+  public static ProductUserRelation reconstruct(EntityId id, EntityId productId, EntityId userId) {
+    return new ProductUserRelation(id, productId, userId);
+  }
+
+  // ---------- BEHAVIOR METHODS ----------
+
+  public boolean belongsToUser(EntityId userId) {
+    return this.userId.equals(userId);
+  }
+
+  public boolean belongsToProduct(EntityId productId) {
+    return this.productId.equals(productId);
+  }
+
+  // ---------- IDENTITY ----------
 
   @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof ProductUserRelation that)) {
       return false;
     }
-    ProductUserRelation that = (ProductUserRelation) o;
-    return Objects.equals(userId, that.userId) &&
-        Objects.equals(productId, that.productId);
+    return id.equals(that.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(userId, productId);
+    return Objects.hash(id);
+  }
+
+  @Override
+  public String toString() {
+    return "ProductUserRelation[" + id + ", product=" + productId + ", user=" + userId + "]";
   }
 }

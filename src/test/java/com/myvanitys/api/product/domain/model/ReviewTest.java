@@ -1,163 +1,499 @@
 package com.myvanitys.api.product.domain.model;
 
-import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
+import com.myvanitys.api.product.domain.valueobject.Timestamp;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class ReviewTest {
 
-  private Review review1;
-
-  private ProductUserRelation productUserRelation;
-
-  private EntityId userId;
+  private EntityId id;
 
   private EntityId productUserId;
 
-    @BeforeEach
+  private ReviewDetails details;
+
+  private Review target;
+
+  private final Instant now = Instant.now();
+
+  private final Instant yesterday = now.minusSeconds(86400);
+
+  private final Instant tomorrow = now.plusSeconds(86400);
+
+  @BeforeEach
   void setUp() {
-        EntityId reviewId = new EntityId(UUID.randomUUID());
-    userId = new EntityId(UUID.randomUUID());
-    EntityId productId = new EntityId(UUID.randomUUID());
+    id = new EntityId(UUID.randomUUID());
     productUserId = new EntityId(UUID.randomUUID());
-    // Assuming ProductUserRelation is a class that holds the relationship between product and user
-    productUserRelation = new ProductUserRelation( productUserId = new EntityId(UUID.randomUUID()), productId, userId, reviewId);
-
-    review1 = new Review(reviewId, userId, productUserId, 5, "Excellent product");
+    details = ReviewDetails.create(4, "Test Comment");
+    target = Review.createWithExistingId(id, productUserId, details);
   }
 
-  @Test
-  void testReviewInitialization() {
-    assertNotNull(review1.getId());
-    assertEquals(userId, review1.getUserId());
-    assertEquals(productUserRelation.getId(), review1.getProductUserId());
-    assertEquals(5, review1.getRating());
-    assertEquals("Excellent product", review1.getComment());
+  @Nested
+  class CreateFor {
+
+    @Test
+    void when_givenProductUserIdAndDetails_then_returnsNewReview() {
+      // Given
+      final EntityId newProductUserId = new EntityId(UUID.randomUUID());
+      final ReviewDetails newDetails = ReviewDetails.create(5, "New Comment");
+
+      // When
+      final Review result = Review.createFor(newProductUserId, newDetails);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getId()).isNotNull();
+      assertThat(result.getProductUserId()).isEqualTo(newProductUserId);
+      assertThat(result.getRating()).isEqualTo(5);
+      assertThat(result.getComment()).isEqualTo("New Comment");
+    }
+
+    @Test
+    void when_givenProductUserIdAndRatingAndComment_then_returnsNewReview() {
+      // Given
+      final EntityId newProductUserId = new EntityId(UUID.randomUUID());
+      final int rating = 3;
+      final String comment = "Simple Comment";
+
+      // When
+      final Review result = Review.createFor(newProductUserId, rating, comment);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getId()).isNotNull();
+      assertThat(result.getProductUserId()).isEqualTo(newProductUserId);
+      assertThat(result.getRating()).isEqualTo(rating);
+      assertThat(result.getComment()).isEqualTo(comment);
+    }
+
+    @Test
+    void when_givenProductUserIdAndRatingAndCommentAndTimestamps_then_returnsNewReview() {
+      // Given
+      final EntityId newProductUserId = new EntityId(UUID.randomUUID());
+      final int rating = 2;
+      final String comment = "Timestamped Comment";
+
+      // When
+      final Review result = Review.createFor(newProductUserId, rating, comment, yesterday, now);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getId()).isNotNull();
+      assertThat(result.getProductUserId()).isEqualTo(newProductUserId);
+      assertThat(result.getRating()).isEqualTo(rating);
+      assertThat(result.getComment()).isEqualTo(comment);
+      assertThat(result.getCreatedAt()).isEqualTo(yesterday);
+      assertThat(result.getUpdatedAt()).isEqualTo(now);
+    }
+
+    @Test
+    void when_givenNullProductUserId_then_throwsNullPointerException() {
+      // When/Then
+      assertThatThrownBy(() -> Review.createFor(null, details))
+          .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void when_givenNullComment_then_throwsNullPointerException() {
+      // When/Then
+      assertThatThrownBy(() -> Review.createFor(productUserId, 4, null))
+          .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void when_givenInvalidRating_then_throwsValidationException() {
+      // When/Then
+      assertThatThrownBy(() -> Review.createFor(productUserId, 0, "Valid Comment"))
+          .isInstanceOf(ValidationException.class)
+          .hasMessageContaining("Rating must be between 1 and 5");
+
+      assertThatThrownBy(() -> Review.createFor(productUserId, 6, "Valid Comment"))
+          .isInstanceOf(ValidationException.class)
+          .hasMessageContaining("Rating must be between 1 and 5");
+    }
+
+    @Test
+    void when_givenEmptyComment_then_throwsValidationException() {
+      // When/Then
+      assertThatThrownBy(() -> Review.createFor(productUserId, 4, ""))
+          .isInstanceOf(ValidationException.class)
+          .hasMessageContaining("Comment cannot be empty");
+
+      assertThatThrownBy(() -> Review.createFor(productUserId, 4, "   "))
+          .isInstanceOf(ValidationException.class)
+          .hasMessageContaining("Comment cannot be empty");
+    }
   }
 
-  @Test
-  void testEqualsAndHashCode() {
-    Review review2 = new Review(review1.getId(), review1.getUserId(), review1.getProductUserId(), 5, "Different comment");
-    assertEquals(review1, review2);  // Equality is based only on ID
-    assertEquals(review1.hashCode(), review2.hashCode());
+  @Nested
+  class CreateWithExistingId {
+
+    @Test
+    void when_givenIdAndProductUserIdAndDetails_then_returnsReviewWithSpecificId() {
+      // Given
+      final EntityId existingId = new EntityId(UUID.randomUUID());
+      final EntityId existingProductUserId = new EntityId(UUID.randomUUID());
+      final ReviewDetails existingDetails = ReviewDetails.create(5, "Existing Comment");
+
+      // When
+      final Review result = Review.createWithExistingId(existingId, existingProductUserId, existingDetails);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getId()).isEqualTo(existingId);
+      assertThat(result.getProductUserId()).isEqualTo(existingProductUserId);
+      assertThat(result.getRating()).isEqualTo(5);
+      assertThat(result.getComment()).isEqualTo("Existing Comment");
+    }
+
+    @Test
+    void when_givenIdAndProductUserIdAndRatingAndCommentAndTimestamps_then_returnsReviewWithSpecificId() {
+      // Given
+      final EntityId existingId = new EntityId(UUID.randomUUID());
+      final EntityId existingProductUserId = new EntityId(UUID.randomUUID());
+      final int rating = 1;
+      final String comment = "Complete Comment";
+
+      // When
+      final Review result = Review.createWithExistingId(existingId, existingProductUserId,
+          rating, comment, yesterday, now, tomorrow);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getId()).isEqualTo(existingId);
+      assertThat(result.getProductUserId()).isEqualTo(existingProductUserId);
+      assertThat(result.getRating()).isEqualTo(rating);
+      assertThat(result.getComment()).isEqualTo(comment);
+      assertThat(result.getCreatedAt()).isEqualTo(yesterday);
+      assertThat(result.getUpdatedAt()).isEqualTo(now);
+      assertThat(result.getDeletedAt()).isEqualTo(tomorrow);
+    }
+
+    @Test
+    void when_givenNullProductUserId_then_throwsNullPointerException() {
+      // When/Then
+      assertThatThrownBy(() -> Review.createWithExistingId(id, null, details))
+          .isInstanceOf(NullPointerException.class);
+    }
   }
 
-  @Test
-  void testDifferentReviewsNotEqual() {
-    Review review2 = new Review(new EntityId(UUID.randomUUID()), userId, productUserId, 4, "Good product");
-    assertNotEquals(review1, review2);
+  @Nested
+  class UpdateDetails {
+
+    @Test
+    void when_givenRatingAndComment_then_updatesDetailsWithNewTimestamp() {
+      // Given
+      final int newRating = 5;
+      final String newComment = "Updated Comment";
+
+      // When
+      target.updateDetails(newRating, newComment);
+
+      // Then
+      assertThat(target.getRating()).isEqualTo(newRating);
+      assertThat(target.getComment()).isEqualTo(newComment);
+      // Updated timestamp should be more recent than created timestamp
+      assertThat(target.getUpdatedAt()).isAfterOrEqualTo(target.getCreatedAt());
+    }
+
+    @Test
+    void when_givenCompleteDetails_then_replacesDetailsCompletely() {
+      // Given
+      final ReviewDetails newDetails = ReviewDetails.of(2, "Completely New", now, tomorrow, null);
+
+      // When
+      target.updateDetails(newDetails);
+
+      // Then
+      assertThat(target.getRating()).isEqualTo(2);
+      assertThat(target.getComment()).isEqualTo("Completely New");
+      assertThat(target.getCreatedAt()).isEqualTo(now);
+      assertThat(target.getUpdatedAt()).isEqualTo(tomorrow);
+    }
+
+    @Test
+    void when_givenInvalidRating_then_throwsValidationException() {
+      // When/Then
+      assertThatThrownBy(() -> target.updateDetails(0, "Valid Comment"))
+          .isInstanceOf(ValidationException.class)
+          .hasMessageContaining("Rating must be between 1 and 5");
+
+      // Ensure original values weren't changed
+      assertThat(target.getRating()).isEqualTo(4);
+      assertThat(target.getComment()).isEqualTo("Test Comment");
+    }
+
+    @Test
+    void when_givenEmptyComment_then_throwsValidationException() {
+      // When/Then
+      assertThatThrownBy(() -> target.updateDetails(4, ""))
+          .isInstanceOf(ValidationException.class)
+          .hasMessageContaining("Comment cannot be empty");
+
+      // Ensure original values weren't changed
+      assertThat(target.getRating()).isEqualTo(4);
+      assertThat(target.getComment()).isEqualTo("Test Comment");
+    }
+
+    @Test
+    void when_givenNullComment_then_throwsNullPointerException() {
+      // When/Then
+      assertThatThrownBy(() -> target.updateDetails(4, null))
+          .isInstanceOf(NullPointerException.class);
+
+      // Ensure original values weren't changed
+      assertThat(target.getRating()).isEqualTo(4);
+      assertThat(target.getComment()).isEqualTo("Test Comment");
+    }
   }
 
-  @Test
-  void testCreateReview() {
-    Review review = Review.create(userId, productUserId, 4, "Good product");
-    assertNotNull(review.getId());
-    assertEquals(userId, review.getUserId());
-    assertEquals(productUserRelation.getId(), review.getProductUserId());
-    assertEquals(4, review.getRating());
-    assertEquals("Good product", review.getComment());
+  @Nested
+  class MarkAsDeleted {
+
+    @Test
+    void when_called_then_marksReviewAsDeletedWithCurrentTime() {
+      // Given
+      assertThat(target.isDeleted()).isFalse();
+
+      // When
+      target.markAsDeleted();
+
+      // Then
+      assertThat(target.isDeleted()).isTrue();
+      assertThat(target.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    void when_givenSpecificTimestamp_then_marksReviewAsDeletedWithThatTimestamp() {
+      // Given
+      assertThat(target.isDeleted()).isFalse();
+
+      // When
+      target.markAsDeleted(tomorrow);
+
+      // Then
+      assertThat(target.isDeleted()).isTrue();
+      assertThat(target.getDeletedAt()).isEqualTo(tomorrow);
+    }
+
+    @Test
+    void when_alreadyDeleted_then_doesNothing() {
+      // Given
+      target.markAsDeleted(yesterday);
+      assertThat(target.isDeleted()).isTrue();
+      assertThat(target.getDeletedAt()).isEqualTo(yesterday);
+
+      // When
+      target.markAsDeleted(tomorrow);
+
+      // Then - still has original deletion timestamp
+      assertThat(target.getDeletedAt()).isEqualTo(yesterday);
+    }
+
+    @Test
+    void when_givenNullTimestamp_then_doesNothing() {
+      // Given
+      assertThat(target.isDeleted()).isFalse();
+
+      // When
+      target.markAsDeleted(null);
+
+      // Then
+      assertThat(target.isDeleted()).isFalse();
+      assertThat(target.getDeletedAt()).isNull();
+    }
   }
 
-  @Test
-  void testValidateRatingThrowsValidationExceptionForInvalidValues() {
-    assertThrows(ValidationException.class, () ->
-        Review.create(userId, productUserId, 0, "Invalid rating"));
+  @Nested
+  class IsDeleted {
 
-    assertThrows(ValidationException.class, () ->
-        Review.create(userId, productUserId, 6, "Invalid rating"));
-        
-    ValidationException exception = assertThrows(ValidationException.class, () ->
-        Review.create(userId, productUserId, -1, "Invalid rating"));
-    assertTrue(exception.getErrors().stream()
-        .anyMatch(error -> error.field().equals("rating") &&
-            error.message().equals("Rating must be between 1 and 5")));
+    @Test
+    void when_reviewIsNotDeleted_then_returnsFalse() {
+      // When/Then
+      assertThat(target.isDeleted()).isFalse();
+    }
+
+    @Test
+    void when_reviewIsDeleted_then_returnsTrue() {
+      // Given
+      target.markAsDeleted();
+
+      // When/Then
+      assertThat(target.isDeleted()).isTrue();
+    }
   }
 
-  @Test
-  void testValidateCommentThrowsValidationExceptionForEmptyComment() {
-    // Prueba string vacío
-    ValidationException exception = assertThrows(ValidationException.class, () ->
-        Review.create(userId, productUserId, 5, ""));
-    assertTrue(exception.getErrors().stream()
-        .anyMatch(error -> error.field().equals("comment") &&
-            error.message().equals("Comment cannot be empty")));
+  @Nested
+  class GetRating {
 
-    // Prueba string con espacios en blanco
-    exception = assertThrows(ValidationException.class, () ->
-        Review.create(userId, productUserId, 5, "   "));
-    assertTrue(exception.getErrors().stream()
-        .anyMatch(error -> error.field().equals("comment") &&
-            error.message().equals("Comment cannot be empty")));
+    @Test
+    void when_called_then_returnsRatingFromDetails() {
+      // Given
+      final ReviewDetails mockDetails = mock(ReviewDetails.class);
+      when(mockDetails.rating()).thenReturn(5);
+      final Review reviewWithMock = Review.createWithExistingId(id, productUserId, mockDetails);
+
+      // When
+      final int result = reviewWithMock.getRating();
+
+      // Then
+      assertThat(result).isEqualTo(5);
+    }
   }
 
-  @Test
-  void testCreateReviewWithNullValues() {
-    assertThrows(NullPointerException.class, () ->
-        Review.create(null, productUserId, 5, "Valid comment"));
+  @Nested
+  class GetComment {
 
-    assertThrows(NullPointerException.class, () ->
-        Review.create(userId, null, 5, "Valid comment"));
+    @Test
+    void when_called_then_returnsCommentFromDetails() {
+      // Given
+      final ReviewDetails mockDetails = mock(ReviewDetails.class);
+      when(mockDetails.comment()).thenReturn("Mocked Comment");
+      final Review reviewWithMock = Review.createWithExistingId(id, productUserId, mockDetails);
 
-    assertThrows(NullPointerException.class, () ->
-        Review.create(userId, productUserId, 5, null));
+      // When
+      final String result = reviewWithMock.getComment();
+
+      // Then
+      assertThat(result).isEqualTo("Mocked Comment");
+    }
   }
 
-  @Test
-  void testUpdateDetailsWithInvalidValues() {
-    Review review = Review.create(userId, productUserId, 5, "Initial comment");
+  @Nested
+  class GetCreatedAt {
 
-    // Prueba rating inválido
-    ValidationException exception = assertThrows(ValidationException.class, () ->
-        review.updateDetails(0, "Valid comment"));
-    assertTrue(exception.getErrors().stream()
-        .anyMatch(error -> error.field().equals("rating") &&
-            error.message().equals("Rating must be between 1 and 5")));
+    @Test
+    void when_called_then_returnsCreatedAtTimestampAsInstant() {
+      // Given
+      final Timestamp mockTimestamp = mock(Timestamp.class);
+      final ReviewDetails mockDetails = mock(ReviewDetails.class);
+      when(mockDetails.createdAt()).thenReturn(mockTimestamp);
+      when(mockTimestamp.asInstant()).thenReturn(yesterday);
+      final Review reviewWithMock = Review.createWithExistingId(id, productUserId, mockDetails);
 
-    // Prueba comentario inválido
-    exception = assertThrows(ValidationException.class, () ->
-        review.updateDetails(4, ""));
-    assertTrue(exception.getErrors().stream()
-        .anyMatch(error -> error.field().equals("comment") &&
-            error.message().equals("Comment cannot be empty")));
+      // When
+      final Instant result = reviewWithMock.getCreatedAt();
 
-    // Verificar que los valores originales no cambiaron
-    assertEquals(5, review.getRating());
-    assertEquals("Initial comment", review.getComment());
+      // Then
+      assertThat(result).isEqualTo(yesterday);
+    }
   }
 
-  @Test 
-  void testCreateWithValidRatingBoundaryValues() {
-    // Prueba valores límite válidos (1 y 5)
-    Review review1 = Review.create(userId, productUserId, 1, "Valid comment");
-    assertEquals(1, review1.getRating());
+  @Nested
+  class GetUpdatedAt {
 
-    Review review5 = Review.create(userId, productUserId, 5, "Valid comment");
-    assertEquals(5, review5.getRating());
+    @Test
+    void when_called_then_returnsUpdatedAtTimestampAsInstant() {
+      // Given
+      final Timestamp mockTimestamp = mock(Timestamp.class);
+      final ReviewDetails mockDetails = mock(ReviewDetails.class);
+      when(mockDetails.updatedAt()).thenReturn(mockTimestamp);
+      when(mockTimestamp.asInstant()).thenReturn(now);
+      final Review reviewWithMock = Review.createWithExistingId(id, productUserId, mockDetails);
+
+      // When
+      final Instant result = reviewWithMock.getUpdatedAt();
+
+      // Then
+      assertThat(result).isEqualTo(now);
+    }
   }
 
-  @Test
-  void testUpdateDetails() {
-    review1.updateDetails(4, "Updated comment");
+  @Nested
+  class GetDeletedAt {
 
-    assertEquals(4, review1.getRating());
-    assertEquals("Updated comment", review1.getComment());
+    @Test
+    void when_reviewIsNotDeleted_then_returnsNull() {
+      // Given
+      final ReviewDetails mockDetails = mock(ReviewDetails.class);
+      when(mockDetails.deletedAt()).thenReturn(null);
+      final Review reviewWithMock = Review.createWithExistingId(id, productUserId, mockDetails);
+
+      // When
+      final Instant result = reviewWithMock.getDeletedAt();
+
+      // Then
+      assertThat(result).isNull();
+    }
+
+    @Test
+    void when_reviewIsDeleted_then_returnsDeletedAtTimestampAsInstant() {
+      // Given
+      final Timestamp mockTimestamp = mock(Timestamp.class);
+      final ReviewDetails mockDetails = mock(ReviewDetails.class);
+      when(mockDetails.deletedAt()).thenReturn(mockTimestamp);
+      when(mockTimestamp.asInstant()).thenReturn(tomorrow);
+      final Review reviewWithMock = Review.createWithExistingId(id, productUserId, mockDetails);
+
+      // When
+      final Instant result = reviewWithMock.getDeletedAt();
+
+      // Then
+      assertThat(result).isEqualTo(tomorrow);
+    }
   }
 
-  @Test
-  void testUpdateDetailsValidatesRating() {
-    ValidationException exception = assertThrows(ValidationException.class, () ->
-        review1.updateDetails(0, "Should throw exception"));
-    assertTrue(exception.getErrors().stream()
-        .anyMatch(error -> error.field().equals("rating") &&
-            error.message().equals("Rating must be between 1 and 5")));
+  @Nested
+  class EqualsAndHashCode {
+
+    @Test
+    void when_sameId_then_equalsReturnsTrue() {
+      // Given
+      final Review otherReview = Review.createWithExistingId(
+          id,
+          new EntityId(UUID.randomUUID()),
+          ReviewDetails.create(1, "Different Comment")
+      );
+
+      // When/Then
+      assertThat(target).isEqualTo(otherReview);
+      assertThat(target.hashCode()).isEqualTo(otherReview.hashCode());
+    }
+
+    @Test
+    void when_differentId_then_equalsReturnsFalse() {
+      // Given
+      final Review otherReview = Review.createWithExistingId(
+          new EntityId(UUID.randomUUID()),
+          productUserId,
+          details
+      );
+
+      // When/Then
+      assertThat(target).isNotEqualTo(otherReview);
+    }
+
+    @Test
+    void when_comparedToNull_then_equalsReturnsFalse() {
+      // When/Then
+      assertThat(target).isNotEqualTo(null);
+    }
+
+    @Test
+    void when_comparedToDifferentClass_then_equalsReturnsFalse() {
+      // When/Then
+      assertThat(target).isNotEqualTo("This is a string, not a Review");
+    }
+
+    @Test
+    void when_comparedToSameObject_then_equalsReturnsTrue() {
+      // When/Then
+      assertThat(target).isEqualTo(target);
+    }
   }
 }

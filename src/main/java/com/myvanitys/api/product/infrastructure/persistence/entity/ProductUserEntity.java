@@ -4,10 +4,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -40,7 +40,8 @@ public class ProductUserEntity {
   @Column(name = "product_id", nullable = false)
   private UUID productId;
 
-  @OneToMany(mappedBy = "productUserEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany
+  @JoinColumn(name = "product_user_id", referencedColumnName = "product_user_id")
   @ToString.Exclude
   private List<ReviewEntity> reviews;
 

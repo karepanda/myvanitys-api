@@ -6,8 +6,6 @@ import java.util.Objects;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.domain.valueobject.Timestamp;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -17,7 +15,6 @@ import lombok.ToString;
  */
 @Getter
 @ToString
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Review {
 
   private final EntityId id;
@@ -25,6 +22,12 @@ public class Review {
   private final EntityId productUserId;
 
   private ReviewDetails details;
+
+  private Review(EntityId id, EntityId productUserId, ReviewDetails details) {
+    this.id = Objects.requireNonNull(id);
+    this.productUserId = Objects.requireNonNull(productUserId);
+    this.details = Objects.requireNonNull(details);
+  }
 
   // ---------- CREATION METHODS ----------
 
@@ -118,6 +121,13 @@ public class Review {
    */
   public boolean isDeleted() {
     return this.details.isDeleted();
+  }
+
+  /**
+   * Checks if this review is deleted
+   */
+  public boolean isActive() {
+    return !this.details.isDeleted();
   }
 
   // ---------- GETTER CONVENIENCE METHODS ----------

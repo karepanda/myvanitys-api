@@ -36,7 +36,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     final var userid = UUID.randomUUID();
     productUser.setProductUserId(UUID.randomUUID());
     productUser.setUserId(userid);
-    review.setProductUserEntity(productUser);
+    review.setProductUserId(productUser.getProductUserId());
     productUser.setReviews(List.of(review));
     ProductUserEntity savedProductUser = jpaProductUserRepository.save(productUser);
     jpaProductUserRepository.flush();
@@ -172,14 +172,21 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product2);
     jpaProductRepository.save(product3);
 
-    // When: Find products by category ID
-    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryId(savedCategory1.getCategoryId());
+    // When: Find products by category name using a join query
+    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryName("Electronics");
 
     // Then: Assert that the correct products are found
     assertThat(foundProducts).hasSize(2);
     assertThat(foundProducts)
         .extracting(ProductEntity::getName)
         .containsExactlyInAnyOrder("Product 1", "Product 2");
+
+    // Additional verification for the second category
+    List<ProductEntity> clothingProducts = jpaProductRepository.findByCategoryName("Clothing");
+    assertThat(clothingProducts).hasSize(1);
+    assertThat(clothingProducts)
+        .extracting(ProductEntity::getName)
+        .containsExactly("Product 3");
   }
 
   @Test

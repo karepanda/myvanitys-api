@@ -16,6 +16,9 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
 
+/**
+ * Mapper for converting between domain objects and persistence entities
+ */
 @Component
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class, CategoryMapper.class})
 public class ProductMapper {
@@ -114,14 +117,23 @@ public class ProductMapper {
     Optional.ofNullable(productUsers)
         .ifPresent(users -> users.forEach(pu -> {
           // Add the user relation
-          product.getUserRelations().add(toProductUserRelation(pu));
+          ProductUserRelation relation = toProductUserRelation(pu);
+          product.getUserRelations().add(relation);
 
           // Map reviews if they exist
           Optional.ofNullable(pu.getReviews()).ifPresent(reviews -> reviews.forEach(reviewEntity -> {
-            Review review = toReview(reviewEntity, new EntityId(pu.getProductUserId()));
-            product.addReview(review);
+            // Use the ProductUserRelation ID as the productUserId for the Review
+            EntityId productUserId = relation.getId();
+            Review review = toReview(reviewEntity, productUserId);
+
+            // Add directly to the collection to bypass validation
+            // since we're reconstructing an existing state
+            product.addReviewToCollection(review);
           }));
         }));
+
+    // Calculate the average rating based on active reviews
+    product.calculateAverageRating();
 
     return product;
   }
@@ -163,14 +175,16 @@ public class ProductMapper {
       return null;
     }
 
-    // Crear el value object ReviewDetails
+    // Create ReviewDetails with all timestamp information
     ReviewDetails reviewDetails = ReviewDetails.of(
         reviewEntity.getRating(),
         reviewEntity.getComment(),
-        reviewEntity.getCreatedAt()
+        reviewEntity.getCreatedAt(),
+        reviewEntity.getUpdatedAt() != null ? reviewEntity.getUpdatedAt() : reviewEntity.getCreatedAt(),
+        reviewEntity.getDeletedAt()
     );
 
-    // Usar el método factory con ID existente para recrear la review desde la base de datos
+    // Create the Review with the existing ID
     return Review.createWithExistingId(
         new EntityId(reviewEntity.getReviewId()),
         productUserId,
@@ -190,8 +204,10 @@ public class ProductMapper {
         .reviewId(review.getId().getValue())
         .rating(review.getRating())
         .comment(review.getComment())
-        .createdAt(review.getCreatedAt())
         .productUserId(review.getProductUserId().getValue())
+        .createdAt(review.getCreatedAt())
+        .updatedAt(review.getUpdatedAt())
+        .deletedAt(review.getDeletedAt())
         .build();
   }
 }
