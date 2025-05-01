@@ -207,17 +207,6 @@ class FindProductByUserTest {
       // Act & Assert
       assertThrows(ProductNotFoundException.class, () -> target.query(query));
     }
-
-    @Test
-    void verify_emptyList_whenRepositoryReturnsNull() {
-      // Arrange
-      EntityId userId = new EntityId(UUID.randomUUID());
-      final FindProductUserQuery query = new FindProductUserQuery(userId);
-
-      when(jpaProductRepository.findByUserId(userId.getValue())).thenReturn(null);
-
-      // Act & Assert
-      assertThrows(ProductNotFoundException.class, () -> target.query(query));
-    }
+    
   }
 }

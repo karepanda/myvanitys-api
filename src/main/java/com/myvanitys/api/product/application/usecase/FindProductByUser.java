@@ -33,28 +33,25 @@ public class FindProductByUser implements FindProductUserUseCase {
   public List<Product> query(FindProductUserQuery query) {
     List<ProductEntity> productEntities = jpaProductRepository.findByUserId(query.userId().getValue());
 
-    // Manejar el caso null
-    if (productEntities == null || productEntities.isEmpty()) {
-      throw ProductNotFoundException.forUser(query.userId());
-    }
-
     List<Product> products = productEntities.stream()
         .map(entity -> {
-          // Cargar la categoría para cada producto
-          Category category = categoryRepository.findById(new EntityId(entity.getCategoryId()))
-              .orElseThrow(() -> new CategoryNotFoundException("Category not found for product: " + entity.getProductId()));
-
+          final Category category = getCategory(entity);
           return productMapper.toDomain(entity, category);
         })
-        .filter(Objects::nonNull) // Filtrar nulls por si acaso
+        .filter(Objects::nonNull)
         .toList();
 
-    // Verificar si la lista final está vacía (después de filtrar nulls)
     if (products.isEmpty()) {
       throw ProductNotFoundException.forUser(query.userId());
     }
 
     return products;
 
+  }
+
+  private Category getCategory(ProductEntity entity) {
+    Category category = categoryRepository.findById(new EntityId(entity.getCategoryId()))
+        .orElseThrow(() -> new CategoryNotFoundException("Category not found for product: " + entity.getProductId()));
+    return category;
   }
 }
