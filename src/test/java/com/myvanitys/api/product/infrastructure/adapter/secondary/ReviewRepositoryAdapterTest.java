@@ -2,31 +2,21 @@ package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
-import com.myvanitys.api.product.domain.model.Category;
-import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
-import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaReviewRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -48,13 +38,7 @@ class ReviewRepositoryAdapterTest {
   private JpaProductUserRepository jpaProductUserRepository;
 
   @Mock
-  private JpaProductRepository jpaProductRepository;
-
-  @Mock
   private ReviewMapper reviewMapper;
-
-  @Mock
-  private ProductMapper productMapper;
 
   @InjectMocks
   private ReviewRepositoryAdapter target;
@@ -70,7 +54,7 @@ class ReviewRepositoryAdapterTest {
       final UUID reviewId = UUID.randomUUID();
       final UUID productUserId = UUID.randomUUID();
 
-      final EntityId productUserEntityId = new EntityId(productId);
+      final EntityId productUserEntityId = new EntityId(productUserId);
       final EntityId reviewEntityId = new EntityId(reviewId);
 
       final ProductUserEntity productUserEntity = ProductUserEntity.builder()
@@ -90,11 +74,13 @@ class ReviewRepositoryAdapterTest {
           .productUserId(productUserId)
           .build();
 
-      when(jpaProductUserRepository.findByProductIdAndUserId(productId, userId))
+      // Configurar el mock para findById de productUserId
+      when(jpaProductUserRepository.findById(productUserId))
           .thenReturn(Optional.of(productUserEntity));
+
       when(reviewMapper.toEntity(review)).thenReturn(reviewEntity);
       when(jpaReviewRepository.save(reviewEntity)).thenReturn(reviewEntity);
-      when(reviewMapper.toDomain(any(ReviewEntity.class), any(EntityId.class))).thenReturn(review);
+      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(review);
 
       // Act
       final Review result = target.save(review);
@@ -107,17 +93,17 @@ class ReviewRepositoryAdapterTest {
     @Test
     void when_savingReviewThrowsDataAccessException_then_throwDatabaseException() {
       // Arrange
-      final UUID productId = UUID.randomUUID();
       final UUID reviewId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
 
-      final EntityId productUserEntityId = new EntityId(productId);
+      final EntityId productUserEntityId = new EntityId(productUserId);
       final EntityId reviewEntityId = new EntityId(reviewId);
 
       final ReviewDetails reviewDetails = ReviewDetails.create(5, "Great product");
 
       final Review review = Review.createWithExistingId(reviewEntityId, productUserEntityId, reviewDetails);
 
-      when(jpaProductUserRepository.findByProductIdAndUserId(any(), any()))
+      when(jpaProductUserRepository.findById(productUserId))
           .thenThrow(new DataAccessException("Test exception") {
           });
 
@@ -130,23 +116,23 @@ class ReviewRepositoryAdapterTest {
     @Test
     void when_productUserRelationNotFound_then_throwEntityNotFoundException() {
       // Arrange
-      final UUID productId = UUID.randomUUID();
       final UUID reviewId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
 
-      final EntityId productUserEntityId = new EntityId(productId);
+      final EntityId productUserEntityId = new EntityId(productUserId);
       final EntityId reviewEntityId = new EntityId(reviewId);
 
       final ReviewDetails reviewDetails = ReviewDetails.create(5, "Great product");
 
       final Review review = Review.createWithExistingId(reviewEntityId, productUserEntityId, reviewDetails);
 
-      when(jpaProductUserRepository.findByProductIdAndUserId(any(), any()))
+      when(jpaProductUserRepository.findById(productUserId))
           .thenReturn(Optional.empty());
 
       // Act & Assert
       assertThatThrownBy(() -> target.save(review))
           .isInstanceOf(EntityNotFoundException.class)
-          .hasMessageContaining("Product-User relation not found");
+          .hasMessageContaining("ProductUser relation not found for review");
     }
   }
 
@@ -157,10 +143,9 @@ class ReviewRepositoryAdapterTest {
     void when_reviewExists_then_returnReview() {
       // Arrange
       final UUID reviewId = UUID.randomUUID();
-      final UUID productId = UUID.randomUUID();
       final UUID productUserId = UUID.randomUUID();
 
-      final EntityId productUserEntityId = new EntityId(productId);
+      final EntityId productUserEntityId = new EntityId(productUserId);
       final EntityId reviewEntityId = new EntityId(reviewId);
 
       final ReviewEntity reviewEntity = ReviewEntity.builder()
@@ -170,10 +155,10 @@ class ReviewRepositoryAdapterTest {
           .productUserId(productUserId)
           .build();
 
-      final ProductEntity productEntity = ProductEntity.builder()
-          .productId(productId)
-          .name("Test Product")
-          .brand("Test Brand")
+      final ProductUserEntity productUserEntity = ProductUserEntity.builder()
+          .productUserId(productUserId)
+          .productId(UUID.randomUUID())
+          .userId(UUID.randomUUID())
           .build();
 
       final ReviewDetails reviewDetails = ReviewDetails.create(5, "Great product");
@@ -181,15 +166,16 @@ class ReviewRepositoryAdapterTest {
       final Review expectedReview = Review.createWithExistingId(reviewEntityId, productUserEntityId, reviewDetails);
 
       when(jpaReviewRepository.findById(reviewId)).thenReturn(Optional.of(reviewEntity));
-      when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(productEntity));
-      when(reviewMapper.toDomain(any(), any())).thenReturn(expectedReview);
+      when(jpaProductUserRepository.findById(productUserId)).thenReturn(Optional.of(productUserEntity));
+      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(expectedReview);
 
       // Act
       final Optional<Review> result = target.findById(new EntityId(reviewId));
 
       // Assert
-      assertThat(result).isPresent();
-      assertThat(result.get()).isEqualTo(expectedReview);
+      assertThat(result)
+          .isPresent()
+          .contains(expectedReview);
     }
 
     @Test
@@ -260,60 +246,38 @@ class ReviewRepositoryAdapterTest {
     void when_reviewsExist_then_returnReviewList() {
       // Arrange
       final UUID productId = UUID.randomUUID();
-      final UUID userId = UUID.randomUUID();
+      final UUID reviewId = UUID.randomUUID();
       final UUID productUserId = UUID.randomUUID();
 
-      final EntityId productEntityId = new EntityId(productId);
-      final EntityId userEntityId = new EntityId(userId);
-      final EntityId reviewEntityId = new EntityId(UUID.randomUUID());
+      final EntityId productUserEntityId = new EntityId(productUserId);
+      final EntityId reviewEntityId = new EntityId(reviewId);
 
-      final ReviewEntity reviewEntity1 = ReviewEntity.builder()
-          .reviewId(UUID.randomUUID())
+      final ProductUserEntity productUserEntity = ProductUserEntity.builder()
+          .productUserId(productUserId)
+          .productId(productId)
+          .userId(UUID.randomUUID())
+          .build();
+
+      final ReviewEntity reviewEntity = ReviewEntity.builder()
+          .reviewId(reviewId)
           .rating(4)
           .comment("Good product")
           .productUserId(productUserId)
           .build();
 
-      final ProductEntity productEntity = ProductEntity.builder()
-          .productId(productId)
-          .categoryId(UUID.randomUUID())
-          .name("Test Product")
-          .build();
-
-      // Crear relación producto-usuario
-      final ProductUserRelation relation = ProductUserRelation.create(
-          new EntityId(productId),
-          userEntityId
-      );
-
-      // Establecer colecciones con al menos una relación
-      final Set<ProductUserRelation> relations = new HashSet<>();
-      relations.add(relation);
-      Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
-
-      // Usamos el método reconstruct con una relación usuario-producto
-      final Product product = Product.reconstruct(
-          new EntityId(productId),
-          "Test Product",
-          "Test Brand",
-          category,
-          "#FFFFFF",
-          new ArrayList<>(), // Lista vacía de reviews inicialmente
-          relations         // Conjunto con al menos una relación
-      );
-
       final ReviewDetails reviewDetails = ReviewDetails.create(5, "Great product");
+      final Review review = Review.createWithExistingId(reviewEntityId, productUserEntityId, reviewDetails);
 
-      final Review review = Review.createWithExistingId(reviewEntityId, productEntityId, reviewDetails);
+      // Configurar para encontrar productUserEntities
+      when(jpaProductUserRepository.findByProductId(productId))
+          .thenReturn(List.of(productUserEntity));
 
-      when(jpaReviewRepository.findByProductUserId(productId))
-          .thenReturn(List.of(reviewEntity1));
-      when(jpaProductRepository.findById(productId))
-          .thenReturn(Optional.of(productEntity));
-      when(productMapper.toDomain(productEntity, category))
-          .thenReturn(product);
-      when(reviewMapper.toDomain(any(), any()))
-          .thenReturn(review);
+      // Configurar para encontrar reviews
+      when(jpaReviewRepository.findByProductUserId(productUserId))
+          .thenReturn(List.of(reviewEntity));
+
+      // Configurar el mapper
+      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(review);
 
       // Act
       final List<Review> result = target.findByProductId(new EntityId(productId));
@@ -327,8 +291,20 @@ class ReviewRepositoryAdapterTest {
     void when_noReviewsExist_then_returnEmptyList() {
       // Arrange
       final UUID productId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
 
-      when(jpaReviewRepository.findByProductUserId(productId))
+      final ProductUserEntity productUserEntity = ProductUserEntity.builder()
+          .productUserId(productUserId)
+          .productId(productId)
+          .userId(UUID.randomUUID())
+          .build();
+
+      // Configurar para encontrar productUserEntities
+      when(jpaProductUserRepository.findByProductId(productId))
+          .thenReturn(List.of(productUserEntity));
+
+      // Configurar para encontrar NO reviews
+      when(jpaReviewRepository.findByProductUserId(productUserId))
           .thenReturn(List.of());
 
       // Act
@@ -350,31 +326,35 @@ class ReviewRepositoryAdapterTest {
       final UUID productUserId = UUID.randomUUID();
       final UUID reviewId = UUID.randomUUID();
 
-      final EntityId productUserEntityId = new EntityId(productId);
+      final EntityId productUserEntityId = new EntityId(productUserId);
       final EntityId reviewEntityId = new EntityId(reviewId);
 
+      final ProductUserEntity productUserEntity = ProductUserEntity.builder()
+          .productUserId(productUserId)
+          .productId(productId)
+          .userId(userId)
+          .build();
+
       final ReviewEntity reviewEntity = ReviewEntity.builder()
-          .reviewId(UUID.randomUUID())
+          .reviewId(reviewId)
           .rating(3)
           .comment("Average product")
           .productUserId(productUserId)
           .build();
 
-      final ProductEntity productEntity = ProductEntity.builder()
-          .productId(productId)
-          .name("Test Product")
-          .build();
-
       final ReviewDetails reviewDetails = ReviewDetails.create(5, "Great product");
-
       final Review review = Review.createWithExistingId(reviewEntityId, productUserEntityId, reviewDetails);
 
-      when(jpaReviewRepository.findByProductUserId(userId))
+      // Configurar para encontrar productUserEntities
+      when(jpaProductUserRepository.findByUserId(userId))
+          .thenReturn(List.of(productUserEntity));
+
+      // Configurar para encontrar reviews
+      when(jpaReviewRepository.findByProductUserId(productUserId))
           .thenReturn(List.of(reviewEntity));
-      when(jpaProductRepository.findById(productId))
-          .thenReturn(Optional.of(productEntity));
-      when(reviewMapper.toDomain(any(), any()))
-          .thenReturn(review);
+
+      // Configurar el mapper
+      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(review);
 
       // Act
       final List<Review> result = target.findByUserId(new EntityId(userId));
@@ -388,8 +368,20 @@ class ReviewRepositoryAdapterTest {
     void when_noReviewsExist_then_returnEmptyList() {
       // Arrange
       final UUID userId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
 
-      when(jpaReviewRepository.findByProductUserId(userId))
+      final ProductUserEntity productUserEntity = ProductUserEntity.builder()
+          .productUserId(productUserId)
+          .productId(UUID.randomUUID())
+          .userId(userId)
+          .build();
+
+      // Configurar para encontrar productUserEntities
+      when(jpaProductUserRepository.findByUserId(userId))
+          .thenReturn(List.of(productUserEntity));
+
+      // Configurar para encontrar NO reviews
+      when(jpaReviewRepository.findByProductUserId(productUserId))
           .thenReturn(List.of());
 
       // Act
@@ -400,4 +392,83 @@ class ReviewRepositoryAdapterTest {
     }
   }
 
+  @Nested
+  class ExistsByReviewIdAndUserId {
+
+    @Test
+    void when_reviewExistsForUser_then_returnTrue() {
+      // Arrange
+      final UUID reviewId = UUID.randomUUID();
+      final UUID userId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
+
+      final ReviewEntity reviewEntity = ReviewEntity.builder()
+          .reviewId(reviewId)
+          .rating(3)
+          .comment("Average product")
+          .productUserId(productUserId)
+          .build();
+
+      final ProductUserEntity productUserEntity = ProductUserEntity.builder()
+          .productUserId(productUserId)
+          .productId(UUID.randomUUID())
+          .userId(userId)
+          .build();
+
+      when(jpaReviewRepository.findById(reviewId)).thenReturn(Optional.of(reviewEntity));
+      when(jpaProductUserRepository.findById(productUserId)).thenReturn(Optional.of(productUserEntity));
+
+      // Act
+      boolean result = target.existsByReviewIdAndUserId(new EntityId(reviewId), new EntityId(userId));
+
+      // Assert
+      assertThat(result).isTrue();
+    }
+
+    @Test
+    void when_reviewDoesNotExist_then_returnFalse() {
+      // Arrange
+      final UUID reviewId = UUID.randomUUID();
+      final UUID userId = UUID.randomUUID();
+
+      when(jpaReviewRepository.findById(reviewId)).thenReturn(Optional.empty());
+
+      // Act
+      boolean result = target.existsByReviewIdAndUserId(new EntityId(reviewId), new EntityId(userId));
+
+      // Assert
+      assertThat(result).isFalse();
+    }
+
+    @Test
+    void when_productUserRelationDoesNotBelongToUser_then_returnFalse() {
+      // Arrange
+      final UUID reviewId = UUID.randomUUID();
+      final UUID userId = UUID.randomUUID();
+      final UUID anotherUserId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
+
+      final ReviewEntity reviewEntity = ReviewEntity.builder()
+          .reviewId(reviewId)
+          .rating(3)
+          .comment("Average product")
+          .productUserId(productUserId)
+          .build();
+
+      final ProductUserEntity productUserEntity = ProductUserEntity.builder()
+          .productUserId(productUserId)
+          .productId(UUID.randomUUID())
+          .userId(anotherUserId)  // Diferente usuario al solicitado
+          .build();
+
+      when(jpaReviewRepository.findById(reviewId)).thenReturn(Optional.of(reviewEntity));
+      when(jpaProductUserRepository.findById(productUserId)).thenReturn(Optional.of(productUserEntity));
+
+      // Act
+      boolean result = target.existsByReviewIdAndUserId(new EntityId(reviewId), new EntityId(userId));
+
+      // Assert
+      assertThat(result).isFalse();
+    }
+  }
 }

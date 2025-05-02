@@ -28,19 +28,26 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     ProductEntity savedProduct = jpaProductRepository.save(product);
     jpaProductRepository.flush();
 
-    ReviewEntity review = new ReviewEntity();
-    review.setRating(5);
-    review.setComment("Great product!");
+    // Crear y guardar el ProductUserEntity
     ProductUserEntity productUser = new ProductUserEntity();
     productUser.setProductId(savedProduct.getProductId());
     final var userid = UUID.randomUUID();
     productUser.setProductUserId(UUID.randomUUID());
     productUser.setUserId(userid);
-    review.setProductUserId(productUser.getProductUserId());
-    productUser.setReviews(List.of(review));
+
     ProductUserEntity savedProductUser = jpaProductUserRepository.save(productUser);
     jpaProductUserRepository.flush();
 
+    // Luego crear y guardar la ReviewEntity
+    ReviewEntity review = new ReviewEntity();
+    review.setRating(5);
+    review.setComment("Great product!");
+    review.setProductUserId(savedProductUser.getProductUserId());
+
+    ReviewEntity savedReview = jpaReviewRepository.save(review);
+    jpaReviewRepository.flush();
+
+    // Ahora obtener los datos frescos para las verificaciones
     Optional<ProductEntity> retrievedProduct = jpaProductRepository.findById(savedProduct.getProductId());
 
     Optional<ProductUserEntity> retrievedProductUser =
@@ -65,7 +72,9 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
             .extracting(ProductUserEntity::getUserId, ProductUserEntity::getProductId)
             .containsExactly(userid, product.getProductId()));
 
-    assertThat(retrievedProductUser.get().getReviews())
+    // Verificar que al recuperar las reviews asociadas se obtiene la review guardada
+    List<ReviewEntity> reviews = jpaReviewRepository.findByProductUserId(savedProductUser.getProductUserId());
+    assertThat(reviews)
         .hasSize(1)
         .first()
         .satisfies(r -> assertThat(r)

@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.myvanitys.api.common.ValidationException;
+import com.myvanitys.api.product.domain.exception.ReviewValidationException;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.domain.valueobject.Timestamp;
@@ -116,26 +116,26 @@ class ReviewTest {
     }
 
     @Test
-    void when_givenInvalidRating_then_throwsValidationException() {
+    void when_givenInvalidRating_then_throwsReviewValidationException() {
       // When/Then
       assertThatThrownBy(() -> Review.createFor(productUserId, 0, "Valid Comment"))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Rating must be between 1 and 5");
 
       assertThatThrownBy(() -> Review.createFor(productUserId, 6, "Valid Comment"))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Rating must be between 1 and 5");
     }
 
     @Test
-    void when_givenEmptyComment_then_throwsValidationException() {
+    void when_givenEmptyComment_then_throwsReviewValidationException() {
       // When/Then
       assertThatThrownBy(() -> Review.createFor(productUserId, 4, ""))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Comment cannot be empty");
 
       assertThatThrownBy(() -> Review.createFor(productUserId, 4, "   "))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Comment cannot be empty");
     }
   }
@@ -227,10 +227,10 @@ class ReviewTest {
     }
 
     @Test
-    void when_givenInvalidRating_then_throwsValidationException() {
+    void when_givenInvalidRating_then_throwsReviewValidationException() {
       // When/Then
       assertThatThrownBy(() -> target.updateDetails(0, "Valid Comment"))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Rating must be between 1 and 5");
 
       // Ensure original values weren't changed
@@ -239,10 +239,10 @@ class ReviewTest {
     }
 
     @Test
-    void when_givenEmptyComment_then_throwsValidationException() {
+    void when_givenEmptyComment_then_throwsReviewValidationException() {
       // When/Then
       assertThatThrownBy(() -> target.updateDetails(4, ""))
-          .isInstanceOf(ValidationException.class)
+          .isInstanceOf(ReviewValidationException.class)
           .hasMessageContaining("Comment cannot be empty");
 
       // Ensure original values weren't changed

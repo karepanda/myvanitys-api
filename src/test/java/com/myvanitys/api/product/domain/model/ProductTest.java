@@ -226,10 +226,7 @@ class ProductTest {
   }
 
   @Test
-  void shouldNotThrowExceptionWhenDeletingNonExistentReview() {
-    // When
-    Review deletedReview = product.deleteReview(userId);
-
+  void shouldThrowExceptionWhenDeletingReviewForUserWithNoRelation() {
     // Then
     assertThatThrownBy(() -> product.deleteReview(userId))
         .isInstanceOf(ReviewValidationException.class)
