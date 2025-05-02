@@ -20,6 +20,9 @@ erDiagram
         String name "NOT NULL"
         String brand "NOT NULL"
         String colorHex
+        String description "NOT NULL"
+        Double price "NOT NULL"
+        String image "NOT NULL"
         Long version "NOT NULL"
         Date createdAt "NOT NULL"
         Date updatedAt "NOT NULL"
@@ -53,6 +56,10 @@ erDiagram
         String email "NOT NULL, UNIQUE"
         String password "NOT NULL"
         Boolean isActive "NOT NULL"
+        Boolean isVerified "NOT NULL"
+        String verificationCode
+        String resetPasswordToken
+        Date resetPasswordTokenExpiry
         Long version "NOT NULL"
         Date createdAt "NOT NULL"
         Date updatedAt "NOT NULL"

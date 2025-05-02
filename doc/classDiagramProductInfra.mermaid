@@ -1,0 +1,135 @@
+classDiagram
+    %% Infrastructure - Persistence Entities
+    class ProductEntity {
+        -UUID productId
+        -UUID categoryId
+        -String name
+        -String brand
+        -String colorHex
+        -Instant createdAt
+        -Instant updatedAt
+    }
+
+    class ReviewEntity {
+        -UUID reviewId
+        -UUID productUserId
+        -int rating
+        -String comment
+        -Instant createdAt
+        -Instant updatedAt
+        -Instant deletedAt
+    }
+
+    class CategoryEntity {
+        -UUID categoryId
+        -String name
+        -Instant createdAt
+        -Instant updatedAt
+    }
+
+    class ProductUserEntity {
+        -UUID productUserId
+        -UUID productId
+        -UUID userId
+        -boolean isFavorite
+        -Instant createdAt
+        -Instant updatedAt
+    }
+
+    %% Infrastructure - JPA Repositories
+    class JpaProductRepository {
+        <<Interface>>
+        +findById(UUID) Optional~ProductEntity~
+        +save(ProductEntity) ProductEntity
+        +findAll() List~ProductEntity~
+    }
+
+    class JpaReviewRepository {
+        <<Interface>>
+        +findById(UUID) Optional~ReviewEntity~
+        +findByProductUserId(UUID) List~ReviewEntity~
+    }
+
+    class JpaCategoryRepository {
+        <<Interface>>
+        +findById(UUID) Optional~CategoryEntity~
+    }
+
+    class JpaProductUserRepository {
+        <<Interface>>
+        +findById(UUID) Optional~ProductUserEntity~
+        +findByProductId(UUID) List~ProductUserEntity~
+        +findByUserId(UUID) List~ProductUserEntity~
+    }
+
+    %% Infrastructure - Adapters
+    class ProductRepositoryAdapter {
+        -JpaProductRepository jpaRepository
+        -ProductMapper mapper
+        +save(Product)
+        +findById(EntityId)
+        +findAll()
+    }
+
+    class ReviewRepositoryAdapter {
+        -JpaReviewRepository jpaRepository
+        -JpaProductUserRepository userRepository
+        -ReviewMapper mapper
+        +save(Review)
+        +findById(EntityId)
+        +findByProductId(EntityId)
+    }
+
+    class CategoryRepositoryAdapter {
+        -JpaCategoryRepository jpaRepository
+        -CategoryMapper mapper
+        +save(Category)
+        +findById(EntityId)
+    }
+
+    %% Infrastructure - Mappers
+    class ProductMapper {
+        +toEntity(Product) ProductEntity
+        +toDomain(ProductEntity) Product
+    }
+
+    class ReviewMapper {
+        +toEntity(Review) ReviewEntity
+        +toDomain(ReviewEntity, EntityId) Review
+    }
+
+    class CategoryMapper {
+        +toEntity(Category) CategoryEntity
+        +toDomain(CategoryEntity) Category
+    }
+
+    %% Infrastructure - Exceptions
+    class DatabaseException {
+        +String message
+        +Throwable cause
+    }
+
+    %% Relationships - Infrastructure
+    ProductRepositoryAdapter ..|> ProductRepository
+    ReviewRepositoryAdapter ..|> ReviewRepository
+    CategoryRepositoryAdapter ..|> CategoryRepository
+
+    ProductRepositoryAdapter --> JpaProductRepository
+    ReviewRepositoryAdapter --> JpaReviewRepository
+    CategoryRepositoryAdapter --> JpaCategoryRepository
+
+    ProductMapper --> ProductEntity
+    ProductMapper --> Product
+    ReviewMapper --> ReviewEntity
+    ReviewMapper --> Review
+    CategoryMapper --> CategoryEntity
+    CategoryMapper --> Category
+
+    ProductRepositoryAdapter --> ProductMapper
+    ReviewRepositoryAdapter --> ReviewMapper
+    CategoryRepositoryAdapter --> CategoryMapper
+
+    JpaProductRepository --> ProductEntity
+    JpaReviewRepository --> ReviewEntity
+    JpaCategoryRepository --> CategoryEntity
+    JpaProductUserRepository --> ProductUserEntity
