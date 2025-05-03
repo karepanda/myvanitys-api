@@ -1,19 +1,37 @@
 package com.myvanitys.api.product.domain.model;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
+import com.myvanitys.api.product.domain.exception.ReviewValidationException;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import lombok.Getter;
 import lombok.ToString;
 
+/**
+ * Product aggregate root that manages reviews and user relations.
+ */
 @Getter
 @ToString
 public class Product {
+
+  public static final String USER_HAS_NO_RELATION = "User has no relation with this product";
+
+  public static final String USER_HAS_NO_REVIEW = "User has no review for this product";
+
+  public static final String REVIEW_NOT_FOUND = "Review not found";
+
+  public static final String CANNOT_UPDATE_DELETED_REVIEW = "Cannot update a deleted review";
+
+  public static final String USER_ALREADY_HAS_REVIEW = "User already has a review for this product";
 
   private final EntityId id;
 
@@ -31,14 +49,48 @@ public class Product {
 
   private final Set<ProductUserRelation> userRelations = new HashSet<>();
 
-  public Product(EntityId id, String name, String brand, Category category, String colorHex) {
+  // Constructor con acceso package-private para control de instanciación
+  Product(EntityId id, String name, String brand, Category category, String colorHex) {
     validateProductDetails(name, brand, colorHex);
-    this.id = id;
+    this.id = Objects.requireNonNull(id, "Product ID cannot be null");
     this.name = name;
     this.brand = brand;
     this.category = category;
     this.colorHex = colorHex;
     this.averageRating = 0;
+  }
+
+  public static Product create(String name, String brand, Category category, String colorHex) {
+    Objects.requireNonNull(category, "Category cannot be null when creating a product");
+    return new Product(EntityId.newId(), name, brand, category, colorHex);
+  }
+
+  public static Product newProduct(String name, String brand, String colorHex) {
+    return new Product(EntityId.newId(), name, brand, null, colorHex);
+  }
+
+  public void assignCategory(Category category) {
+    if (this.category != null) {
+      throw new ProductValidationException("Product already has a category assigned");
+    }
+    this.category = Objects.requireNonNull(category, "Category cannot be null");
+  }
+
+  public static Product reconstruct(EntityId id, String name, String brand, Category category,
+      String colorHex, List<Review> reviews, Set<ProductUserRelation> userRelations) {
+    Objects.requireNonNull(category, "Category cannot be null for reconstructed products");
+    Product product = new Product(id, name, brand, category, colorHex);
+
+    if (reviews != null) {
+      product.reviews.addAll(reviews);
+    }
+
+    if (userRelations != null) {
+      product.userRelations.addAll(userRelations);
+    }
+
+    product.calculateAverageRating();
+    return product;
   }
 
   public void updateDetails(String name, String brand, Category category, String colorHex) {
@@ -47,6 +99,141 @@ public class Product {
     this.brand = brand;
     this.category = category;
     this.colorHex = colorHex;
+  }
+
+  public Review addReviewFromUser(EntityId userId, ReviewDetails details) {
+    ProductUserRelation relation = findOrCreateUserRelation(userId);
+
+    if (relation.hasReview()) {
+      Optional<Review> existingReview = findReviewById(relation.getReviewId());
+      if (existingReview.isPresent() && existingReview.get().isActive()) {
+        throw new ReviewValidationException(USER_ALREADY_HAS_REVIEW);
+      }
+    }
+
+    Review review = Review.createFor(relation.getId(), details);
+    relation.linkToReview(review.getId());
+    addReview(review);
+    calculateAverageRating();
+
+    return review;
+  }
+
+  public Review addReviewFromUser(EntityId userId, int rating, String comment) {
+    return addReviewFromUser(userId, ReviewDetails.create(rating, comment));
+  }
+
+  public Review addReviewFromUser(EntityId userId, int rating, String comment, Instant createdAt, Instant updatedAt) {
+    return addReviewFromUser(userId, ReviewDetails.of(rating, comment, createdAt, updatedAt, null));
+  }
+
+  public Review updateReview(EntityId userId, ReviewDetails details) {
+    ProductUserRelation relation = findUserRelationOrThrow(userId);
+
+    if (!relation.hasReview()) {
+      throw new ReviewValidationException(USER_HAS_NO_REVIEW);
+    }
+
+    Review review = findReviewById(relation.getReviewId())
+        .orElseThrow(() -> new ReviewValidationException(REVIEW_NOT_FOUND));
+
+    if (review.isDeleted()) {
+      throw new ReviewValidationException(CANNOT_UPDATE_DELETED_REVIEW);
+    }
+
+    review.updateDetails(details);
+    calculateAverageRating();
+
+    return review;
+  }
+
+  public Review updateReview(EntityId userId, int rating, String comment) {
+    ProductUserRelation relation = findUserRelationOrThrow(userId);
+
+    if (!relation.hasReview()) {
+      throw new ReviewValidationException(USER_HAS_NO_REVIEW);
+    }
+
+    Review review = findReviewById(relation.getReviewId())
+        .orElseThrow(() -> new ReviewValidationException(REVIEW_NOT_FOUND));
+
+    if (review.isDeleted()) {
+      throw new ReviewValidationException(CANNOT_UPDATE_DELETED_REVIEW);
+    }
+
+    review.updateDetails(rating, comment);
+    calculateAverageRating();
+
+    return review;
+  }
+
+  public Review deleteReview(EntityId userId) {
+    ProductUserRelation relation = findUserRelationOrThrow(userId);
+
+    if (!relation.hasReview()) {
+      throw new ReviewValidationException(USER_HAS_NO_REVIEW);
+    }
+
+    Review review = findReviewById(relation.getReviewId())
+        .orElseThrow(() -> new ReviewValidationException(REVIEW_NOT_FOUND));
+
+    if (review.isDeleted()) {
+      return review; // Already deleted, nothing to do
+    }
+
+    review.markAsDeleted();
+    calculateAverageRating();
+
+    return review;
+  }
+
+  public boolean removeReviewByUser(EntityId userId) {
+    Optional<ProductUserRelation> relationOpt = userRelations.stream()
+        .filter(r -> r.getUserId().equals(userId))
+        .findFirst();
+
+    if (relationOpt.isEmpty() || !relationOpt.get().hasReview()) {
+      return false;
+    }
+
+    ProductUserRelation relation = relationOpt.get();
+    EntityId reviewId = relation.getReviewId();
+
+    Optional<Review> reviewOpt = findReviewById(reviewId);
+    if (reviewOpt.isEmpty()) {
+      return false;
+    }
+
+    boolean removed = reviews.remove(reviewOpt.get());
+
+    if (removed) {
+      relation.unlinkReview();
+      calculateAverageRating();
+    }
+
+    return removed;
+  }
+
+  public boolean hasReviewFrom(EntityId userId) {
+    return userRelations.stream()
+        .filter(r -> r.getUserId().equals(userId) && r.hasReview())
+        .findFirst()
+        .flatMap(r -> findReviewById(r.getReviewId()))
+        .map(Review::isActive)
+        .orElse(false);
+  }
+
+  public Optional<Review> findReviewByUser(EntityId userId) {
+    return userRelations.stream()
+        .filter(r -> r.getUserId().equals(userId) && r.hasReview())
+        .findFirst()
+        .flatMap(r -> findReviewById(r.getReviewId()));
+  }
+
+  public Optional<Review> findReviewById(EntityId reviewId) {
+    return reviews.stream()
+        .filter(r -> r.getId().equals(reviewId))
+        .findFirst();
   }
 
   private void validateProductDetails(String name, String brand, String colorHex) {
@@ -68,24 +255,57 @@ public class Product {
     }
   }
 
-  public int getAverageRating() {
-    return reviews.isEmpty() ? 0 : reviews.stream().mapToInt(Review::getRating).sum() / reviews.size();
+  private ProductUserRelation findUserRelationOrThrow(EntityId userId) {
+    return userRelations.stream()
+        .filter(r -> r.getUserId().equals(userId))
+        .findFirst()
+        .orElseThrow(() -> new ReviewValidationException(USER_HAS_NO_RELATION));
   }
 
-  public void addReview(Review review) {
+  private ProductUserRelation findOrCreateUserRelation(EntityId userId) {
+    return userRelations.stream()
+        .filter(r -> r.getUserId().equals(userId))
+        .findFirst()
+        .orElseGet(() -> {
+          ProductUserRelation newRelation = ProductUserRelation.create(id, userId);
+          userRelations.add(newRelation);
+          return newRelation;
+        });
+  }
+
+  private void addReview(Review review) {
     if (review == null) {
-      throw new ProductValidationException("Review cannot be null");
+      throw new IllegalArgumentException("Review cannot be null");
     }
     if (!reviews.contains(review)) {
       reviews.add(review);
-      calculateAverageRating();
     }
   }
 
-  public void removeReview(Review review) {
-    if (reviews.remove(review)) {
-      calculateAverageRating();
-    }
+  void calculateAverageRating() {
+    List<Review> activeReviews = reviews.stream()
+        .filter(Review::isActive)
+        .toList();
+
+    averageRating = activeReviews.isEmpty() ? 0 :
+        (int) Math.round(activeReviews.stream()
+            .mapToInt(Review::getRating)
+            .average()
+            .orElse(0));
+  }
+
+  public List<Review> getReviews() {
+    return Collections.unmodifiableList(reviews);
+  }
+
+  public Set<ProductUserRelation> getUserRelations() {
+    return Collections.unmodifiableSet(userRelations);
+  }
+
+  public int getActiveReviewCount() {
+    return (int) reviews.stream()
+        .filter(Review::isActive)
+        .count();
   }
 
   @Override
@@ -103,10 +323,5 @@ public class Product {
   @Override
   public int hashCode() {
     return Objects.hash(id);
-  }
-
-  private void calculateAverageRating() {
-    averageRating = reviews.isEmpty() ? 0 :
-        reviews.stream().mapToInt(Review::getRating).sum() / reviews.size();
   }
 }

@@ -1,115 +1,212 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
+import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewMapperTest {
 
-    @InjectMocks
-    private ReviewMapper reviewMapper;
+  @Mock
+  private EntityIdMapper entityIdMapper;
 
-    private UUID reviewId;
-    private UUID userId;
-    private UUID productUserId;
-    private ProductUserEntity productUserEntity;
+  @InjectMocks
+  private ReviewMapperImpl target;
 
-    @BeforeEach
-    void setUp() {
-        reviewId = UUID.randomUUID();
-        userId = UUID.randomUUID();
-        productUserEntity = new ProductUserEntity();
-        productUserEntity.setUserId(userId);
+  @Nested
+  @DisplayName("toDomain")
+  class ToDomain {
+
+    @Test
+    void when_validEntityAndProductUserId_then_returnsMappedReview() {
+      // Arrange
+      final UUID reviewId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
+      final EntityId productUserEntityId = new EntityId(productUserId);
+      final Instant createdAt = Instant.now().minusSeconds(3600);
+      final Instant updatedAt = Instant.now();
+
+      final ReviewEntity reviewEntity = ReviewEntity.builder()
+          .reviewId(reviewId)
+          .productUserId(productUserId)
+          .rating(5)
+          .comment("Excelente producto")
+          .createdAt(createdAt)
+          .updatedAt(updatedAt)
+          .build();
+
+      // Act
+      final Review result = target.toDomain(reviewEntity, productUserEntityId);
+
+      // Assert
+      assertThat(result).isNotNull();
+      assertThat(result.getId().getValue()).isEqualTo(reviewId);
+      assertThat(result.getProductUserId()).isEqualTo(productUserEntityId);
+      assertThat(result.getDetails().rating()).isEqualTo(5);
+      assertThat(result.getDetails().comment()).isEqualTo("Excelente producto");
+      assertThat(result.getDetails().createdAt().asInstant()).isEqualTo(createdAt);
+      assertThat(result.getDetails().updatedAt().asInstant()).isEqualTo(updatedAt);
     }
 
     @Test
-    void toDomain_shouldMapReviewEntityToReview() {
+    void when_entityIsNull_then_returnsNull() {
+      // Arrange
+      final EntityId productUserEntityId = new EntityId(UUID.randomUUID());
+
+      // Act
+      final Review result = target.toDomain(null, productUserEntityId);
+
+      // Assert
+      assertThat(result).isNull();
+    }
+
+    @Test
+    void when_productUserIdIsNull_then_returnsNull() {
+      // Arrange
+      final ReviewEntity reviewEntity = ReviewEntity.builder()
+          .reviewId(UUID.randomUUID())
+          .rating(4)
+          .comment("Good product")
+          .build();
+
+      // Act
+      final Review result = target.toDomain(reviewEntity, null);
+
+      // Assert
+      assertThat(result).isNull();
+    }
+  }
+
+  @Nested
+  @DisplayName("toEntity")
+  class ToEntity {
+
+    @Test
+    void when_validReview_then_returnsMappedEntity() {
+      // Arrange
+      final UUID reviewId = UUID.randomUUID();
+      final UUID productUserId = UUID.randomUUID();
+      final EntityId reviewEntityId = new EntityId(reviewId);
+      final EntityId productUserEntityId = new EntityId(productUserId);
+
+      final Instant createdAt = Instant.now().minusSeconds(3600);
+      final Instant updatedAt = Instant.now();
+
+      final ReviewDetails reviewDetails = ReviewDetails.of(
+          4,
+          "Good product",
+          createdAt,
+          updatedAt,
+          null);
+
+      final Review review = Review.createWithExistingId(reviewEntityId, productUserEntityId, reviewDetails);
+
+      // Configure specific mapping for these IDs
+      when(entityIdMapper.toUUID(reviewEntityId)).thenReturn(reviewId);
+      when(entityIdMapper.toUUID(productUserEntityId)).thenReturn(productUserId);
+
+      // Act
+      final ReviewEntity result = target.toEntity(review);
+
+      // Assert
+      assertThat(result).isNotNull();
+      assertThat(result.getReviewId()).isEqualTo(reviewId);
+      assertThat(result.getProductUserId()).isEqualTo(productUserId);
+      assertThat(result.getRating()).isEqualTo(4);
+      assertThat(result.getComment()).isEqualTo("Good product");
+      assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+      assertThat(result.getUpdatedAt()).isEqualTo(updatedAt);
+      assertThat(result.getDeletedAt()).isNull();
+    }
+
+    @Test
+    void when_reviewIsNull_then_returnsNull() {
+      // Act
+      final ReviewEntity result = target.toEntity(null);
+
+      // Assert
+      assertThat(result).isNull();
+    }
+
+    @Nested
+    @DisplayName("ForProductUserId")
+    class ForProductUserId {
+
+      @Test
+      void when_validReviewAndProductUserId_then_returnsMappedEntityWithOverriddenProductUserId() {
         // Arrange
-        productUserId = UUID.randomUUID();
-        EntityId productUserEntityId = new EntityId(productUserId);
-        ReviewEntity reviewEntity = ReviewEntity.builder()
-                .reviewId(reviewId)
-                .productUserId(productUserId)
-                .rating(5)
-                .comment("Excelente producto")
-                .build();
+        final UUID reviewId = UUID.randomUUID();
+        final UUID originalProductUserId = UUID.randomUUID();
+        final UUID newProductUserId = UUID.randomUUID();
+        final EntityId reviewEntityId = new EntityId(reviewId);
+        final EntityId productUserEntityId = new EntityId(originalProductUserId);
+
+        final Instant createdAt = Instant.now().minusSeconds(3600);
+        final Instant updatedAt = Instant.now();
+
+        final ReviewDetails reviewDetails = ReviewDetails.of(
+            4,
+            "Good product",
+            createdAt,
+            updatedAt,
+            null);
+
+        final Review review = Review.createWithExistingId(reviewEntityId, productUserEntityId, reviewDetails);
+        // Configure default behavior for entityIdMapper
+        lenient().when(entityIdMapper.toUUID(any(EntityId.class))).thenAnswer(
+            invocation -> {
+              EntityId entityId = invocation.getArgument(0);
+              return entityId != null ? entityId.getValue() : null;
+            });
+
+        lenient().when(entityIdMapper.toEntityId(any(UUID.class))).thenAnswer(
+            invocation -> {
+              UUID uuid = invocation.getArgument(0);
+              return uuid != null ? new EntityId(uuid) : null;
+            });
 
         // Act
-        Review result = reviewMapper.toDomain(reviewEntity, productUserEntityId);
+        final ReviewEntity result = target.toEntity(review, newProductUserId);
 
         // Assert
-        assertNotNull(result);
-        assertEquals(reviewId, result.getId().getValue());
-        assertEquals(userId, result.getUserId().getValue());
-        assertEquals(productUserId, result.getProductUserId().getValue());
-        assertEquals(5, result.getRating());
-        assertEquals("Excelente producto", result.getComment());
-    }
+        assertThat(result).isNotNull();
+        assertThat(result.getReviewId()).isEqualTo(reviewId);
+        assertThat(result.getProductUserId()).isEqualTo(newProductUserId);
+        assertThat(result.getRating()).isEqualTo(4);
+        assertThat(result.getComment()).isEqualTo("Good product");
+        assertThat(result.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(result.getUpdatedAt()).isEqualTo(updatedAt);
+        assertThat(result.getDeletedAt()).isNull();
+      }
 
-    @Test
-    void toDomain_shouldReturnNullWhenEntityIsNull() {
-        // Act
-        productUserId = UUID.randomUUID();
-        EntityId productUserEntityId = new EntityId(productUserId);
-        Review result = reviewMapper.toDomain(null, productUserEntityId);
-
-        // Assert
-        assertNull(result);
-    }
-
-    @Test
-    void toDomain_shouldThrowExceptionWhenProductIsNull() {
+      @Test
+      void when_reviewIsNullButProductUserIdProvided_then_throwsNullPointerException() {
         // Arrange
-        ReviewEntity reviewEntity = ReviewEntity.builder()
-                .reviewId(reviewId)
-                .build();
+        final UUID productUserId = UUID.randomUUID();
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class,
-                () -> reviewMapper.toDomain(reviewEntity, null),
-                "Product cannot be null for review conversion");
+        assertThatThrownBy(() -> target.toEntity(null, productUserId))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessageContaining(
+                "Cannot invoke \"com.myvanitys.api.product.domain.model.Review.getCreatedAt()\" because \"review\" is null");
+      }
     }
-
-    @Test
-    void toEntity_shouldMapReviewToReviewEntity() {
-        // Arrange
-        productUserId = UUID.randomUUID();
-        EntityId productUserEntityId = new EntityId(productUserId);
-        Review review = new Review(
-                new EntityId(reviewId),
-                new EntityId(userId),
-                productUserEntityId,
-                4,
-                "Buen producto"
-        );
-
-        // Act
-        ReviewEntity result = reviewMapper.toEntity(review);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(reviewId, result.getReviewId());
-        assertEquals(4, result.getRating());
-        assertEquals("Buen producto", result.getComment());
-    }
-
-    @Test
-    void toEntity_shouldReturnNullWhenDomainIsNull() {
-        // Act
-        ReviewEntity result = reviewMapper.toEntity(null);
-
-        // Assert
-        assertNull(result);
-    }
+  }
 }

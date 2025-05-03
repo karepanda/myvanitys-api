@@ -7,10 +7,10 @@ on:
       - closed
     branches:
       - main
-    # Ejecutar solo cuando el PR se haya mergeado
+    # Only run when the PR has been merged
     if: github.event.pull_request.merged == true
 
-# Agregar permisos para permitir crear y subir tags
+# Add permissions to allow creating and uploading tags
 permissions:
   contents: write
   packages: write
@@ -73,25 +73,19 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.create_tag.outputs.new_version }}
-          name: Release v${{ steps.create_tag.outputs.new_version }}
+          tag_name: ${{ steps.create_tag.outputs.new_tag }}
+          name: Release ${{ steps.create_tag.outputs.new_tag }}
           draft: false
           prerelease: false
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  await-approval:
+  build-and-push-docker:
     needs: tag-and-release
     runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Wait for manual approval
-        run: echo "Deployment approved for version ${{ needs.tag-and-release.outputs.new_version }}"
-
-  deploy-to-railway:
-    needs: [ tag-and-release, await-approval ]
-    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ needs.tag-and-release.outputs.new_tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -129,33 +123,44 @@ jobs:
             GITHUB_USERNAME=${{ github.actor }}
             GITHUB_TOKEN=${{ secrets.PACKAGES_TOKEN }}
 
-  deploy-with-railway-container:
-    needs: [ deploy-to-railway ]
+  await-approval:
+    needs: build-and-push-docker
     runs-on: ubuntu-latest
-    container: ghcr.io/railwayapp/cli:latest
-    env:
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    environment: production
     steps:
-      - name: Login and Deploy to Railway
+      - name: Wait for manual approval
+        run: echo "Deployment approved for version ${{ needs.build-and-push-docker.outputs.image_tag }}"
+
+  deploy-to-railway:
+    needs: [ build-and-push-docker, await-approval ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway
         run: |
-          # Verificar versión de Railway CLI
-          railway --version
+          # Login to Railway
+          echo "${{ secrets.RAILWAY_TOKEN }}" | railway login
 
-          # Intentar login con el token
-          echo "Intentando login con token..."
-          # Crear archivo de configuración directamente
-          mkdir -p /root/.railway
-          echo "{\"token\":\"$RAILWAY_TOKEN\"}" > /root/.railway/config.json
-          chmod 600 /root/.railway/config.json
+          # Link to the Railway project
+          railway link project_id_or_name
 
-          # Verificar el usuario actual
-          echo "Verificando usuario..."
-          railway whoami
-
-          # Ver proyectos disponibles
-          echo "Listando proyectos disponibles..."
-          railway list
-
-          # Resto del script de despliegue...
-          # Como estamos ejecutando en un container, podemos omitir este paso si queremos
-          # simplemente diagnosticar el problema de autenticación primero
+          # Set environment variables
+          railway variables set SPRING_PROFILES_ACTIVE=prod
+          railway variables set GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          railway variables set GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          railway variables set OAUTH_REDIRECT_URI=${{ secrets.OAUTH_REDIRECT_URI }}
+          railway variables set JWT_SECRET=${{ secrets.JWT_SECRET }}
+          
+          # Deploy using the Docker image from GitHub Container Registry
+          railway variables set RAILWAY_DOCKERFILE_PATH=DockerfileProduction
+          railway variables set IMAGE=ghcr.io/${{ github.repository }}:${{ needs.build-and-push-docker.outputs.image_tag }}
+          
+          # Deploy the application
+          railway up
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

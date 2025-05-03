@@ -26,4 +26,7 @@ public abstract class AbstractJpaProductTest extends AbstractIntegrationTest {
 
   @Autowired
   protected JpaProductUserRepository jpaProductUserRepository;
+
+  @Autowired
+  protected JpaReviewRepository jpaReviewRepository;
 }

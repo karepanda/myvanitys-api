@@ -28,19 +28,26 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     ProductEntity savedProduct = jpaProductRepository.save(product);
     jpaProductRepository.flush();
 
-    ReviewEntity review = new ReviewEntity();
-    review.setRating(5);
-    review.setComment("Great product!");
+    // Crear y guardar el ProductUserEntity
     ProductUserEntity productUser = new ProductUserEntity();
     productUser.setProductId(savedProduct.getProductId());
     final var userid = UUID.randomUUID();
     productUser.setProductUserId(UUID.randomUUID());
     productUser.setUserId(userid);
-    review.setProductUserEntity(productUser);
-    productUser.setReviews(List.of(review));
+
     ProductUserEntity savedProductUser = jpaProductUserRepository.save(productUser);
     jpaProductUserRepository.flush();
 
+    // Luego crear y guardar la ReviewEntity
+    ReviewEntity review = new ReviewEntity();
+    review.setRating(5);
+    review.setComment("Great product!");
+    review.setProductUserId(savedProductUser.getProductUserId());
+
+    ReviewEntity savedReview = jpaReviewRepository.save(review);
+    jpaReviewRepository.flush();
+
+    // Ahora obtener los datos frescos para las verificaciones
     Optional<ProductEntity> retrievedProduct = jpaProductRepository.findById(savedProduct.getProductId());
 
     Optional<ProductUserEntity> retrievedProductUser =
@@ -65,7 +72,9 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
             .extracting(ProductUserEntity::getUserId, ProductUserEntity::getProductId)
             .containsExactly(userid, product.getProductId()));
 
-    assertThat(retrievedProductUser.get().getReviews())
+    // Verificar que al recuperar las reviews asociadas se obtiene la review guardada
+    List<ReviewEntity> reviews = jpaReviewRepository.findByProductUserId(savedProductUser.getProductUserId());
+    assertThat(reviews)
         .hasSize(1)
         .first()
         .satisfies(r -> assertThat(r)
@@ -172,14 +181,21 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product2);
     jpaProductRepository.save(product3);
 
-    // When: Find products by category ID
-    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryId(savedCategory1.getCategoryId());
+    // When: Find products by category name using a join query
+    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryName("Electronics");
 
     // Then: Assert that the correct products are found
     assertThat(foundProducts).hasSize(2);
     assertThat(foundProducts)
         .extracting(ProductEntity::getName)
         .containsExactlyInAnyOrder("Product 1", "Product 2");
+
+    // Additional verification for the second category
+    List<ProductEntity> clothingProducts = jpaProductRepository.findByCategoryName("Clothing");
+    assertThat(clothingProducts).hasSize(1);
+    assertThat(clothingProducts)
+        .extracting(ProductEntity::getName)
+        .containsExactly("Product 3");
   }
 
   @Test

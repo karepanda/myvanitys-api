@@ -1,0 +1,124 @@
+classDiagram
+    %% Models
+    class Product {
+        -EntityId id
+        -String name
+        -String brand
+        -Category category
+        -String colorHex
+        -Set~Review~ reviews
+        -Set~ProductUserRelation~ userRelations
+        +addReview(Review)
+        +removeReview(Review)
+        +addUserRelation(ProductUserRelation)
+        +removeUserRelation(ProductUserRelation)
+        +getActiveReviews()
+    }
+
+    class Category {
+        -EntityId categoryId
+        -String name
+    }
+
+    class Review {
+        -EntityId id
+        -EntityId productUserId
+        -ReviewDetails details
+        +updateDetails(int, String)
+        +markAsDeleted()
+        +isDeleted()
+        +isActive()
+    }
+
+    class ProductUserRelation {
+        -EntityId id
+        -EntityId userId
+        -boolean isFavorite
+    }
+
+    class ProductOperations {
+        <<Interface>>
+        +addReview(Review)
+        +removeReview(Review)
+        +addUserRelation(ProductUserRelation)
+        +removeUserRelation(ProductUserRelation)
+    }
+
+    %% Value Objects
+    class EntityId {
+        -UUID value
+        +newId()
+        +of(UUID)
+        +getValue()
+    }
+
+    class ReviewDetails {
+        -int rating
+        -String comment
+        -Timestamp createdAt
+        -Timestamp updatedAt
+        -Timestamp deletedAt
+        +create(int, String)
+        +withUpdates(int, String)
+        +markAsDeleted()
+    }
+
+    class Timestamp {
+        -Instant value
+        +now()
+        +of(Instant)
+        +asInstant()
+    }
+
+    %% Services
+    class ProductReview {
+        +validateReview(Review)
+        +processReview(Review)
+    }
+
+    %% Repositories (Port Secondary)
+    class ProductRepository {
+        <<Interface>>
+        +save(Product) Product
+        +findById(EntityId) Optional~Product~
+        +findByName(String) Optional~Product~
+        +findAll() List~Product~
+        +deleteById(EntityId) void
+    }
+
+    class CategoryRepository {
+        <<Interface>>
+        +save(Category) Category
+        +findById(EntityId) Optional~Category~
+        +findAll() List~Category~
+    }
+
+    class ReviewRepository {
+        <<Interface>>
+        +save(Review) Review
+        +findById(EntityId) Optional~Review~
+        +findByProductId(EntityId) List~Review~
+        +findByUserId(EntityId) List~Review~
+        +deleteById(EntityId) void
+    }
+
+    class ProductUserRepository {
+        <<Interface>>
+        +saveProductUserRelationship(EntityId, EntityId) void
+        +findByProductId(EntityId) List~ProductUserRelation~
+        +findByUserId(EntityId) List~ProductUserRelation~
+    }
+
+    %% Relationships
+    Product ..|> ProductOperations
+    Product "1" *-- "0..*" Review
+    Product "1" *-- "1" Category
+    Product "1" *-- "0..*" ProductUserRelation
+    Review "1" *-- "1" ReviewDetails
+    ReviewDetails "1" *-- "3" Timestamp
+    Product "1" *-- "1" EntityId
+    Category "1" *-- "1" EntityId
+    Review "1" *-- "1" EntityId
+    ProductUserRelation "1" *-- "2" EntityId
+    ProductReview ..> Review
+    ProductReview ..> Product

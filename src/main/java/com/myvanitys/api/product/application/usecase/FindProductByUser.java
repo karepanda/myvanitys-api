@@ -1,11 +1,17 @@
 package com.myvanitys.api.product.application.usecase;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
+import com.myvanitys.api.product.domain.exception.CategoryNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +26,19 @@ public class FindProductByUser implements FindProductUserUseCase {
 
   private final ProductMapper productMapper;
 
+  private final CategoryRepository categoryRepository;
+
   @Override
   @Transactional(readOnly = true)
   public List<Product> query(FindProductUserQuery query) {
-    List<Product> products = jpaProductRepository.findByUserId(query.userId().getValue())
-        .stream()
-        .map(productMapper::toDomain)
+    List<ProductEntity> productEntities = jpaProductRepository.findByUserId(query.userId().getValue());
+
+    List<Product> products = productEntities.stream()
+        .map(entity -> {
+          final Category category = getCategory(entity);
+          return productMapper.toDomain(entity, category);
+        })
+        .filter(Objects::nonNull)
         .toList();
 
     if (products.isEmpty()) {
@@ -33,5 +46,12 @@ public class FindProductByUser implements FindProductUserUseCase {
     }
 
     return products;
+
+  }
+
+  private Category getCategory(ProductEntity entity) {
+    Category category = categoryRepository.findById(new EntityId(entity.getCategoryId()))
+        .orElseThrow(() -> new CategoryNotFoundException("Category not found for product: " + entity.getProductId()));
+    return category;
   }
 }
