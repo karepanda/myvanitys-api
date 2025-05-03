@@ -1,5 +1,63 @@
+# DockerfileProduction
+# Multi-stage build to optimize size and security
+
+# Stage 1: Build stage
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
+WORKDIR /app
+
+# Arguments for GitHub credentials
+ARG GITHUB_USERNAME
+ARG GITHUB_TOKEN
+
+# Copy pom.xml first to leverage Maven cache
+COPY pom.xml .
+COPY .mvn .mvn
+
+# Download dependencies with credentials passed as arguments
+RUN mvn dependency:go-offline -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
+
+# Copy source code and compile
+COPY src src
+RUN mvn package -DskipTests -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
+
+# Stage 2: Runtime stage
 FROM eclipse-temurin:21.0.2_13-jre-alpine
 WORKDIR /app
-COPY target/*.jar app.jar
+
+# Create non-privileged user to run the application
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+# Copy the compiled JAR from the previous stage
+COPY --from=builder /app/target/*.jar app.jar
+
+# Install Flyway CLI to be able to run migrations in production
+# Temporarily use root user to install Flyway
+USER root
+RUN apk add --no-cache curl bash netcat-openbsd && \
+    curl -L https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/9.21.0/flyway-commandline-9.21.0-linux-x64.tar.gz -o flyway.tar.gz && \
+    tar -xzf flyway.tar.gz && \
+    mv flyway-9.21.0 /opt/flyway && \
+    ln -s /opt/flyway/flyway /usr/local/bin/flyway && \
+    rm flyway.tar.gz && \
+    # Create directory for migration scripts
+    mkdir -p /app/migrations && \
+    # Ensure that the appuser user can access these directories
+    chown -R appuser:appgroup /app/migrations /opt/flyway
+
+# Copy migration scripts (assuming they are in src/main/resources/db/migration)
+COPY --chown=appuser:appgroup src/main/resources/db/migration /app/migrations
+
+# Return to the non-privileged user
+USER appuser
+
+# Define environment variables
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseG1GC"
+
+# Startup script that runs Flyway before starting the application
+COPY --chown=appuser:appgroup entrypoint.sh /app/
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/app/entrypoint.sh"]
