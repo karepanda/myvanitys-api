@@ -1,4 +1,3 @@
----
 name: CD Workflow
 
 on:
@@ -7,7 +6,7 @@ on:
       - closed
     branches:
       - main
-    # Only run when the PR has been merged
+    # Execute only when the PR has been merged
     if: github.event.pull_request.merged == true
 
 # Add permissions to allow creating and uploading tags
@@ -84,23 +83,9 @@ jobs:
   build-and-push-docker:
     needs: tag-and-release
     runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ needs.tag-and-release.outputs.new_tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Build with Maven
-        run: mvn -s .mvn/settings.xml clean package -Dgithub.username=${{ github.actor }} -Dgithub.token=${{ secrets.PACKAGES_TOKEN }}
-        env:
-          GITHUB_USERNAME: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -118,49 +103,19 @@ jobs:
           context: .
           file: ./DockerfileProduction
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
           build-args: |
             GITHUB_USERNAME=${{ github.actor }}
             GITHUB_TOKEN=${{ secrets.PACKAGES_TOKEN }}
 
-  await-approval:
-    needs: build-and-push-docker
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Wait for manual approval
-        run: echo "Deployment approved for version ${{ needs.build-and-push-docker.outputs.image_tag }}"
-
-  deploy-to-railway:
-    needs: [ build-and-push-docker, await-approval ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm i -g @railway/cli
-
-      - name: Deploy to Railway
+      - name: Print deployment instructions
         run: |
-          # Login to Railway
-          echo "${{ secrets.RAILWAY_TOKEN }}" | railway login
-
-          # Link to the Railway project
-          railway link project_id_or_name
-
-          # Set environment variables
-          railway variables set SPRING_PROFILES_ACTIVE=prod
-          railway variables set GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          railway variables set GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          railway variables set OAUTH_REDIRECT_URI=${{ secrets.OAUTH_REDIRECT_URI }}
-          railway variables set JWT_SECRET=${{ secrets.JWT_SECRET }}
-          
-          # Deploy using the Docker image from GitHub Container Registry
-          railway variables set RAILWAY_DOCKERFILE_PATH=DockerfileProduction
-          railway variables set IMAGE=ghcr.io/${{ github.repository }}:${{ needs.build-and-push-docker.outputs.image_tag }}
-          
-          # Deploy the application
-          railway up
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          echo "============================================================="
+          echo "The Docker image has been built and published successfully:"
+          echo "ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}"
+          echo " "
+          echo "Railway should automatically detect and deploy this image."
+          echo "If you need to verify the deployment, visit your project on Railway."
+          echo "============================================================="
