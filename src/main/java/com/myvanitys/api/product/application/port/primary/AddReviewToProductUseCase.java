@@ -9,11 +9,10 @@ import com.myvanitys.api.product.domain.model.Product;
 public interface AddReviewToProductUseCase {
 
   /**
-   * Executes the command to add a review to a product.
+   * Adds a review to a product
    *
-   * @param command the command containing the details of the review, such as user ID, product ID, rating, comment, and creation
-   *     timestamp
-   * @return the updated Product with the added review
+   * @param command The command containing the review details
+   * @return The updated product with the new review
    */
   Product execute(AddReviewToProductCommand command);
 }
