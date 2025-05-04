@@ -22,9 +22,9 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
-    baseline-on-migrate: true
+    baseline-on-migrate: false
 
 # Configuración para OAuth en producción
 google:
