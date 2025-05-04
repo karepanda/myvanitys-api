@@ -11,8 +11,8 @@ numReplicas = 1
 
 # Configuramos health checks para asegurar que la aplicación está saludable
 healthcheckPath = "/myvanitys/actuator/health"
-healthcheckTimeout = 10
-healthcheckInterval = 30
+healthcheckTimeout = 60
+healthcheckInterval = 120
 
 # Variables de entorno importantes que no deben ser sobrescritas por el sistema
 [variables]
