@@ -17,7 +17,7 @@
   </parent>
   <groupId>com.myvanitys</groupId>
   <artifactId>api</artifactId>
-  <version>0.0.27</version>
+  <version>0.0.28</version>
   <name>my-vanitys-api</name>
   <description>my-vanitys-api</description>
 
@@ -29,7 +29,7 @@
     <dependency>
       <groupId>com.myvanitys</groupId>
       <artifactId>myvanitys-api-spec</artifactId>
-      <version>1.0.12-SNAPSHOT</version>
+      <version>1.0.6-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
