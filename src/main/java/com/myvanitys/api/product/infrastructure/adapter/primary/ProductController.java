@@ -1,10 +1,13 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
+import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
@@ -96,6 +99,39 @@ public class ProductController implements ProductsApiDelegate {
 
     // Return the response with status 200 OK
     return ResponseEntity.ok(responseProducts);
+  }
+
+  @Override
+  public ResponseEntity<ProductResponse> addReviewToProduct(UUID productId,
+      UUID xRequestID,
+      UUID xFlowID,
+      String acceptLanguage,
+      String userAgent,
+      AddReviewRequest addReviewRequest) {
+
+    // Get the user ID from the token
+    final EntityId userId = getUserId();
+
+    // Create EntityId for productId
+    EntityId productEntityId = new EntityId(productId);
+
+    // Create command with all necessary data
+    AddReviewToProductCommand command = new AddReviewToProductCommand(
+        userId,
+        productEntityId,
+        addReviewRequest.getRating(),
+        addReviewRequest.getComment(),
+        Instant.now()
+    );
+
+    // TODO: Create AddReviewUseCase and inject it into the constructor
+    // Product updatedProduct = AddReviewToProduct.execute(command);
+
+    // TODO: Map the response
+    // ProductResponse response = productResponseMapper.toResponse(updatedProduct);
+
+    // Return placeholder for implementation
+    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
   }
 
   private String extractBearerToken() {
