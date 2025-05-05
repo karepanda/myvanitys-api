@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class, CategoryMapper.class})
 public class ProductMapper {
 
-  public Product toDomain(ProductEntity productEntity, Category category) {
+  public Product toDomain(ProductEntity productEntity, Category category, List<Review> reviews) {
     if (productEntity == null) {
       return null;
     }
@@ -38,7 +38,7 @@ public class ProductMapper {
         productEntity.getBrand(),
         category,
         productEntity.getColorHex(),
-        null,
+        reviews,
         null
     );
   }
@@ -73,13 +73,13 @@ public class ProductMapper {
     return entity;
   }
 
-  public List<Product> toDomainList(List<ProductEntity> productEntities, Category category) {
+  public List<Product> toDomainList(List<ProductEntity> productEntities, Category category, List<Review> reviews) {
     Objects.requireNonNull(category, "Category cannot be null");
 
     return productEntities == null
         ? List.of()
         : productEntities.stream()
-            .map(entity -> toDomain(entity, category))
+            .map(entity -> toDomain(entity, category, reviews))
             .toList();
   }
 

@@ -50,6 +50,8 @@ public interface ReviewRepository {
    */
   List<Review> findByUserId(EntityId userId);
 
+  List<Review> findByProductUserId(EntityId productUserId);
+
   /**
    * Check if a review belongs to a user
    *
@@ -58,4 +60,5 @@ public interface ReviewRepository {
    * @return true if the review belongs to the user
    */
   boolean existsByReviewIdAndUserId(EntityId reviewId, EntityId userId);
+
 }

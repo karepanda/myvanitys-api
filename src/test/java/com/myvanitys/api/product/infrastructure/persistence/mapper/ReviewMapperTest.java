@@ -53,7 +53,7 @@ class ReviewMapperTest {
           .build();
 
       // Act
-      final Review result = target.toDomain(reviewEntity, productUserEntityId);
+      final Review result = target.toDomain(reviewEntity);
 
       // Assert
       assertThat(result).isNotNull();
@@ -71,7 +71,7 @@ class ReviewMapperTest {
       final EntityId productUserEntityId = new EntityId(UUID.randomUUID());
 
       // Act
-      final Review result = target.toDomain(null, productUserEntityId);
+      final Review result = target.toDomain(null);
 
       // Assert
       assertThat(result).isNull();
@@ -87,7 +87,7 @@ class ReviewMapperTest {
           .build();
 
       // Act
-      final Review result = target.toDomain(reviewEntity, null);
+      final Review result = target.toDomain(reviewEntity);
 
       // Assert
       assertThat(result).isNull();

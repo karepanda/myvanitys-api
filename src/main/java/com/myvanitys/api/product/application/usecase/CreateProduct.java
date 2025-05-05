@@ -28,7 +28,7 @@ public class CreateProduct implements CreateProductUseCase {
   @Transactional
   public Product execute(CreateProductCommand command) {
     // Verify if the product already exists by name
-    Optional<Product> existingProduct = productRepository.findByName(command.name());
+    Optional<Product> existingProduct = productRepository.findByName(command.name(), command.userId());
 
     if (existingProduct.isPresent()) {
       // If the product already exists, we only associate the user if he/she is not already associated.

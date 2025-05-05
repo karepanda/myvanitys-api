@@ -54,7 +54,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       ReviewEntity savedEntity = jpaReviewRepository.save(entity);
 
       // Convert back to domain
-      return reviewMapper.toDomain(savedEntity, productUserId);
+      return reviewMapper.toDomain(savedEntity);
     } catch (DataAccessException e) {
       throw new DatabaseException("Error saving review", e);
     }
@@ -81,7 +81,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
             return jpaProductUserRepository.findById(productUserUUID)
                 .map(productUserEntity -> {
                   EntityId productUserEntityId = new EntityId(productUserUUID);
-                  return reviewMapper.toDomain(reviewEntity, productUserEntityId);
+                  return reviewMapper.toDomain(reviewEntity);
                 });
           });
     } catch (DataAccessException e) {
@@ -117,7 +117,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
             // Find reviews for this product-user relation
             return jpaReviewRepository.findByProductUserId(productUserUUID)
                 .stream()
-                .map(reviewEntity -> reviewMapper.toDomain(reviewEntity, productUserEntityId));
+                .map(reviewEntity -> reviewMapper.toDomain(reviewEntity));
           })
           .toList();
     } catch (DataAccessException e) {
@@ -142,12 +142,17 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
             // Find reviews for this product-user relation
             return jpaReviewRepository.findByProductUserId(productUserUUID)
                 .stream()
-                .map(reviewEntity -> reviewMapper.toDomain(reviewEntity, productUserEntityId));
+                .map(reviewEntity -> reviewMapper.toDomain(reviewEntity));
           })
           .toList();
     } catch (DataAccessException e) {
       throw new DatabaseException("Error finding reviews by user", e);
     }
+  }
+
+  @Override
+  public List<Review> findByProductUserId(EntityId productUserId) {
+    return List.of();
   }
 
   @Override

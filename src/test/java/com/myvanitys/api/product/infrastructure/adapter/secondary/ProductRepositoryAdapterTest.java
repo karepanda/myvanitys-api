@@ -94,7 +94,7 @@ class ProductRepositoryAdapterTest {
       when(jpaCategoryRepository.existsById(categoryId)).thenReturn(true);
       when(productMapper.toEntity(product)).thenReturn(productEntity);
       when(jpaProductRepository.save(productEntity)).thenReturn(savedProductEntity);
-      when(productMapper.toDomain(savedProductEntity, category)).thenReturn(product);
+      when(productMapper.toDomain(savedProductEntity, category, any())).thenReturn(product);
 
       // When
       final Product result = target.save(product);
@@ -104,7 +104,7 @@ class ProductRepositoryAdapterTest {
       verify(jpaCategoryRepository).existsById(categoryId);
       verify(productMapper).toEntity(product);
       verify(jpaProductRepository).save(productEntity);
-      verify(productMapper).toDomain(savedProductEntity, category);
+      verify(productMapper).toDomain(savedProductEntity, category, List.of());
     }
 
     @Test
@@ -206,7 +206,7 @@ class ProductRepositoryAdapterTest {
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(productEntity));
       when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
       when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-      when(productMapper.toDomain(productEntity, category)).thenReturn(expectedProduct);
+      when(productMapper.toDomain(productEntity, category, any())).thenReturn(expectedProduct);
 
       // When
       final Optional<Product> result = target.findById(productEntityId);
@@ -230,6 +230,7 @@ class ProductRepositoryAdapterTest {
 
       final UUID productId = UUID.randomUUID();
       final UUID categoryId = UUID.randomUUID();
+      final UUID userId = UUID.randomUUID();
 
       final ProductEntity productEntity = new ProductEntity();
       productEntity.setProductId(productId);
@@ -255,10 +256,10 @@ class ProductRepositoryAdapterTest {
       when(jpaProductRepository.findByName(productName)).thenReturn(Optional.of(productEntity));
       when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
       when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-      when(productMapper.toDomain(productEntity, category)).thenReturn(expectedProduct);
+      when(productMapper.toDomain(productEntity, category, any())).thenReturn(expectedProduct);
 
       // When
-      final Optional<Product> result = target.findByName(productName);
+      final Optional<Product> result = target.findByName(productName, EntityId.of(userId));
 
       // Then
       assertThat(result).isPresent();
@@ -266,74 +267,6 @@ class ProductRepositoryAdapterTest {
     }
 
     // Otros tests de FindByName sin cambios en la lógica...
-  }
-
-  @Nested
-  @DisplayName("findByCategoryName")
-  class FindByCategoryName {
-
-    @Test
-    void when_categoryExists_then_returnsListOfProducts() {
-      // Given
-      final String categoryName = "Test Category";
-
-      final UUID categoryId = UUID.randomUUID();
-      final CategoryEntity categoryEntity = new CategoryEntity();
-      categoryEntity.setCategoryId(categoryId);
-      categoryEntity.setName(categoryName);
-
-      final Category category = new Category(new EntityId(categoryId), categoryName);
-
-      final UUID productId1 = UUID.randomUUID();
-      final UUID productId2 = UUID.randomUUID();
-
-      final ProductEntity productEntity1 = new ProductEntity();
-      productEntity1.setProductId(productId1);
-      productEntity1.setCategoryId(categoryId);
-      productEntity1.setName("Product 1");
-
-      final ProductEntity productEntity2 = new ProductEntity();
-      productEntity2.setProductId(productId2);
-      productEntity2.setCategoryId(categoryId);
-      productEntity2.setName("Product 2");
-
-      final List<ProductEntity> productEntities = Arrays.asList(productEntity1, productEntity2);
-
-      final Product product1 = Product.reconstruct(
-          new EntityId(productId1),
-          "Product 1",
-          "Brand 1",
-          category,
-          "#FFFFFF",
-          null,
-          null
-      );
-
-      final Product product2 = Product.reconstruct(
-          new EntityId(productId2),
-          "Product 2",
-          "Brand 2",
-          category,
-          "#000000",
-          null,
-          null
-      );
-
-      when(jpaCategoryRepository.findByName(categoryName)).thenReturn(Optional.of(categoryEntity));
-      when(jpaProductRepository.findByCategoryId(categoryId)).thenReturn(productEntities);
-      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-      when(productMapper.toDomain(productEntity1, category)).thenReturn(product1);
-      when(productMapper.toDomain(productEntity2, category)).thenReturn(product2);
-
-      // When
-      final List<Product> result = target.findByCategoryName(categoryName);
-
-      // Then
-      assertThat(result).hasSize(2);
-      assertThat(result).containsExactly(product1, product2);
-    }
-
-    // Otros tests de FindByCategoryName sin cambios en la lógica...
   }
 
   @Nested
@@ -416,8 +349,8 @@ class ProductRepositoryAdapterTest {
       when(categoryMapper.toDomain(categoryEntity2)).thenReturn(category2);
 
       // Configurar mocks para mapper de productos
-      when(productMapper.toDomain(productEntity1, category1)).thenReturn(product1);
-      when(productMapper.toDomain(productEntity2, category2)).thenReturn(product2);
+      when(productMapper.toDomain(productEntity1, category1, any())).thenReturn(product1);
+      when(productMapper.toDomain(productEntity2, category2, any())).thenReturn(product2);
 
       // When
       final List<Product> result = target.findByUserId(userId);

@@ -44,10 +44,9 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     review.setComment("Great product!");
     review.setProductUserId(savedProductUser.getProductUserId());
 
-    ReviewEntity savedReview = jpaReviewRepository.save(review);
+    jpaReviewRepository.save(review);
     jpaReviewRepository.flush();
 
-    // Ahora obtener los datos frescos para las verificaciones
     Optional<ProductEntity> retrievedProduct = jpaProductRepository.findById(savedProduct.getProductId());
 
     Optional<ProductUserEntity> retrievedProductUser =

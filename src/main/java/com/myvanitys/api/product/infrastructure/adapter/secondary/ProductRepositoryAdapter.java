@@ -9,6 +9,7 @@ import java.util.UUID;
 import com.myvanitys.api.common.InfrastructureException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
@@ -17,6 +18,7 @@ import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotF
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.CategoryMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
+import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import lombok.AllArgsConstructor;
@@ -38,6 +40,8 @@ public class ProductRepositoryAdapter implements ProductRepository {
   private final ProductMapper productMapper;
 
   private final CategoryMapper categoryMapper;
+
+  private final ReviewMapper reviewMapper;
 
   @Override
   public Product save(Product product) {
@@ -64,7 +68,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
       ProductEntity savedEntity = jpaProductRepository.save(entity);
 
       // Return the product with its category
-      return productMapper.toDomain(savedEntity, product.getCategory());
+      return productMapper.toDomain(savedEntity, product.getCategory(), product.getReviews());
     } catch (DataAccessException e) {
       log.error("Error saving product: {}", e.getMessage(), e);
       throw DatabaseException.queryError("Save product", e);
@@ -80,12 +84,12 @@ public class ProductRepositoryAdapter implements ProductRepository {
   @Override
   public Optional<Product> findById(EntityId productId) {
     try {
-      UUID uuid = productId.getValue();
-      return jpaProductRepository.findById(uuid)
+      return jpaProductRepository.findById(productId.getValue())
           .map(productEntity -> {
             // Load the associated category
             Category category = getCategoryForProduct(productEntity);
-            return productMapper.toDomain(productEntity, category);
+            List<Review> reviews = getReviewsForProduct(productEntity.getProductId(), null);
+            return productMapper.toDomain(productEntity, category, reviews);
           });
     } catch (DataAccessException e) {
       log.error("Error finding product by ID: {}", e.getMessage(), e);
@@ -94,40 +98,18 @@ public class ProductRepositoryAdapter implements ProductRepository {
   }
 
   @Override
-  public Optional<Product> findByName(String productName) {
+  public Optional<Product> findByName(String productName, EntityId userId) {
     try {
       return jpaProductRepository.findByName(productName)
           .map(productEntity -> {
             // Load the category
             Category category = getCategoryForProduct(productEntity);
-            return productMapper.toDomain(productEntity, category);
+            List<Review> reviews = getReviewsForProduct(productEntity.getProductId(), userId.getValue());
+            return productMapper.toDomain(productEntity, category, reviews);
           });
     } catch (DataAccessException e) {
       log.error("Error finding product by name: {}", e.getMessage(), e);
       throw DatabaseException.queryError("Find product by name", e);
-    }
-  }
-
-  @Override
-  public List<Product> findByCategoryName(String categoryName) {
-    try {
-      return jpaCategoryRepository.findByName(categoryName)
-          .map(categoryEntity -> {
-            UUID categoryId = categoryEntity.getCategoryId();
-            List<ProductEntity> products = jpaProductRepository.findByCategoryId(categoryId);
-
-            // Convert the category to domain object
-            Category category = categoryMapper.toDomain(categoryEntity);
-
-            // Map each product with the same category
-            return products.stream()
-                .map(productEntity -> productMapper.toDomain(productEntity, category))
-                .toList();
-          })
-          .orElse(Collections.emptyList());
-    } catch (DataAccessException e) {
-      log.error("Error finding products by category name: {}", e.getMessage(), e);
-      throw DatabaseException.queryError("Find products by category name", e);
     }
   }
 
@@ -155,7 +137,8 @@ public class ProductRepositoryAdapter implements ProductRepository {
           .map(productEntity -> {
             // Load the category for each product
             Category category = getCategoryForProduct(productEntity);
-            return productMapper.toDomain(productEntity, category);
+            List<Review> reviews = getReviewsForProduct(productEntity.getProductId(), userId);
+            return productMapper.toDomain(productEntity, category, reviews);
           })
           .toList();
     } catch (DataAccessException e) {
@@ -192,6 +175,18 @@ public class ProductRepositoryAdapter implements ProductRepository {
     } catch (DataAccessException e) {
       log.error("Error loading category for product: {}", e.getMessage(), e);
       throw DatabaseException.queryError("Find category by ID", e);
+    }
+  }
+
+  private List<Review> getReviewsForProduct(UUID productId, UUID userId) {
+    try {
+      return jpaProductRepository.findReviewsByProductId(productId, userId)
+          .stream()
+          .map(reviewMapper::toDomain)
+          .toList();
+    } catch (DataAccessException e) {
+      log.error("Error loading reviews for product: {}", e.getMessage(), e);
+      throw DatabaseException.queryError("Find reviews by product ID", e);
     }
   }
 }

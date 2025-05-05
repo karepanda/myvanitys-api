@@ -19,11 +19,10 @@ public interface ReviewMapper {
    * Converts a ReviewEntity to a domain Review object. This is implemented manually due to the factory method requirements.
    *
    * @param entity The entity to convert
-   * @param productUserId The ID of the product-user relation associated with the review
    * @return The domain Review object
    */
-  default Review toDomain(ReviewEntity entity, EntityId productUserId) {
-    if (entity == null || productUserId == null) {
+  default Review toDomain(ReviewEntity entity) {
+    if (entity == null) {
       return null;
     }
 
@@ -39,7 +38,7 @@ public interface ReviewMapper {
     // Create the Review with existing ID
     return Review.createWithExistingId(
         new EntityId(entity.getReviewId()),
-        productUserId,
+        EntityId.of(entity.getProductUserId()),
         details
     );
   }

@@ -83,8 +83,8 @@ class FindProductByUserTest {
           .thenReturn(List.of(productId1, productId2));
 
       // Modificado para usar toDomain con categoría
-      when(productMapper.toDomain(eq(productId1), any(Category.class))).thenReturn(domain1);
-      when(productMapper.toDomain(eq(productId2), any(Category.class))).thenReturn(domain2);
+      when(productMapper.toDomain(eq(productId1), any(Category.class), List.of())).thenReturn(domain1);
+      when(productMapper.toDomain(eq(productId2), any(Category.class), List.of())).thenReturn(domain2);
 
       // Añadidos mocks para CategoryRepository
       when(categoryRepository.findById(any(EntityId.class)))
@@ -138,7 +138,7 @@ class FindProductByUserTest {
           .thenReturn(List.of(productEntity));
       when(categoryRepository.findById(any(EntityId.class)))
           .thenReturn(Optional.of(category));
-      when(productMapper.toDomain(eq(productEntity), any(Category.class))).thenReturn(domainProduct);
+      when(productMapper.toDomain(eq(productEntity), any(Category.class), any())).thenReturn(domainProduct);
 
       // Act
       target.query(query);
@@ -146,7 +146,7 @@ class FindProductByUserTest {
       // Assert
       verify(jpaProductRepository, times(1)).findByUserId(userId.getValue());
       verify(categoryRepository, times(1)).findById(any(EntityId.class));
-      verify(productMapper, times(1)).toDomain(eq(productEntity), any(Category.class));
+      verify(productMapper, times(1)).toDomain(eq(productEntity), any(Category.class), List.of());
       verifyNoMoreInteractions(jpaProductRepository, productMapper);
     }
 
@@ -174,7 +174,7 @@ class FindProductByUserTest {
           .thenReturn(List.of(productEntity));
       when(categoryRepository.findById(any(EntityId.class)))
           .thenReturn(Optional.of(category));
-      when(productMapper.toDomain(eq(productEntity), any(Category.class))).thenReturn(expectedProduct);
+      when(productMapper.toDomain(eq(productEntity), any(Category.class), any())).thenReturn(expectedProduct);
 
       // Act
       List<Product> result = target.query(query);
@@ -202,11 +202,11 @@ class FindProductByUserTest {
           .thenReturn(List.of(productEntity));
       when(categoryRepository.findById(any(EntityId.class)))
           .thenReturn(Optional.of(category));
-      when(productMapper.toDomain(eq(productEntity), any(Category.class))).thenReturn(null);
+      when(productMapper.toDomain(eq(productEntity), any(Category.class), any())).thenReturn(null);
 
       // Act & Assert
       assertThrows(ProductNotFoundException.class, () -> target.query(query));
     }
-    
+
   }
 }
