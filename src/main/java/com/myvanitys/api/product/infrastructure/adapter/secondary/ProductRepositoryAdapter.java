@@ -88,7 +88,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
           .map(productEntity -> {
             // Load the associated category
             Category category = getCategoryForProduct(productEntity);
-            List<Review> reviews = getReviewsForProduct(productEntity.getProductId(), null);
+            List<Review> reviews = getReviewsForProduct(productEntity.getProductId());
             return productMapper.toDomain(productEntity, category, reviews);
           });
     } catch (DataAccessException e) {
@@ -104,7 +104,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
           .map(productEntity -> {
             // Load the category
             Category category = getCategoryForProduct(productEntity);
-            List<Review> reviews = getReviewsForProduct(productEntity.getProductId(), userId.getValue());
+            List<Review> reviews = getReviewsUserForProduct(productEntity.getProductId(), userId.getValue());
             return productMapper.toDomain(productEntity, category, reviews);
           });
     } catch (DataAccessException e) {
@@ -119,7 +119,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
       // Get product IDs associated with the user
       List<EntityId> productIds = productUserRepository.findProductIdsByUserId(new EntityId(userId));
 
-      // Return empty list if no products found
+      // Return an empty list if no products found
       if (productIds.isEmpty()) {
         return Collections.emptyList();
       }
@@ -137,7 +137,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
           .map(productEntity -> {
             // Load the category for each product
             Category category = getCategoryForProduct(productEntity);
-            List<Review> reviews = getReviewsForProduct(productEntity.getProductId(), userId);
+            List<Review> reviews = getReviewsUserForProduct(productEntity.getProductId(), userId);
             return productMapper.toDomain(productEntity, category, reviews);
           })
           .toList();
@@ -178,9 +178,21 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
   }
 
-  private List<Review> getReviewsForProduct(UUID productId, UUID userId) {
+  private List<Review> getReviewsUserForProduct(UUID productId, UUID userId) {
     try {
-      return jpaProductRepository.findReviewsByProductId(productId, userId)
+      return jpaProductRepository.findReviewsByProductIdAndUserId(productId, userId)
+          .stream()
+          .map(reviewMapper::toDomain)
+          .toList();
+    } catch (DataAccessException e) {
+      log.error("Error loading reviews for product: {}", e.getMessage(), e);
+      throw DatabaseException.queryError("Find reviews by product ID", e);
+    }
+  }
+
+  private List<Review> getReviewsForProduct(UUID productId) {
+    try {
+      return jpaProductRepository.findReviewsByProductIdAndUserId(productId)
           .stream()
           .map(reviewMapper::toDomain)
           .toList();

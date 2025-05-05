@@ -49,5 +49,9 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
   @Query(
       "SELECT r FROM ReviewEntity r JOIN ProductUserEntity pu ON r.productUserId = pu.productUserId WHERE pu.productId = :productId and "
           + "pu.userId = :userId")
-  List<ReviewEntity> findReviewsByProductId(@Param("productId") UUID productId, @Param("userId") UUID userId);
+  List<ReviewEntity> findReviewsByProductIdAndUserId(@Param("productId") UUID productId, @Param("userId") UUID userId);
+
+  @Query(
+      "SELECT r FROM ReviewEntity r JOIN ProductUserEntity pu ON r.productUserId = pu.productUserId WHERE pu.productId = :productId")
+  List<ReviewEntity> findReviewsByProductIdAndUserId(@Param("productId") UUID productId);
 }
