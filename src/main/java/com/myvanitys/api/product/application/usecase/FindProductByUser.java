@@ -50,8 +50,7 @@ public class FindProductByUser implements FindProductUserUseCase {
   }
 
   private Category getCategory(ProductEntity entity) {
-    Category category = categoryRepository.findById(new EntityId(entity.getCategoryId()))
-        .orElseThrow(() -> new CategoryNotFoundException("Category not found for product: " + entity.getProductId()));
-    return category;
+      return categoryRepository.findById(new EntityId(entity.getCategoryId()))
+          .orElseThrow(() -> new CategoryNotFoundException("Category not found for product: " + entity.getProductId()));
   }
 }
