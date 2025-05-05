@@ -28,6 +28,7 @@ public abstract class ReviewEntityMapper {
   // Inverse method to create ReviewEntity from ProductUserRelation
   public ReviewEntity toReviewEntity(ProductUserRelation productUserRelation, int rating, String comment) {
     ProductUserEntity productUserEntity = new ProductUserEntity();
+    productUserEntity.setProductUserId(productUserRelation.getId().getValue());
     productUserEntity.setProductId(productUserRelation.getProductId().getValue());
     productUserEntity.setUserId(productUserRelation.getUserId().getValue());
 
