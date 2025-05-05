@@ -25,7 +25,7 @@ public record Timestamp(Instant value) {
   }
 
   /**
-   * Factory method to create a timestamp from an Instant, or use the current moment if null
+   * Factory method to create a timestamp from an Instant or use the current moment if null
    *
    * @param instant The instant to use, or null to use the current moment
    * @return A new timestamp
