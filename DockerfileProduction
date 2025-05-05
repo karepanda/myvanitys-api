@@ -1,22 +1,22 @@
-# DockerfileProduction
-# Multi-stage build para optimizar tamaño y seguridad
+# Dockerfile for Production
+# Multi-stage build to optimize size and security
 
 # Stage 1: Build stage
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-# Argumentos para las credenciales de GitHub
+# Arguments for GitHub credentials
 ARG GITHUB_USERNAME
 ARG GITHUB_TOKEN
 
-# Copiar primero el pom.xml para aprovechar cache de Maven
+# Copy pom.xml first to leverage Maven's cache
 COPY pom.xml .
 COPY .mvn .mvn
 
-# Descargar dependencias con credenciales pasadas como argumentos
+# Download dependencies with credentials passed as arguments
 RUN mvn dependency:go-offline -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
 
-# Copiar código fuente y compilar
+# Copy source code and compile
 COPY src src
 RUN mvn package -DskipTests -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
 
@@ -24,40 +24,16 @@ RUN mvn package -DskipTests -s .mvn/settings.xml -Dgithub.username="${GITHUB_USE
 FROM eclipse-temurin:21.0.2_13-jre-alpine
 WORKDIR /app
 
-# Crear usuario no privilegiado para ejecutar la aplicación
+# Create a non-privileged user to run the application
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-# Copiar el JAR compilado desde la etapa anterior
+# Copy the compiled JAR from the previous stage
 COPY --from=builder /app/target/*.jar app.jar
 
-# Instalar Flyway CLI para poder ejecutar migraciones en producción
-# Usar usuario root temporalmente para instalar Flyway
-USER root
-RUN apk add --no-cache curl bash netcat-openbsd && \
-    curl -L https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/9.21.0/flyway-commandline-9.21.0-linux-x64.tar.gz -o flyway.tar.gz && \
-    tar -xzf flyway.tar.gz && \
-    mv flyway-9.21.0 /opt/flyway && \
-    ln -s /opt/flyway/flyway /usr/local/bin/flyway && \
-    rm flyway.tar.gz && \
-    # Crear directorio para scripts de migración
-    mkdir -p /app/migrations && \
-    # Asegurarse de que el usuario appuser puede acceder a estos directorios
-    chown -R appuser:appgroup /app/migrations /opt/flyway
-
-# Copiar scripts de migración (asumiendo que están en src/main/resources/db/migration)
-COPY --chown=appuser:appgroup src/main/resources/db/migration /app/migrations
-
-# Volver al usuario no privilegiado
-USER appuser
-
-# Definir variables de entorno
+# Define environment variables
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV JAVA_OPTS="-Xms512m -Xmx1g -XX:+UseG1GC"
 
-# Script de inicio que ejecuta Flyway antes de iniciar la aplicación
-COPY --chown=appuser:appgroup entrypoint.sh /app/
-RUN chmod +x /app/entrypoint.sh
-
 EXPOSE 8080
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

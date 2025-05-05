@@ -23,6 +23,8 @@ management:
     health:
       show-details: always
       only-when-up: true
+      probes:
+        enabled: true
 
 # OAuth Configuration base
 google:
