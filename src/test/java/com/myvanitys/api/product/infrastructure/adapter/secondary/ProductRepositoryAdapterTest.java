@@ -1,22 +1,5 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.Review;
@@ -42,6 +25,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
+
+import java.time.Instant;
+import java.util.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductRepositoryAdapterTest {
@@ -223,6 +214,14 @@ class ProductRepositoryAdapterTest {
       categoryEntity.setName("Test Category");
 
       final Category category = new Category(new EntityId(categoryId), "Test Category");
+      
+      final List<Review> reviews = new ArrayList<>();
+      final Review review1 = Review.createWithExistingId(
+            EntityId.newId(),
+            EntityId.newId(),
+            ReviewDetails.of(5, "Great review", Instant.now(), Instant.now(), null)
+        );
+      reviews.add(review1);
 
       final Product expectedProduct = Product.reconstruct(
           productEntityId,
@@ -230,14 +229,14 @@ class ProductRepositoryAdapterTest {
           "Test Brand",
           category,
           "#FFFFFF",
-          null,
+          reviews,
           null
       );
 
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(productEntity));
       when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
       when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-      when(productMapper.toDomain(productEntity, category, any())).thenReturn(expectedProduct);
+      when(productMapper.toDomain(eq(productEntity),eq(category), anyList())).thenReturn(expectedProduct);
 
       // When
       final Optional<Product> result = target.findById(productEntityId);
