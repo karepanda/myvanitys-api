@@ -31,7 +31,8 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -55,11 +56,13 @@ class ProductRepositoryAdapterTest {
   @Mock
   private ReviewMapper reviewMapper;
 
-  private Review review;
-
   private ReviewEntity reviewEntity;
 
-  @InjectMocks
+  private Review review;
+
+
+
+    @InjectMocks
   private ProductRepositoryAdapter target;
 
   @BeforeEach
@@ -68,15 +71,6 @@ class ProductRepositoryAdapterTest {
         EntityId.newId(),
         EntityId.newId(),
         ReviewDetails.of(3, "Test review", Instant.now(), Instant.now(), null));
-    reviewEntity = ReviewEntity.builder()
-        .reviewId(review.getId().getValue())
-        .productUserId(review.getProductUserId().getValue())
-        .comment(review.getComment())
-        .rating(review.getRating())
-        .createdAt(review.getCreatedAt())
-        .updatedAt(review.getUpdatedAt())
-        .deletedAt(null)
-        .build();
   }
 
   @Nested
@@ -214,14 +208,6 @@ class ProductRepositoryAdapterTest {
       categoryEntity.setName("Test Category");
 
       final Category category = new Category(new EntityId(categoryId), "Test Category");
-      
-      final List<Review> reviews = new ArrayList<>();
-      final Review review1 = Review.createWithExistingId(
-            EntityId.newId(),
-            EntityId.newId(),
-            ReviewDetails.of(5, "Great review", Instant.now(), Instant.now(), null)
-        );
-      reviews.add(review1);
 
       final Product expectedProduct = Product.reconstruct(
           productEntityId,
@@ -229,7 +215,7 @@ class ProductRepositoryAdapterTest {
           "Test Brand",
           category,
           "#FFFFFF",
-          reviews,
+          List.of(review),
           null
       );
 
@@ -244,6 +230,11 @@ class ProductRepositoryAdapterTest {
       // Then
       assertThat(result).isPresent();
       assertThat(result).contains(expectedProduct);
+      verify(jpaProductRepository).findById(productId);
+      verify(jpaCategoryRepository).findById(categoryId);
+      verify(categoryMapper).toDomain(categoryEntity);
+      verify(productMapper).toDomain(eq(productEntity), eq(category), anyList());
+
     }
 
     // Otros tests de FindById sin cambios en la lógica...
@@ -310,36 +301,43 @@ class ProductRepositoryAdapterTest {
       final EntityId userEntityId = new EntityId(userId);
 
       // Definir IDs de productos
-      final UUID productId1 = UUID.randomUUID();
-      final UUID productId2 = UUID.randomUUID();
-      final EntityId productEntityId1 = new EntityId(productId1);
-      final EntityId productEntityId2 = new EntityId(productId2);
+      final EntityId productEntityId1 = EntityId.newId();
+      final EntityId productEntityId2 = EntityId.newId();
+
 
       // Definir IDs de categorías
       final UUID categoryId1 = UUID.randomUUID();
       final UUID categoryId2 = UUID.randomUUID();
-      final EntityId categoryEntityId1 = new EntityId(categoryId1);
-      final EntityId categoryEntityId2 = new EntityId(categoryId2);
 
       // Lista de IDs de productos
       final List<EntityId> productIds = Arrays.asList(productEntityId1, productEntityId2);
 
       // Crear entidades de producto con IDs de categoría específicos
       final ProductEntity productEntity1 = new ProductEntity();
-      productEntity1.setProductId(productId1);
+      productEntity1.setProductId(productEntityId1.getValue());
       productEntity1.setName("Product 1");
       productEntity1.setCategoryId(categoryId1); // Usar el ID de categoría 1
 
       final ProductEntity productEntity2 = new ProductEntity();
-      productEntity2.setProductId(productId2);
+      productEntity2.setProductId(productEntityId2.getValue());
       productEntity2.setName("Product 2");
       productEntity2.setCategoryId(categoryId2); // Usar el ID de categoría 2
 
-      final List<ProductEntity> productEntities = Arrays.asList(productEntity1, productEntity2);
+      //final List<ProductEntity> productEntities = Arrays.asList(productEntity1, productEntity2);
 
-      // Crear categorías con los mismos IDs que se usaron en las entidades
-      final Category category1 = new Category(categoryEntityId1, "Category 1");
-      final Category category2 = new Category(categoryEntityId2, "Category 2");
+      // Preparar entidades de categoría
+      final CategoryEntity categoryEntity1 = new CategoryEntity();
+      categoryEntity1.setCategoryId(categoryId1);
+      categoryEntity1.setName("Category 1");
+
+      final CategoryEntity categoryEntity2 = new CategoryEntity();
+      categoryEntity2.setCategoryId(categoryId2);
+      categoryEntity2.setName("Category 2");
+
+      // Preparar objetos de dominio
+      final Category category1 = new Category(new EntityId(categoryId1), "Category 1");
+      final Category category2 = new Category(new EntityId(categoryId2), "Category 2");
+
 
       final var reviews01 = new ArrayList<>(
           List.of(
@@ -382,15 +380,12 @@ class ProductRepositoryAdapterTest {
           null
       );
 
-      // Configurar mocks para repositorios
-      when(productUserRepository.findProductIdsByUserId(eq(userEntityId))).thenReturn(productIds);
-      when(jpaProductRepository.findAllById(Arrays.asList(productId1, productId2))).thenReturn(productEntities);
+      // Configurar mocks para el repositorio de productos
+      when(productUserRepository.findProductIdsByUserId(userEntityId))
+              .thenReturn(List.of(productEntityId1, productEntityId2));
 
-      // Configurar entidades de categoría
-      final CategoryEntity categoryEntity1 = new CategoryEntity();
-      categoryEntity1.setCategoryId(categoryId1);
-      final CategoryEntity categoryEntity2 = new CategoryEntity();
-      categoryEntity2.setCategoryId(categoryId2);
+      when(jpaProductRepository.findAllById(List.of(productEntityId1.getValue(), productEntityId2.getValue())))
+              .thenReturn(List.of(productEntity1, productEntity2));
 
       // Configurar mocks para categorías
       when(jpaCategoryRepository.findById(categoryId1)).thenReturn(Optional.of(categoryEntity1));
@@ -399,15 +394,28 @@ class ProductRepositoryAdapterTest {
       when(categoryMapper.toDomain(categoryEntity2)).thenReturn(category2);
 
       // Configurar mocks para mapper de productos
-      when(productMapper.toDomain(productEntity1, category1, anyList())).thenReturn(product1);
-      when(productMapper.toDomain(productEntity2, category2, anyList())).thenReturn(product2);
+      when(productMapper.toDomain(eq(productEntity1),eq(category1),anyList())).thenReturn(product1);
+      when(productMapper.toDomain(eq(productEntity2),eq(category2),anyList())).thenReturn(product2);
 
       // When
       final List<Product> result = target.findByUserId(userId);
 
       // Then
-      assertThat(result).hasSize(2);
-      assertThat(result).containsExactly(product1, product2);
+      assertThat(result)
+              .hasSize(2)
+              .containsExactly(product1, product2);
+
+      verify(productUserRepository).findProductIdsByUserId(userEntityId);
+      verify(jpaProductRepository).findAllById(List.of(
+              productEntityId1.getValue(),
+              productEntityId2.getValue()));
+      verify(jpaCategoryRepository).findById(categoryId1);
+      verify(jpaCategoryRepository).findById(categoryId2);
+      verify(categoryMapper).toDomain(categoryEntity1);
+      verify(categoryMapper).toDomain(categoryEntity2);
+      verify(productMapper).toDomain(eq(productEntity1), eq(category1), anyList());
+      verify(productMapper).toDomain(eq(productEntity2), eq(category2), anyList());
+
     }
 
   }
