@@ -1,32 +1,22 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.CategoryMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
+import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,6 +25,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductRepositoryAdapterTest {
@@ -54,8 +56,23 @@ class ProductRepositoryAdapterTest {
   @Mock
   private CategoryMapper categoryMapper;
 
+  @Mock
+  private ReviewMapper reviewMapper;
+
+  private ReviewEntity reviewEntity;
+
+  private Review review;
+
   @InjectMocks
   private ProductRepositoryAdapter target;
+
+  @BeforeEach
+  void setUp() {
+    review = Review.createWithExistingId(
+        EntityId.newId(),
+        EntityId.newId(),
+        ReviewDetails.of(3, "Test review", Instant.now(), Instant.now(), null));
+  }
 
   @Nested
   @DisplayName("save")
@@ -76,7 +93,7 @@ class ProductRepositoryAdapterTest {
           "Test Brand",
           category,
           "#FFFFFF",
-          null,
+          List.of(review),
           null
       );
 
@@ -94,7 +111,7 @@ class ProductRepositoryAdapterTest {
       when(jpaCategoryRepository.existsById(categoryId)).thenReturn(true);
       when(productMapper.toEntity(product)).thenReturn(productEntity);
       when(jpaProductRepository.save(productEntity)).thenReturn(savedProductEntity);
-      when(productMapper.toDomain(savedProductEntity, category)).thenReturn(product);
+      when(productMapper.toDomain(savedProductEntity, category, List.of(review))).thenReturn(product);
 
       // When
       final Product result = target.save(product);
@@ -104,7 +121,7 @@ class ProductRepositoryAdapterTest {
       verify(jpaCategoryRepository).existsById(categoryId);
       verify(productMapper).toEntity(product);
       verify(jpaProductRepository).save(productEntity);
-      verify(productMapper).toDomain(savedProductEntity, category);
+      verify(productMapper).toDomain(savedProductEntity, category, List.of(review));
     }
 
     @Test
@@ -199,14 +216,14 @@ class ProductRepositoryAdapterTest {
           "Test Brand",
           category,
           "#FFFFFF",
-          null,
+          List.of(review),
           null
       );
 
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(productEntity));
       when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
       when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-      when(productMapper.toDomain(productEntity, category)).thenReturn(expectedProduct);
+      when(productMapper.toDomain(eq(productEntity),eq(category), anyList())).thenReturn(expectedProduct);
 
       // When
       final Optional<Product> result = target.findById(productEntityId);
@@ -214,6 +231,11 @@ class ProductRepositoryAdapterTest {
       // Then
       assertThat(result).isPresent();
       assertThat(result).contains(expectedProduct);
+      verify(jpaProductRepository).findById(productId);
+      verify(jpaCategoryRepository).findById(categoryId);
+      verify(categoryMapper).toDomain(categoryEntity);
+      verify(productMapper).toDomain(eq(productEntity), eq(category), anyList());
+
     }
 
     // Otros tests de FindById sin cambios en la lógica...
@@ -230,6 +252,7 @@ class ProductRepositoryAdapterTest {
 
       final UUID productId = UUID.randomUUID();
       final UUID categoryId = UUID.randomUUID();
+      final UUID userId = UUID.randomUUID();
 
       final ProductEntity productEntity = new ProductEntity();
       productEntity.setProductId(productId);
@@ -255,10 +278,10 @@ class ProductRepositoryAdapterTest {
       when(jpaProductRepository.findByName(productName)).thenReturn(Optional.of(productEntity));
       when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
       when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-      when(productMapper.toDomain(productEntity, category)).thenReturn(expectedProduct);
+      when(productMapper.toDomain(productEntity, category, List.of())).thenReturn(expectedProduct);
 
       // When
-      final Optional<Product> result = target.findByName(productName);
+      final Optional<Product> result = target.findByName(productName, EntityId.of(userId));
 
       // Then
       assertThat(result).isPresent();
@@ -266,74 +289,6 @@ class ProductRepositoryAdapterTest {
     }
 
     // Otros tests de FindByName sin cambios en la lógica...
-  }
-
-  @Nested
-  @DisplayName("findByCategoryName")
-  class FindByCategoryName {
-
-    @Test
-    void when_categoryExists_then_returnsListOfProducts() {
-      // Given
-      final String categoryName = "Test Category";
-
-      final UUID categoryId = UUID.randomUUID();
-      final CategoryEntity categoryEntity = new CategoryEntity();
-      categoryEntity.setCategoryId(categoryId);
-      categoryEntity.setName(categoryName);
-
-      final Category category = new Category(new EntityId(categoryId), categoryName);
-
-      final UUID productId1 = UUID.randomUUID();
-      final UUID productId2 = UUID.randomUUID();
-
-      final ProductEntity productEntity1 = new ProductEntity();
-      productEntity1.setProductId(productId1);
-      productEntity1.setCategoryId(categoryId);
-      productEntity1.setName("Product 1");
-
-      final ProductEntity productEntity2 = new ProductEntity();
-      productEntity2.setProductId(productId2);
-      productEntity2.setCategoryId(categoryId);
-      productEntity2.setName("Product 2");
-
-      final List<ProductEntity> productEntities = Arrays.asList(productEntity1, productEntity2);
-
-      final Product product1 = Product.reconstruct(
-          new EntityId(productId1),
-          "Product 1",
-          "Brand 1",
-          category,
-          "#FFFFFF",
-          null,
-          null
-      );
-
-      final Product product2 = Product.reconstruct(
-          new EntityId(productId2),
-          "Product 2",
-          "Brand 2",
-          category,
-          "#000000",
-          null,
-          null
-      );
-
-      when(jpaCategoryRepository.findByName(categoryName)).thenReturn(Optional.of(categoryEntity));
-      when(jpaProductRepository.findByCategoryId(categoryId)).thenReturn(productEntities);
-      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-      when(productMapper.toDomain(productEntity1, category)).thenReturn(product1);
-      when(productMapper.toDomain(productEntity2, category)).thenReturn(product2);
-
-      // When
-      final List<Product> result = target.findByCategoryName(categoryName);
-
-      // Then
-      assertThat(result).hasSize(2);
-      assertThat(result).containsExactly(product1, product2);
-    }
-
-    // Otros tests de FindByCategoryName sin cambios en la lógica...
   }
 
   @Nested
@@ -347,36 +302,61 @@ class ProductRepositoryAdapterTest {
       final EntityId userEntityId = new EntityId(userId);
 
       // Definir IDs de productos
-      final UUID productId1 = UUID.randomUUID();
-      final UUID productId2 = UUID.randomUUID();
-      final EntityId productEntityId1 = new EntityId(productId1);
-      final EntityId productEntityId2 = new EntityId(productId2);
+      final EntityId productEntityId1 = EntityId.newId();
+      final EntityId productEntityId2 = EntityId.newId();
+
 
       // Definir IDs de categorías
       final UUID categoryId1 = UUID.randomUUID();
       final UUID categoryId2 = UUID.randomUUID();
-      final EntityId categoryEntityId1 = new EntityId(categoryId1);
-      final EntityId categoryEntityId2 = new EntityId(categoryId2);
 
-      // Lista de IDs de productos
-      final List<EntityId> productIds = Arrays.asList(productEntityId1, productEntityId2);
 
       // Crear entidades de producto con IDs de categoría específicos
       final ProductEntity productEntity1 = new ProductEntity();
-      productEntity1.setProductId(productId1);
+      productEntity1.setProductId(productEntityId1.getValue());
       productEntity1.setName("Product 1");
       productEntity1.setCategoryId(categoryId1); // Usar el ID de categoría 1
 
       final ProductEntity productEntity2 = new ProductEntity();
-      productEntity2.setProductId(productId2);
+      productEntity2.setProductId(productEntityId2.getValue());
       productEntity2.setName("Product 2");
       productEntity2.setCategoryId(categoryId2); // Usar el ID de categoría 2
 
-      final List<ProductEntity> productEntities = Arrays.asList(productEntity1, productEntity2);
+      //final List<ProductEntity> productEntities = Arrays.asList(productEntity1, productEntity2);
 
-      // Crear categorías con los mismos IDs que se usaron en las entidades
-      final Category category1 = new Category(categoryEntityId1, "Category 1");
-      final Category category2 = new Category(categoryEntityId2, "Category 2");
+      // Preparar entidades de categoría
+      final CategoryEntity categoryEntity1 = new CategoryEntity();
+      categoryEntity1.setCategoryId(categoryId1);
+      categoryEntity1.setName("Category 1");
+
+      final CategoryEntity categoryEntity2 = new CategoryEntity();
+      categoryEntity2.setCategoryId(categoryId2);
+      categoryEntity2.setName("Category 2");
+
+      // Preparar objetos de dominio
+      final Category category1 = new Category(new EntityId(categoryId1), "Category 1");
+      final Category category2 = new Category(new EntityId(categoryId2), "Category 2");
+
+
+      final var reviews01 = new ArrayList<>(
+          List.of(
+              Review.createWithExistingId(
+                  EntityId.newId(),
+                  EntityId.newId(),
+                  ReviewDetails.of(5, "Great review", Instant.now(), Instant.now(), null)
+              )
+          )
+      );
+
+      final var reviews02 = new ArrayList<>(
+          List.of(
+              Review.createWithExistingId(
+                  EntityId.newId(),
+                  EntityId.newId(),
+                  ReviewDetails.of(5, "Great review", Instant.now(), Instant.now(), null)
+              )
+          )
+      );
 
       // Crear productos de dominio
       final Product product1 = Product.reconstruct(
@@ -385,7 +365,7 @@ class ProductRepositoryAdapterTest {
           "Brand 1",
           category1,
           "#FFFFFF",
-          null,
+          reviews01,
           null
       );
 
@@ -395,19 +375,16 @@ class ProductRepositoryAdapterTest {
           "Brand 2",
           category2,
           "#000000",
-          null,
+          reviews02,
           null
       );
 
-      // Configurar mocks para repositorios
-      when(productUserRepository.findProductIdsByUserId(eq(userEntityId))).thenReturn(productIds);
-      when(jpaProductRepository.findAllById(Arrays.asList(productId1, productId2))).thenReturn(productEntities);
+      // Configurar mocks para el repositorio de productos
+      when(productUserRepository.findProductIdsByUserId(userEntityId))
+              .thenReturn(List.of(productEntityId1, productEntityId2));
 
-      // Configurar entidades de categoría
-      final CategoryEntity categoryEntity1 = new CategoryEntity();
-      categoryEntity1.setCategoryId(categoryId1);
-      final CategoryEntity categoryEntity2 = new CategoryEntity();
-      categoryEntity2.setCategoryId(categoryId2);
+      when(jpaProductRepository.findAllById(List.of(productEntityId1.getValue(), productEntityId2.getValue())))
+              .thenReturn(List.of(productEntity1, productEntity2));
 
       // Configurar mocks para categorías
       when(jpaCategoryRepository.findById(categoryId1)).thenReturn(Optional.of(categoryEntity1));
@@ -416,19 +393,30 @@ class ProductRepositoryAdapterTest {
       when(categoryMapper.toDomain(categoryEntity2)).thenReturn(category2);
 
       // Configurar mocks para mapper de productos
-      when(productMapper.toDomain(productEntity1, category1)).thenReturn(product1);
-      when(productMapper.toDomain(productEntity2, category2)).thenReturn(product2);
+      when(productMapper.toDomain(eq(productEntity1),eq(category1),anyList())).thenReturn(product1);
+      when(productMapper.toDomain(eq(productEntity2),eq(category2),anyList())).thenReturn(product2);
 
       // When
       final List<Product> result = target.findByUserId(userId);
 
       // Then
-      assertThat(result).hasSize(2);
-      assertThat(result).containsExactly(product1, product2);
+      assertThat(result)
+              .hasSize(2)
+              .containsExactly(product1, product2);
+
+      verify(productUserRepository).findProductIdsByUserId(userEntityId);
+      verify(jpaProductRepository).findAllById(List.of(
+              productEntityId1.getValue(),
+              productEntityId2.getValue()));
+      verify(jpaCategoryRepository).findById(categoryId1);
+      verify(jpaCategoryRepository).findById(categoryId2);
+      verify(categoryMapper).toDomain(categoryEntity1);
+      verify(categoryMapper).toDomain(categoryEntity2);
+      verify(productMapper).toDomain(eq(productEntity1), eq(category1), anyList());
+      verify(productMapper).toDomain(eq(productEntity2), eq(category2), anyList());
+
     }
 
-    // Otros tests de FindByUserId sin cambios en la lógica...
   }
 
-  // Clase DeleteById sin cambios...
 }

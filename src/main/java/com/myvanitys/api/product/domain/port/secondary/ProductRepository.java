@@ -34,15 +34,7 @@ public interface ProductRepository {
    * @param productName the product name
    * @return the product if found
    */
-  Optional<Product> findByName(String productName);
-
-  /**
-   * Find products by category name
-   *
-   * @param categoryName the category name
-   * @return list of products in the category
-   */
-  List<Product> findByCategoryName(String categoryName);
+  Optional<Product> findByName(String productName, EntityId entityId);
 
   /**
    * Delete a product by its ID

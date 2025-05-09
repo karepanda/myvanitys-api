@@ -80,7 +80,7 @@ class ReviewRepositoryAdapterTest {
 
       when(reviewMapper.toEntity(review)).thenReturn(reviewEntity);
       when(jpaReviewRepository.save(reviewEntity)).thenReturn(reviewEntity);
-      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(review);
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
 
       // Act
       final Review result = target.save(review);
@@ -167,7 +167,7 @@ class ReviewRepositoryAdapterTest {
 
       when(jpaReviewRepository.findById(reviewId)).thenReturn(Optional.of(reviewEntity));
       when(jpaProductUserRepository.findById(productUserId)).thenReturn(Optional.of(productUserEntity));
-      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(expectedReview);
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(expectedReview);
 
       // Act
       final Optional<Review> result = target.findById(new EntityId(reviewId));
@@ -277,7 +277,7 @@ class ReviewRepositoryAdapterTest {
           .thenReturn(List.of(reviewEntity));
 
       // Configurar el mapper
-      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(review);
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
 
       // Act
       final List<Review> result = target.findByProductId(new EntityId(productId));
@@ -354,7 +354,7 @@ class ReviewRepositoryAdapterTest {
           .thenReturn(List.of(reviewEntity));
 
       // Configurar el mapper
-      when(reviewMapper.toDomain(reviewEntity, productUserEntityId)).thenReturn(review);
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
 
       // Act
       final List<Review> result = target.findByUserId(new EntityId(userId));

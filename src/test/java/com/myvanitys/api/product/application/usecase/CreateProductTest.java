@@ -70,7 +70,7 @@ class CreateProductTest {
   @Test
   void shouldCreateNewProductWhenDoesNotExist() {
     // Arrange
-    when(productRepository.findByName("Test Product")).thenReturn(Optional.empty());
+    when(productRepository.findByName("Test Product", command.userId())).thenReturn(Optional.empty());
     when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
 
     // Usamos ArgumentCaptor para capturar el producto guardado
@@ -89,7 +89,7 @@ class CreateProductTest {
     assertEquals(category, result.getCategory());
 
     // Verificamos que se llamaron a los repositories correctamente
-    verify(productRepository).findByName("Test Product");
+    verify(productRepository).findByName("Test Product", command.userId());
     verify(categoryRepository).findById(categoryId);
     verify(productRepository).save(productCaptor.capture());
 
@@ -115,7 +115,7 @@ class CreateProductTest {
         null        // Sin relaciones usuario-producto
     );
 
-    when(productRepository.findByName("Test Product")).thenReturn(Optional.of(existingProduct));
+    when(productRepository.findByName("Test Product", command.userId())).thenReturn(Optional.of(existingProduct));
 
     // Act
     Product result = createProduct.execute(command);
@@ -127,7 +127,7 @@ class CreateProductTest {
     assertEquals("Existing Brand", result.getBrand()); // Verificamos que es el producto existente
 
     // Verificar que NO se creó un nuevo producto
-    verify(productRepository).findByName("Test Product");
+    verify(productRepository).findByName("Test Product", command.userId());
     verify(productRepository, never()).save(any(Product.class));
 
     // Verificar que se intentó crear la relación con el producto existente
@@ -137,7 +137,7 @@ class CreateProductTest {
   @Test
   void shouldThrowExceptionWhenCategoryNotFound() {
     // Arrange
-    when(productRepository.findByName("Test Product")).thenReturn(Optional.empty());
+    when(productRepository.findByName("Test Product", command.userId())).thenReturn(Optional.empty());
     when(categoryRepository.findById(categoryId)).thenReturn(Optional.empty());
 
     // Act & Assert

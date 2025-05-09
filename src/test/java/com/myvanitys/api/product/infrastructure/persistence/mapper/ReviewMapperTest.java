@@ -1,14 +1,5 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.UUID;
-
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
@@ -20,6 +11,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewMapperTest {
@@ -53,7 +53,7 @@ class ReviewMapperTest {
           .build();
 
       // Act
-      final Review result = target.toDomain(reviewEntity, productUserEntityId);
+      final Review result = target.toDomain(reviewEntity);
 
       // Assert
       assertThat(result).isNotNull();
@@ -67,31 +67,14 @@ class ReviewMapperTest {
 
     @Test
     void when_entityIsNull_then_returnsNull() {
-      // Arrange
-      final EntityId productUserEntityId = new EntityId(UUID.randomUUID());
 
       // Act
-      final Review result = target.toDomain(null, productUserEntityId);
+      final Review result = target.toDomain(null);
 
       // Assert
       assertThat(result).isNull();
     }
 
-    @Test
-    void when_productUserIdIsNull_then_returnsNull() {
-      // Arrange
-      final ReviewEntity reviewEntity = ReviewEntity.builder()
-          .reviewId(UUID.randomUUID())
-          .rating(4)
-          .comment("Good product")
-          .build();
-
-      // Act
-      final Review result = target.toDomain(reviewEntity, null);
-
-      // Assert
-      assertThat(result).isNull();
-    }
   }
 
   @Nested
