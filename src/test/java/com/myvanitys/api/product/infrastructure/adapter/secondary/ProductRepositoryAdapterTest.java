@@ -27,7 +27,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -60,9 +63,7 @@ class ProductRepositoryAdapterTest {
 
   private Review review;
 
-
-
-    @InjectMocks
+  @InjectMocks
   private ProductRepositoryAdapter target;
 
   @BeforeEach
@@ -309,8 +310,6 @@ class ProductRepositoryAdapterTest {
       final UUID categoryId1 = UUID.randomUUID();
       final UUID categoryId2 = UUID.randomUUID();
 
-      // Lista de IDs de productos
-      final List<EntityId> productIds = Arrays.asList(productEntityId1, productEntityId2);
 
       // Crear entidades de producto con IDs de categoría específicos
       final ProductEntity productEntity1 = new ProductEntity();
