@@ -1,5 +1,8 @@
 package com.myvanitys.api.common;
 
+import java.net.URI;
+
+import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.model.v1.ProblemDetail;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
@@ -12,8 +15,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
-import java.net.URI;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -29,7 +30,6 @@ public class GlobalExceptionHandler {
   private static final URI PRODUCT_INSTANCE = URI.create("myvanitys/api/products/");
 
   private static final String MYVANITYS_API_FAILED = "My vanitys API failed";
-
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ProblemDetail> handleValidationExceptions(MethodArgumentNotValidException ex) {
@@ -55,15 +55,14 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
   }
 
-
   @ExceptionHandler(ProductNotFoundException.class)
   public ResponseEntity<ProblemDetail> handleMissingHeaderExceptions(ProductNotFoundException ex) {
     ProblemDetail problem = new ProblemDetail()
-            .type(VALIDATION_ERROR_TYPE)
-            .title("Product Not Found")
-            .status(404)
-            .detail("Product failed " + ex.getMessage())
-            .instance(PRODUCT_INSTANCE);
+        .type(VALIDATION_ERROR_TYPE)
+        .title("Product Not Found")
+        .status(404)
+        .detail("Product failed " + ex.getMessage())
+        .instance(PRODUCT_INSTANCE);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
   }
@@ -71,11 +70,11 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ProductValidationException.class)
   public ResponseEntity<ProblemDetail> handleMissingHeaderExceptions(ProductValidationException ex) {
     ProblemDetail problem = new ProblemDetail()
-            .type(VALIDATION_ERROR_TYPE)
-            .title("Domain validation error")
-            .status(400)
-            .detail("Product failed " + ex.getMessage())
-            .instance(PRODUCT_INSTANCE);
+        .type(VALIDATION_ERROR_TYPE)
+        .title("Domain validation error")
+        .status(400)
+        .detail("Product failed " + ex.getMessage())
+        .instance(PRODUCT_INSTANCE);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
   }
@@ -83,11 +82,11 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(DatabaseException.class)
   public ResponseEntity<ProblemDetail> handleMissingHeaderExceptions(DatabaseException ex) {
     ProblemDetail problem = new ProblemDetail()
-            .type(INTERNAL_ERROR_TYPE)
-            .title("Infrastructure validation error")
-            .status(500)
-            .detail("Product failed " + ex.getMessage())
-            .instance(PRODUCT_INSTANCE);
+        .type(INTERNAL_ERROR_TYPE)
+        .title("Infrastructure validation error")
+        .status(500)
+        .detail("Product failed " + ex.getMessage())
+        .instance(PRODUCT_INSTANCE);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
   }
@@ -95,11 +94,11 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(RepositoryResourceNotFoundException.class)
   public ResponseEntity<ProblemDetail> handleMissingHeaderExceptions(RepositoryResourceNotFoundException ex) {
     ProblemDetail problem = new ProblemDetail()
-            .type(INTERNAL_ERROR_TYPE)
-            .title("Infrastructure validation error")
-            .status(500)
-            .detail("Product failed " + ex.getMessage())
-            .instance(PRODUCT_INSTANCE);
+        .type(INTERNAL_ERROR_TYPE)
+        .title("Infrastructure validation error")
+        .status(500)
+        .detail("Product failed " + ex.getMessage())
+        .instance(PRODUCT_INSTANCE);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
   }
@@ -107,11 +106,23 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(UnauthorizedException.class)
   public ResponseEntity<ProblemDetail> handleMissingHeaderExceptions(UnauthorizedException ex) {
     ProblemDetail problem = new ProblemDetail()
-            .type(INTERNAL_ERROR_TYPE)
-            .title("Infrastructure validation error")
-            .status(401)
-            .detail("Token verification failed " + ex.getMessage())
-            .instance(PRODUCT_INSTANCE);
+        .type(INTERNAL_ERROR_TYPE)
+        .title("Infrastructure validation error")
+        .status(401)
+        .detail("Token verification failed " + ex.getMessage())
+        .instance(PRODUCT_INSTANCE);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+  }
+
+  @ExceptionHandler(GoogleAuthException.class)
+  public ResponseEntity<ProblemDetail> handleMissingHeaderExceptions(GoogleAuthException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(AUTH_GOOGLE_INSTANCE)
+        .title("Google Authorization Error")
+        .status(404)
+        .detail("Token verification failed " + ex.getMessage())
+        .instance(AUTH_GOOGLE_INSTANCE);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
   }

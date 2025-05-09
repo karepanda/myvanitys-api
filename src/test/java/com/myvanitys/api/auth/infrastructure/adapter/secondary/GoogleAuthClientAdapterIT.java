@@ -42,8 +42,9 @@ class GoogleAuthClientAdapterIT extends AbstractIntegrationTest {
   void setUp() {
     // Set up properties
     GoogleClientProperties googleClientProperties = new GoogleClientProperties();
-    googleClientProperties.setId("mock-client-id");
-    googleClientProperties.setSecret("mock-client-secret");
+    googleClientProperties.setClientId("mock-client-id");
+    googleClientProperties.setClientSecret("mock-client-secret");
+    googleClientProperties.setRedirectUri("https://localhost/callback");
 
     // Configure WebClient with an Exchange Filter Function to redirect requests
     WebClient webClient = WebClient.builder()
@@ -141,7 +142,8 @@ class GoogleAuthClientAdapterIT extends AbstractIntegrationTest {
     StepVerifier.create(result)
         .expectErrorMatches(throwable ->
             throwable instanceof GoogleAuthException &&
-                throwable.getMessage().contains("Failed to exchange authorization code for token"))
+                throwable.getMessage()
+                    .contains("The authorization code is invalid or has expired. Try to start the authorization process again"))
         .verify();
 
     // Verify request to token endpoint

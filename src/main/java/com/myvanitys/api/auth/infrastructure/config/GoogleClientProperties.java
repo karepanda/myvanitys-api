@@ -8,12 +8,12 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "google.client")
+@ConfigurationProperties(prefix = "google.oauth2")
 public class GoogleClientProperties {
 
-  private String id;
+  private String clientId;
 
-  private String secret;
+  private String clientSecret;
 
-  private String redirectUri = "http://localhost:5173/callback";
+  private String redirectUri;
 }
