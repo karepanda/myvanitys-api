@@ -34,7 +34,8 @@ public class CorsConfig implements WebMvcConfigurer {
     // Allowed origins
     config.addAllowedOrigin("https://myvanitys.com");
     config.addAllowedOrigin("https://www.myvanitys.com");
-    config.addAllowedOrigin("http://localhost:5173"); // For local development
+    config.addAllowedOrigin("http://localhost:5173");
+    config.addAllowedOrigin("https://www.myvanitys.com/callback"); // For local development
 
     // Enable credentials (cookies, authorization headers)
     config.setAllowCredentials(true);

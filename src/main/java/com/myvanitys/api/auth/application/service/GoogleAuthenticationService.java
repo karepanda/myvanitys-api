@@ -28,7 +28,7 @@ public class GoogleAuthenticationService implements GoogleAuthenticationUseCase 
 
   private final JwtTokenGeneratorAdapter tokenGenerator;
 
-  @Value("${google.oauth.redirect-uri:http://localhost:5173/callback}")
+  @Value("${google.oauth.redirect-uri:https://www.myvanitys.com/callback}")
   private String defaultRedirectUri;
 
   @Override

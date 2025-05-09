@@ -3,6 +3,7 @@ package com.myvanitys.api.common.config;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import com.myvanitys.api.auth.infrastructure.config.GoogleClientProperties;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +20,17 @@ public class ApplicationStartupLogger implements ApplicationListener<Application
 
   private final Environment env;
 
+  private final GoogleClientProperties googleClientProperties;
+
   @Value("${server.servlet.context-path:/}")
   private String contextPath;
 
   @Value("${server.port:8080}")
   private String serverPort;
 
-  public ApplicationStartupLogger(Environment env) {
+  public ApplicationStartupLogger(Environment env, GoogleClientProperties googleClientProperties) {
     this.env = env;
+    this.googleClientProperties = googleClientProperties;
   }
 
   @Override
@@ -43,7 +47,6 @@ public class ApplicationStartupLogger implements ApplicationListener<Application
       log.warn("Could not determine host address", e);
     }
 
-    // Railway environment variables
     String railwayStaticUrl = System.getenv("RAILWAY_STATIC_URL");
     String railwayPublicDomain = System.getenv("RAILWAY_PUBLIC_DOMAIN");
     String railwayService = System.getenv("RAILWAY_SERVICE_NAME");
@@ -87,5 +90,25 @@ public class ApplicationStartupLogger implements ApplicationListener<Application
         railwayStaticUrl != null ? railwayStaticUrl : "https://[service].[project].railway.app",
         contextPath
     );
+
+    log.info("""
+            ----------------------------------------------------------
+            \tGOOGLE OAUTH CONFIGURATION:
+            \tClient ID: \t{}
+            \tRedirect URI: \t{}
+            ----------------------------------------------------------""",
+        maskIfNotNull(googleClientProperties.getClientId()),
+        googleClientProperties.getRedirectUri()
+    );
+  }
+
+  private String maskIfNotNull(String value) {
+    if (value == null) {
+      return "Not configured";
+    }
+    if (value.length() <= 8) {
+      return "***";
+    }
+    return value.substring(0, 4) + "..." + value.substring(value.length() - 4);
   }
 }
