@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @ExtendWith(MockitoExtension.class)
-class GoogleAuthenticationServiceTest {
+class GoogleAuthenticationTest {
 
   @Mock
   private GoogleAuthClient googleAuthClient;
@@ -40,13 +40,13 @@ class GoogleAuthenticationServiceTest {
   private UserRepository userRepository;
 
   @InjectMocks
-  private GoogleAuthenticationService target;
+  private GoogleAuthentication target;
 
   private static final String DEFAULT_REDIRECT_URI = "http://localhost:5173/callback";
 
   @BeforeEach
   void setUp() {
-    target = new GoogleAuthenticationService(googleAuthClient, userRepository, tokenGenerator);
+    target = new GoogleAuthentication(googleAuthClient, userRepository, tokenGenerator);
     // Inject the redirect URI manually
     ReflectionTestUtils.setField(target, "defaultRedirectUri", DEFAULT_REDIRECT_URI);
   }
