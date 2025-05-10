@@ -1,5 +1,6 @@
 package com.myvanitys.api.auth.domain.model;
 
+import java.time.Instant;
 import java.util.Objects;
 
 import com.myvanitys.api.product.domain.valueobject.EntityId;
@@ -17,11 +18,24 @@ public class User {
 
   private final String name;
 
-  public User(EntityId id, @NonNull String authorizationId, @NonNull String email, String name) {
+  private final Instant createAt;
+
+  public User(
+      EntityId id,
+      @NonNull String authorizationId,
+      @NonNull String email,
+      String name,
+      @NonNull Instant createAt
+  ) {
     this.id = id;
     this.authorizationId = Objects.requireNonNull(authorizationId, "authorizationId is marked non-null but is null");
     this.email = Objects.requireNonNull(email, "email is marked non-null but is null");
     this.name = name;
+    this.createAt = Objects.requireNonNull(createAt, "registrationDate is marked non-null but is null");
+  }
+  
+  public User(EntityId id, @NonNull String authorizationId, @NonNull String email, String name) {
+    this(id, authorizationId, email, name, Instant.now());
   }
 
   @Override

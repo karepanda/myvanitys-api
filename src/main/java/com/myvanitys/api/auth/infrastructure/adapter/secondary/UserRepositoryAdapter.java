@@ -1,5 +1,7 @@
 package com.myvanitys.api.auth.infrastructure.adapter.secondary;
 
+import java.time.Instant;
+
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.infrastructure.adapter.secondary.port.UserRepository;
 import com.myvanitys.api.auth.infrastructure.persistence.entity.UserEntity;
@@ -51,13 +53,14 @@ public class UserRepositoryAdapter implements UserRepository {
     UserEntity entity = new UserEntity();
     if (user.getId() != null) {
       entity.setUserId(user.getId().getValue());
+      entity.setVersion(0L);
+      entity.setCreatedAt(Instant.now());
     }
+
     // We use token instead of authorizationId
     entity.setToken(user.getAuthorizationId());
     entity.setEmail(user.getEmail());
     entity.setName(user.getName());
-    // There is no pictureUrl in the entity
-    // We don't need to set createdAt or updatedAt, they are handled via @PrePersist/@PreUpdate
     return entity;
   }
 
