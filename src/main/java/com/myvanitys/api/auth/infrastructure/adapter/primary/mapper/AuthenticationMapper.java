@@ -17,7 +17,7 @@ public interface AuthenticationMapper {
     if (request == null || request.getCode() == null) {
       return null;
     }
-    // Utilizamos null como redirectUri o puedes proporcionar un valor predeterminado
+    
     return GoogleAuthCommand.of(request.getCode());
   }
 

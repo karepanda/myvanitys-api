@@ -36,18 +36,13 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
   @Override
   public Mono<GoogleUserInfo> exchangeCodeForUserInfo(String authorizationCode, String redirectUri) {
     log.debug("Starting Google authentication process with authorization code");
+    String effectiveRedirectUri = googleClientProperties.getRedirectUri();
 
     // Log the redirect URI being used for debugging
     log.debug("Using redirect URI: {}", redirectUri);
-    log.debug("Configured redirect URI: {}", googleClientProperties.getRedirectUri());
+    log.debug("Configured redirect URI: {}", effectiveRedirectUri);
 
-    // Check for exact match with configured URI
-    if (!googleClientProperties.getRedirectUri().equals(redirectUri)) {
-      log.warn("⚠️ MISMATCH: The redirect URI parameter ({}) does not match the configured URI ({})",
-          redirectUri, googleClientProperties.getRedirectUri());
-    }
-
-    return exchangeCodeForToken(authorizationCode, redirectUri)
+    return exchangeCodeForToken(authorizationCode, effectiveRedirectUri)
         .flatMap(tokenResponse -> fetchUserInfo(tokenResponse.getAccessToken()))
         .map(this::mapToDomainModel)
         .onErrorMap(WebClientResponseException.class, ex -> {

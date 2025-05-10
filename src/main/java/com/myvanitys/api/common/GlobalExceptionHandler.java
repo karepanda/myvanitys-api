@@ -3,6 +3,7 @@ package com.myvanitys.api.common;
 import java.net.URI;
 
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
+import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
 import com.myvanitys.api.model.v1.ProblemDetail;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
@@ -137,5 +138,17 @@ public class GlobalExceptionHandler {
         .instance(MYVANITYS_INSTANCE);
 
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
+  }
+
+  @ExceptionHandler(UserNotFoundException.class)
+  public ResponseEntity<ProblemDetail> handleMissingHeaderExceptions(UserNotFoundException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(AUTH_GOOGLE_INSTANCE)
+        .title("Authorization Error")
+        .status(401)
+        .detail("User verification failed " + ex.getMessage())
+        .instance(AUTH_GOOGLE_INSTANCE);
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
   }
 }
