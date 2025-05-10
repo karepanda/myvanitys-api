@@ -15,8 +15,10 @@ import reactor.test.StepVerifier;
 
 import java.util.UUID;
 
-import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.*;
+
 
 @ExtendWith(MockitoExtension.class)
 class UserRepositoryAdapterTest {
@@ -44,7 +46,15 @@ class UserRepositoryAdapterTest {
             savedEntity.setName(name);
             savedEntity.setToken(authorizationId);
 
-            when(jpaUserRepository.save(savedEntity)).thenReturn(savedEntity);
+            doReturn(savedEntity)
+                    .when(jpaUserRepository)
+                    .save(argThat(entity ->
+                            entity.getUserId().equals(userId) &&
+                                    entity.getToken().equals(authorizationId) &&
+                                    entity.getEmail().equals(email) &&
+                                    entity.getName().equals(name)
+                    ));
+
 
             final Mono<User> result = target.save(inputUser);
 
@@ -56,6 +66,8 @@ class UserRepositoryAdapterTest {
                         assertThat(user.getName()).isEqualTo(name);
                     })
                     .verifyComplete();
+
+            verify(jpaUserRepository).save(any(UserEntity.class));
         }
     }
 
