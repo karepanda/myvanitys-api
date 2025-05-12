@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GoogleAuthenticationService implements GoogleAuthenticationUseCase {
+public class GoogleAuthentication implements GoogleAuthenticationUseCase {
 
   private final GoogleAuthClient googleAuthClient;
 
