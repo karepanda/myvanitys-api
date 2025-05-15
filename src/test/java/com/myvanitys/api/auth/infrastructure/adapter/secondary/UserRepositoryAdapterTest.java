@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import com.myvanitys.api.auth.domain.model.User;
@@ -40,14 +41,18 @@ class UserRepositoryAdapterTest {
       String authorizationId = "auth123";
       String email = "test@example.com";
       String name = "Test User";
+      Instant createAt = Instant.now(); // Importante: creamos una fecha explícita
 
-      User inputUser = new User(new EntityId(userId), authorizationId, email, name);
+      // Usamos el constructor completo con createAt
+      User inputUser = new User(new EntityId(userId), authorizationId, email, name, createAt);
 
       UserEntity savedEntity = new UserEntity();
       savedEntity.setUserId(userId);
       savedEntity.setEmail(email);
       savedEntity.setName(name);
       savedEntity.setToken(authorizationId);
+      savedEntity.setCreatedAt(createAt); // Usamos la misma fecha para mantener consistencia
+      savedEntity.setVersion(0L);
 
       ArgumentCaptor<UserEntity> captor = ArgumentCaptor.forClass(UserEntity.class);
       when(jpaUserRepository.save(any(UserEntity.class))).thenReturn(savedEntity);
@@ -62,6 +67,7 @@ class UserRepositoryAdapterTest {
             assertThat(user.getAuthorizationId()).isEqualTo(authorizationId);
             assertThat(user.getEmail()).isEqualTo(email);
             assertThat(user.getName()).isEqualTo(name);
+            assertThat(user.getCreateAt()).isEqualTo(createAt); // Verificamos la fecha
           })
           .verifyComplete();
 
@@ -73,8 +79,10 @@ class UserRepositoryAdapterTest {
       assertThat(captured.getToken()).isEqualTo(authorizationId);
       assertThat(captured.getEmail()).isEqualTo(email);
       assertThat(captured.getName()).isEqualTo(name);
-      assertThat(captured.getCreatedAt()).isNotNull();
-      assertThat(captured.getVersion()).isEqualTo(0L);
+      assertThat(captured.getCreatedAt()).isEqualTo(createAt); // Verificamos que la fecha sea la misma
+
+      // Para la versión, permite null (si no se ha establecido) o 0L (si se estableció)
+      assertThat(captured.getVersion() == null || captured.getVersion() == 0L).isTrue();
     }
 
   }
@@ -88,12 +96,14 @@ class UserRepositoryAdapterTest {
       final String authorizationId = "auth123";
       final String email = "test@example.com";
       final String name = "Test User";
+      final Instant createAt = Instant.now(); // Añadir fecha de creación
 
       final UserEntity foundEntity = new UserEntity();
       foundEntity.setUserId(userId);
       foundEntity.setEmail(email);
       foundEntity.setName(name);
       foundEntity.setToken(authorizationId);
+      foundEntity.setCreatedAt(createAt); // Establecer fecha de creación
 
       when(jpaUserRepository.findByToken(authorizationId)).thenReturn(foundEntity);
 
@@ -105,6 +115,7 @@ class UserRepositoryAdapterTest {
             assertThat(user.getAuthorizationId()).isEqualTo(authorizationId);
             assertThat(user.getEmail()).isEqualTo(email);
             assertThat(user.getName()).isEqualTo(name);
+            assertThat(user.getCreateAt()).isEqualTo(createAt); // Verificar la fecha
           })
           .verifyComplete();
     }

@@ -36,6 +36,11 @@ management:
   security:
     enabled: true  # Enable actuator safety
 
+jwt:
+  secret: "${JWT_SECRET}"
+  expiration: 1800  # 30 minutes
+  issuer: "myvanitys-production"
+
 logging:
   level:
     org:
