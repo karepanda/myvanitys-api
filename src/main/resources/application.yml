@@ -1,9 +1,14 @@
-# Configuración base para todos los entornos
+# Base configuration for all environments
+---
 spring:
   application:
     name: myvanitys-api
   profiles:
     active: local
+openapi:
+  myVanitysProduct:
+    base-path: /api/v1
+
 
 server:
   servlet:
@@ -42,3 +47,9 @@ info:
   app:
     name: MyVanitys API
     version: ${project.version}
+
+springdoc:
+  swagger-ui:
+    path: /myvanitys/swagger-ui.html
+  api-docs:
+    path: /myvanitys/v3/api-docs
