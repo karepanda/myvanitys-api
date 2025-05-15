@@ -5,17 +5,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
 import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
 import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
+import com.myvanitys.api.auth.domain.model.TokenClaims;
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
+import com.myvanitys.api.auth.domain.port.secondary.TokenGenerator;
 import com.myvanitys.api.auth.infrastructure.adapter.secondary.port.UserRepository;
-import com.myvanitys.api.auth.infrastructure.security.JwtTokenGeneratorAdapter;
-import com.myvanitys.api.auth.infrastructure.security.TokenClaims;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -35,7 +36,7 @@ class GoogleAuthenticationTest {
   private GoogleAuthClient googleAuthClient;
 
   @Mock
-  private JwtTokenGeneratorAdapter tokenGenerator;
+  private TokenGenerator tokenGenerator;
 
   @Mock
   private UserRepository userRepository;
@@ -64,15 +65,17 @@ class GoogleAuthenticationTest {
       GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-user-id", "user@example.com", "Jane Doe", "https://example.com/pic.jpg");
       EntityId userId = new EntityId(UUID.randomUUID());
       User existingUser = new User(userId, "google-user-id", "user@example.com", "Jane Doe");
+      TokenClaims tokenClaims = new TokenClaims(existingUser, Instant.now(), Instant.now().plusSeconds(3600));
 
       when(googleAuthClient.exchangeCodeForUserInfo(command.code(), DEFAULT_REDIRECT_URI))
           .thenReturn(Mono.just(googleUserInfo));
 
       when(userRepository.findByAuthorizationId("google-user-id"))
-          .thenReturn(Mono.just(existingUser));
+          .thenReturn(
+              Mono.just(existingUser));
 
       when(tokenGenerator.createClaimsFromUser(existingUser))
-          .thenReturn(new TokenClaims(userId.toString(), "user@example.com", "Jane Doe"));
+          .thenReturn(tokenClaims);
 
       when(tokenGenerator.generateToken(any()))
           .thenReturn("dummy-jwt-token");
@@ -126,6 +129,7 @@ class GoogleAuthenticationTest {
       GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-user-id", "user@example.com", "Jane Doe", "https://example.com/pic.jpg");
       EntityId userId = new EntityId(UUID.randomUUID());
       User user = new User(userId, "google-user-id", "user@example.com", "Jane Doe");
+      TokenClaims tokenClaims = new TokenClaims(user, Instant.now(), Instant.now().plusSeconds(3600));
 
       when(googleAuthClient.exchangeCodeForUserInfo(command.code(), DEFAULT_REDIRECT_URI))
           .thenReturn(Mono.just(googleUserInfo));
@@ -134,7 +138,7 @@ class GoogleAuthenticationTest {
           .thenReturn(Mono.just(user));
 
       when(tokenGenerator.createClaimsFromUser(user))
-          .thenReturn(new TokenClaims(userId.toString(), "user@example.com", "Jane Doe"));
+          .thenReturn(tokenClaims);
 
       when(tokenGenerator.generateToken(any()))
           .thenReturn("dummy-jwt-token");
