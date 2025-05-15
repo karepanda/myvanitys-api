@@ -49,4 +49,31 @@ class GoogleAuthCommandTest {
         assertEquals("Authorization code cannot be null or blank", exception.getMessage());
     }
 
+    @Test
+    void shouldCreateCommandUsingStaticOfMethodWithBothParams(){
+        //Arrange
+        String validCode = "valid-auth-code";
+        String validRedirectUri = "https://example.com/callback";
+
+        //Act
+        GoogleAuthCommand command = GoogleAuthCommand.of(validCode, validRedirectUri);
+
+        //Assert
+        assertNotNull(command.code());
+        assertNotNull(GoogleAuthCommand.of(validCode, validRedirectUri));
+    }
+
+    @Test
+    void shouldCreateCommandUsingStaticOfMethodWithCodeOnly(){
+        //Arrange
+        String validCode = "valid-auth-code";
+
+        //Act
+        GoogleAuthCommand command = GoogleAuthCommand.of(validCode);
+
+        //Assert
+        assertNotNull(command.code());
+        assertNotNull(GoogleAuthCommand.of(validCode));
+    }
+
 }
