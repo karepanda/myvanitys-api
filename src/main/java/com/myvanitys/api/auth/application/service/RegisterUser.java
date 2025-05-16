@@ -9,12 +9,12 @@ import com.myvanitys.api.auth.application.port.primary.result.UserRegistrationRe
 import com.myvanitys.api.auth.domain.exception.AuthenticationFailedException;
 import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
 import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
+import com.myvanitys.api.auth.domain.model.TokenClaims;
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
+import com.myvanitys.api.auth.domain.port.secondary.TokenGenerator;
 import com.myvanitys.api.auth.infrastructure.adapter.secondary.port.UserRepository;
-import com.myvanitys.api.auth.infrastructure.security.JwtTokenGeneratorAdapter;
-import com.myvanitys.api.auth.infrastructure.security.TokenClaims;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ public class RegisterUser implements RegisterUserUseCase {
 
   private final UserRepository userRepository;
 
-  private final JwtTokenGeneratorAdapter tokenGenerator;
+  private final TokenGenerator tokenGenerator;
 
   @Value("${google.oauth.redirect-uri:https://www.myvanitys.com/callback}")
   private String defaultRedirectUri;

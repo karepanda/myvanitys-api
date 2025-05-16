@@ -2,7 +2,9 @@ package com.myvanitys.api.common;
 
 import java.net.URI;
 
+import com.myvanitys.api.auth.domain.exception.AuthenticationFailedException;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
+import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
 import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
 import com.myvanitys.api.model.v1.ProblemDetail;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
@@ -151,4 +153,30 @@ public class GlobalExceptionHandler {
 
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
   }
+
+  @ExceptionHandler(UserAlreadyExistsException.class)
+  public ResponseEntity<ProblemDetail> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(AUTH_GOOGLE_INSTANCE)
+        .title("User Already Exists")
+        .status(409)  // Conflict
+        .detail("The registration failed because: " + ex.getMessage())
+        .instance(AUTH_GOOGLE_INSTANCE);
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+  }
+
+  @ExceptionHandler(AuthenticationFailedException.class)
+  public ResponseEntity<ProblemDetail> handleAuthenticationFailedException(AuthenticationFailedException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(AUTH_GOOGLE_INSTANCE)
+        .title("Authentication Error")
+        .status(401)  // Unauthorized
+        .detail("Authentication failed: " + ex.getMessage())
+        .instance(AUTH_GOOGLE_INSTANCE);
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
+  }
+
+
 }

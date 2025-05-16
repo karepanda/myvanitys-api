@@ -43,3 +43,10 @@ logging:
               BasicBinder: TRACE
       flywaydb: DEBUG
       springframework: DEBUG
+
+# Local environment overrides
+jwt:
+  secret: "local_development_secret_key_which_is_at_least_32_chars_long"
+  expiration: 86400  # 24 hours in seconds for easier development
+  issuer: "myvanitys-local"
+

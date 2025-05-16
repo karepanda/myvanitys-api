@@ -40,7 +40,8 @@ google:
 # JWT Configuration base
 jwt:
   secret: ${JWT_SECRET:defaultSecretKeyForDevelopmentPurposesOnlyDoNotUseInProduction}
-  expiration: 86400000  # 24 hours in milliseconds
+  expiration: 3600  # 1 hour in seconds (no milliseconds)
+  issuer: "myvanitys"
 
 # Info endpoint
 info:

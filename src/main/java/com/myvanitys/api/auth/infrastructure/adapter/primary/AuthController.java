@@ -1,5 +1,7 @@
 package com.myvanitys.api.auth.infrastructure.adapter.primary;
 
+import java.util.UUID;
+
 import com.myvanitys.api.auth.application.port.primary.GoogleAuthenticationUseCase;
 import com.myvanitys.api.auth.application.port.primary.RegisterUserUseCase;
 import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
@@ -15,13 +17,13 @@ import com.myvanitys.api.model.v1.UserCreatedResponse;
 import com.myvanitys.api.rest.v1.AuthenticationApiDelegate;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
 @Component
 @AllArgsConstructor
+@Slf4j
 public class AuthController implements AuthenticationApiDelegate {
 
   private final GoogleAuthenticationUseCase googleAuthenticationUseCase;
@@ -55,18 +57,18 @@ public class AuthController implements AuthenticationApiDelegate {
       UUID xRequestID,
       UUID xFlowID,
       @Valid CreateUserRequest createUserRequest) {
-      //Map request to domain command
+    
     RegisterUserCommand command = createUserMapper.toCommand(createUserRequest);
 
-    //calling the usecase
     UserRegistrationResult result = registerUserUseCase.execute(command, xRequestID, xFlowID).block();
     if (result == null) {
+      log.error("User registration result was null for request ID: {}, flow ID: {}", xRequestID, xFlowID);
       return ResponseEntity.internalServerError().build();
     }
 
     UserCreatedResponse response = createUserMapper.toResponse(result.session().user());
+    return ResponseEntity.ok(response);
 
-    return ResponseEntity.ok(response); // temporal
   }
 
 }

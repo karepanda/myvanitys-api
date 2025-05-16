@@ -5,6 +5,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 import com.myvanitys.api.auth.infrastructure.persistence.entity.UserEntity;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ class JpaUserRepositoryIT extends AbstractJpaAuthTest {
   void should_SaveUser_When_ValidUserEntity() {
     // Given
     UserEntity user = UserEntity.builder()
+        .userId(UUID.randomUUID())
         .token("google-auth-id-123")
         .email("test@example.com")
         .name("Test User")
@@ -39,6 +41,7 @@ class JpaUserRepositoryIT extends AbstractJpaAuthTest {
   void should_FindUserByToken_When_UserExists() {
     // Given
     UserEntity user = UserEntity.builder()
+        .userId(UUID.randomUUID())
         .token("google-auth-id-123")
         .email("test@example.com")
         .name("Test User")
@@ -68,6 +71,7 @@ class JpaUserRepositoryIT extends AbstractJpaAuthTest {
   void should_UpdateUser_When_UserExists() {
     // Given
     UserEntity user = UserEntity.builder()
+        .userId(UUID.randomUUID())
         .token("google-auth-id-123")
         .email("test@example.com")
         .name("Test User")
@@ -102,6 +106,7 @@ class JpaUserRepositoryIT extends AbstractJpaAuthTest {
   void should_HandleUniqueConstraint_When_DuplicateToken() {
     // Given
     UserEntity user1 = UserEntity.builder()
+        .userId(UUID.randomUUID())
         .token("duplicate-token")
         .email("user1@example.com")
         .name("User 1")
@@ -112,6 +117,7 @@ class JpaUserRepositoryIT extends AbstractJpaAuthTest {
 
     // When & Then
     UserEntity user2 = UserEntity.builder()
+        .userId(UUID.randomUUID())
         .token("duplicate-token") // same token
         .email("user2@example.com")
         .name("User 2")
@@ -123,6 +129,5 @@ class JpaUserRepositoryIT extends AbstractJpaAuthTest {
       userRepository.flush();
     }).isInstanceOf(DataIntegrityViolationException.class);
   }
-
 
 }

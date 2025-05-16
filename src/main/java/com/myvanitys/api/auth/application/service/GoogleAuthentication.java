@@ -5,11 +5,11 @@ import java.util.UUID;
 import com.myvanitys.api.auth.application.port.primary.GoogleAuthenticationUseCase;
 import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
 import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
+import com.myvanitys.api.auth.domain.model.TokenClaims;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
+import com.myvanitys.api.auth.domain.port.secondary.TokenGenerator;
 import com.myvanitys.api.auth.infrastructure.adapter.secondary.port.UserRepository;
-import com.myvanitys.api.auth.infrastructure.security.JwtTokenGeneratorAdapter;
-import com.myvanitys.api.auth.infrastructure.security.TokenClaims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +25,7 @@ public class GoogleAuthentication implements GoogleAuthenticationUseCase {
 
   private final UserRepository userRepository;
 
-  private final JwtTokenGeneratorAdapter tokenGenerator;
+  private final TokenGenerator tokenGenerator;
 
   @Value("${google.oauth.redirect-uri:https://www.myvanitys.com/callback}")
   private String defaultRedirectUri;
