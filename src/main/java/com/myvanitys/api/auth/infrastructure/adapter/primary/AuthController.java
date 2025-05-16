@@ -57,7 +57,7 @@ public class AuthController implements AuthenticationApiDelegate {
       UUID xRequestID,
       UUID xFlowID,
       @Valid CreateUserRequest createUserRequest) {
-    
+
     RegisterUserCommand command = createUserMapper.toCommand(createUserRequest);
 
     UserRegistrationResult result = registerUserUseCase.execute(command, xRequestID, xFlowID).block();
