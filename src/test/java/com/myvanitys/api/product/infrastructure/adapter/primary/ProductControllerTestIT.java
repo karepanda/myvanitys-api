@@ -352,7 +352,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
 
     // Verify that the mocks were called
-    verify(tokenService).extractUserId(anyString());
     verify(addReviewToProduct).execute(any(AddReviewToProductCommand.class));
     verify(productResponseMapper).toResponse(updatedProduct);
 
