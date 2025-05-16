@@ -21,14 +21,19 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myvanitys.api.common.AbstractIntegrationTest;
+import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
+import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
+import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
+import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
 import com.myvanitys.api.product.infrastructure.adapter.primary.service.TokenService;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,6 +70,12 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     @Bean
     @Primary
+    public AddReviewToProduct addReviewToProduct() {
+      return mock(AddReviewToProduct.class);
+    }
+
+    @Bean
+    @Primary
     public TokenService tokenService() {
       return mock(TokenService.class);
     }
@@ -83,6 +94,9 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
   @Autowired
   private ProductResponseMapper productResponseMapper;
+
+  @Autowired
+  private AddReviewToProduct addReviewToProduct;
 
   @Autowired
   private TokenService tokenService;
@@ -111,7 +125,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
     Category category2 = new Category(new EntityId(UUID.randomUUID()), "Test Category2");
 
-    // Crear relaciones de usuario para cada producto
+    // Create user relations for each product
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
 
@@ -121,7 +135,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     Set<ProductUserRelation> relations2 = new HashSet<>();
     relations2.add(ProductUserRelation.create(productId2, entityId));
 
-    // Usar métodos de fábrica para crear productos
+    // Use factory methods to create products
     List<Product> domainProducts = Arrays.asList(
         Product.reconstruct(
             productId1,
@@ -129,8 +143,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             "Brand 1",
             category,
             "#FF0000",
-            new ArrayList<>(),  // Sin reviews
-            relations1          // Con relación al usuario
+            new ArrayList<>(),
+            relations1
         ),
         Product.reconstruct(
             productId2,
@@ -138,8 +152,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             "Brand 2",
             category2,
             "#00FF00",
-            new ArrayList<>(),  // Sin reviews
-            relations2          // Con relación al usuario
+            new ArrayList<>(),
+            relations2
         )
     );
 
@@ -274,4 +288,83 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(0)));
   }
+
+  @Test
+  void shouldAddReviewToProduct() throws Exception {
+    // Given
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    String acceptLanguage = "en-US";
+    String userAgent = "Mozilla/5.0 (Test)";
+
+    // Print the userId to debug
+    System.out.println("Test userId: " + userId);
+
+    // Create domain model objects - Ensure entityId is properly constructed
+    EntityId entityId = new EntityId(userId);
+    System.out.println("EntityId value: " + entityId.getValue());
+
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+
+    EntityId productId = new EntityId(UUID.randomUUID());
+    EntityId reviewId = new EntityId(UUID.randomUUID());
+
+    AddReviewRequest request = new AddReviewRequest()
+        .rating(5)
+        .comment("Great product");
+
+    Set<ProductUserRelation> relations = new HashSet<>();
+    relations.add(ProductUserRelation.reconstruct(EntityId.newId(), entityId, productId, reviewId));
+
+    Review review = Review.createWithExistingId(reviewId, entityId, ReviewDetails.create(5, "Great product"));
+    List<Review> reviews = new ArrayList<>();
+    reviews.add(review);
+
+    Product updatedProduct = Product.reconstruct(
+        productId,
+        "Product 1",
+        "Brand 1",
+        category,
+        "#FF0000",
+        reviews,
+        relations
+    );
+
+    // Create API response objects
+    ProductResponse expectedResponse = new ProductResponse()
+        .id(productId.getValue())
+        .name("Product 1")
+        .brand("Brand 1")
+        .colorHex("#FF0000")
+        .averageRating(5.0f);
+
+    // Configure mocks
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
+    when(addReviewToProduct.execute(any(AddReviewToProductCommand.class))).thenReturn(updatedProduct);
+    when(productResponseMapper.toResponse(updatedProduct)).thenReturn(expectedResponse);
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products/{productId}/reviews", productId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-Request-ID", requestId.toString())
+            .header("X-Flow-ID", flowId.toString())
+            .header("Accept-Language", acceptLanguage)
+            .header("User-Agent", userAgent)
+            .header("Authorization", "Bearer 4/P7q7W91")
+            .content(new ObjectMapper().writeValueAsString(request)))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.id").value(productId.getValue().toString()))
+        .andExpect(jsonPath("$.name").value("Product 1"))
+        .andExpect(jsonPath("$.brand").value("Brand 1"))
+        .andExpect(jsonPath("$.colorHex").value("#FF0000"))
+        .andExpect(jsonPath("$.averageRating").value(5));
+
+    // Verify that the mocks were called
+    verify(addReviewToProduct).execute(any(AddReviewToProductCommand.class));
+    verify(productResponseMapper).toResponse(updatedProduct);
+
+
+  }
+
 }

@@ -1,9 +1,5 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
@@ -12,6 +8,7 @@ import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
+import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
@@ -26,6 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @AllArgsConstructor
 public class ProductController implements ProductsApiDelegate {
@@ -37,6 +38,8 @@ public class ProductController implements ProductsApiDelegate {
   private final CreateProductUseCase createProductUseCase;
 
   private final TokenService tokenService;
+
+  private final AddReviewToProduct addReviewToProduct;
 
   @Override
   public ResponseEntity<ProductResponse> createProduct(UUID xRequestID,
@@ -124,14 +127,12 @@ public class ProductController implements ProductsApiDelegate {
         Instant.now()
     );
 
-    // TODO: Create AddReviewUseCase and inject it into the constructor
-    // Product updatedProduct = AddReviewToProduct.execute(command);
+    Product updatedProduct = addReviewToProduct.execute(command);
 
-    // TODO: Map the response
-    // ProductResponse response = productResponseMapper.toResponse(updatedProduct);
+    ProductResponse response = productResponseMapper.toResponse(updatedProduct);
 
     // Return placeholder for implementation
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
   }
 
   private String extractBearerToken() {

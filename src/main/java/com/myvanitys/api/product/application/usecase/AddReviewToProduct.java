@@ -8,14 +8,16 @@ import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class AddReviewToProduct implements AddReviewToProductUseCase {
 
-  ProductRepository productRepository;
+  private final ProductRepository productRepository;
 
   @Override
+  @Transactional
   public Product execute(AddReviewToProductCommand command) {
     // Find the product
     Product product = findProductOrThrow(command.productId());
