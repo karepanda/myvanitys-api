@@ -1,5 +1,24 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.model.v1.AddReviewRequest;
@@ -30,14 +49,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.util.*;
-
-import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @SpringBootTest
 @AutoConfigureMockMvc
 class ProductControllerTestIT extends AbstractIntegrationTest {
@@ -59,7 +70,9 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     @Bean
     @Primary
-    public AddReviewToProduct addReviewToProduct() {return mock(AddReviewToProduct.class);}
+    public AddReviewToProduct addReviewToProduct() {
+      return mock(AddReviewToProduct.class);
+    }
 
     @Bean
     @Primary
@@ -112,7 +125,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
     Category category2 = new Category(new EntityId(UUID.randomUUID()), "Test Category2");
 
-    // Crear relaciones de usuario para cada producto
+    // Create user relations for each product
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
 
@@ -122,7 +135,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     Set<ProductUserRelation> relations2 = new HashSet<>();
     relations2.add(ProductUserRelation.create(productId2, entityId));
 
-    // Usar métodos de fábrica para crear productos
+    // Use factory methods to create products
     List<Product> domainProducts = Arrays.asList(
         Product.reconstruct(
             productId1,
@@ -130,8 +143,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             "Brand 1",
             category,
             "#FF0000",
-            new ArrayList<>(),  // Sin reviews
-            relations1          // Con relación al usuario
+            new ArrayList<>(),
+            relations1
         ),
         Product.reconstruct(
             productId2,
@@ -139,8 +152,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             "Brand 2",
             category2,
             "#00FF00",
-            new ArrayList<>(),  // Sin reviews
-            relations2          // Con relación al usuario
+            new ArrayList<>(),
+            relations2
         )
     );
 
@@ -294,40 +307,37 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
 
-    // Crear relaciones de usuario para cada producto
     EntityId productId = new EntityId(UUID.randomUUID());
     EntityId reviewId = new EntityId(UUID.randomUUID());
 
-    // Crear el request para la review
     AddReviewRequest request = new AddReviewRequest()
-            .rating(5)
-            .comment("Great product");
-
+        .rating(5)
+        .comment("Great product");
 
     Set<ProductUserRelation> relations = new HashSet<>();
-    relations.add(ProductUserRelation.reconstruct(EntityId.newId(),entityId, productId, reviewId));
+    relations.add(ProductUserRelation.reconstruct(EntityId.newId(), entityId, productId, reviewId));
 
     Review review = Review.createWithExistingId(reviewId, entityId, ReviewDetails.create(5, "Great product"));
     List<Review> reviews = new ArrayList<>();
     reviews.add(review);
 
     Product updatedProduct = Product.reconstruct(
-            productId,
-            "Product 1",
-            "Brand 1",
-            category,
-            "#FF0000",
-            reviews,
-            relations          // Con relación al usuario
+        productId,
+        "Product 1",
+        "Brand 1",
+        category,
+        "#FF0000",
+        reviews,
+        relations
     );
 
     // Create API response objects
     ProductResponse expectedResponse = new ProductResponse()
-            .id(productId.getValue())
-            .name("Product 1")
-            .brand("Brand 1")
-            .colorHex("#FF0000")
-            .averageRating(5.0f);
+        .id(productId.getValue())
+        .name("Product 1")
+        .brand("Brand 1")
+        .colorHex("#FF0000")
+        .averageRating(5.0f);
 
     // Configure mocks
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
@@ -349,7 +359,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
         .andExpect(jsonPath("$.brand").value("Brand 1"))
         .andExpect(jsonPath("$.colorHex").value("#FF0000"))
         .andExpect(jsonPath("$.averageRating").value(5));
-
 
     // Verify that the mocks were called
     verify(addReviewToProduct).execute(any(AddReviewToProductCommand.class));

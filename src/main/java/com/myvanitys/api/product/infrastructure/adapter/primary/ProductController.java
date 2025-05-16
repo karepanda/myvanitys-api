@@ -127,10 +127,8 @@ public class ProductController implements ProductsApiDelegate {
         Instant.now()
     );
 
-    //Create AddReviewUseCase and inject it into the constructor
     Product updatedProduct = addReviewToProduct.execute(command);
 
-    //Map the response
     ProductResponse response = productResponseMapper.toResponse(updatedProduct);
 
     // Return placeholder for implementation
