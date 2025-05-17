@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.Assert.assertTrue;
 
 class JpaProductRepositoryIT extends AbstractJpaProductTest {
 
@@ -273,12 +274,12 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product);
 
     // When
-    Optional<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
+    List<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
+
 
     // Then
-    assertThat(foundProduct)
-        .isPresent()
-        .hasValueSatisfying(productEntity -> assertThat(productEntity.getName()).isEqualTo(searchTerm));
+    assertTrue(foundProduct.stream().allMatch(productEntity -> productEntity.getName().equals(searchTerm)));
+
   }
 
   @Test
@@ -292,12 +293,11 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product);
 
     // When
-    Optional<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
+    List<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
+
 
     // Then
-    assertThat(foundProduct)
-            .isPresent()
-            .hasValueSatisfying(productEntity -> assertThat(productEntity.getBrand()).isEqualTo(searchTerm));
+    assertTrue(foundProduct.stream().allMatch(productEntity -> productEntity.getBrand().equals(searchTerm)));
   }
 
   private CategoryEntity createSampleCategory(String name) {

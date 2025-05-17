@@ -41,7 +41,7 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
   /**
    * Find product by name and brand
    */
-  Optional<ProductEntity> findByNameOrBrand(String name, String brand);
+  List<ProductEntity> findByNameOrBrand(String name, String brand);
 
   @Query("SELECT p FROM ProductEntity p JOIN CategoryEntity c ON p.categoryId = c.categoryId WHERE c.name = :categoryName")
   List<ProductEntity> findByCategoryName(@Param("categoryName") String categoryName);
