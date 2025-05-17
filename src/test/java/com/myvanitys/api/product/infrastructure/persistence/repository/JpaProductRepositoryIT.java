@@ -1,17 +1,18 @@
 package com.myvanitys.api.product.infrastructure.persistence.repository;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
+import org.apache.logging.log4j.util.Strings;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 class JpaProductRepositoryIT extends AbstractJpaProductTest {
 
@@ -259,6 +260,44 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     // Then
     Optional<ProductEntity> deletedProduct = jpaProductRepository.findById(id);
     assertThat(deletedProduct).isEmpty();
+  }
+
+  @Test
+  void shouldFindByNameOrBrandWhenExistNameReturn() {
+    // Given
+    final String searchTerm = "Unique Product Name";
+    CategoryEntity category = createSampleCategory("Some Category");
+    CategoryEntity savedCategory = jpaCategoryRepository.save(category);
+
+    ProductEntity product = createSampleProduct(searchTerm, Strings.EMPTY, savedCategory);
+    jpaProductRepository.save(product);
+
+    // When
+    Optional<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
+
+    // Then
+    assertThat(foundProduct)
+        .isPresent()
+        .hasValueSatisfying(productEntity -> assertThat(productEntity.getName()).isEqualTo(searchTerm));
+  }
+
+  @Test
+  void shouldFindByNameOrBrandWhenExistBrandReturn() {
+    // Given
+    final String searchTerm = "Unique Product Brand";
+    CategoryEntity category = createSampleCategory("Some Category");
+    CategoryEntity savedCategory = jpaCategoryRepository.save(category);
+
+    ProductEntity product = createSampleProduct( Strings.EMPTY,searchTerm, savedCategory);
+    jpaProductRepository.save(product);
+
+    // When
+    Optional<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
+
+    // Then
+    assertThat(foundProduct)
+            .isPresent()
+            .hasValueSatisfying(productEntity -> assertThat(productEntity.getBrand()).isEqualTo(searchTerm));
   }
 
   private CategoryEntity createSampleCategory(String name) {

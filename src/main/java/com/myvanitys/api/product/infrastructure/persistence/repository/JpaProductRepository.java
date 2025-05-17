@@ -1,15 +1,15 @@
 package com.myvanitys.api.product.infrastructure.persistence.repository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * JPA repository for product entities
@@ -41,7 +41,7 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
   /**
    * Find product by name and brand
    */
-  Optional<ProductEntity> findByNameAndBrand(String name, String brand);
+  Optional<ProductEntity> findByNameOrBrand(String name, String brand);
 
   @Query("SELECT p FROM ProductEntity p JOIN CategoryEntity c ON p.categoryId = c.categoryId WHERE c.name = :categoryName")
   List<ProductEntity> findByCategoryName(@Param("categoryName") String categoryName);
