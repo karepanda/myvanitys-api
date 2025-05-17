@@ -10,7 +10,7 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
-public class FinProductByTerm implements FindProductByTermUseCase {
+public class FindProductByTerm implements FindProductByTermUseCase {
 
     private final JpaProductRepository jpaProductRepository;
 
