@@ -1,8 +1,13 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
+import com.myvanitys.api.model.v1.ProductSearchResponse;
 import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
@@ -22,10 +27,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -62,10 +63,8 @@ public class ProductController implements ProductsApiDelegate {
         userId
     );
 
-    // Execute the use case
     Product createdProduct = createProductUseCase.execute(command);
 
-    // Map the response
     ProductResponse response = productResponseMapper.toResponse(createdProduct);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -88,20 +87,29 @@ public class ProductController implements ProductsApiDelegate {
       String acceptLanguage,
       String userAgent) {
 
-    // Wrap the raw UUID in a domain-specific identifier
     final EntityId userIdValue = getUserId();
 
-    // Create the query object
     FindProductUserQuery query = new FindProductUserQuery(userIdValue);
-
-    // Execute the use case to fetch domain products
     List<Product> domainProducts = findProductUserUseCase.query(query);
-
-    // Map domain products to API response objects
     List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
 
-    // Return the response with status 200 OK
     return ResponseEntity.ok(responseProducts);
+  }
+
+  @Override
+  public ResponseEntity<ProductSearchResponse> searchProducts(
+      String query,
+      UUID xRequestID,
+      UUID xFlowID,
+      String acceptLanguage,
+      String userAgent
+  ) {
+    // 1. Call the use case
+    // 2. Map the API response
+    // 3. Wrap in your composite response (ProductSearchResponse)
+    // 4. Return with 200 OK
+
+    return ResponseEntity.ok(new ProductSearchResponse());
   }
 
   @Override
