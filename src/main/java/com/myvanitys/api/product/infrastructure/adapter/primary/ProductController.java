@@ -1,9 +1,5 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
@@ -14,6 +10,7 @@ import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
+import com.myvanitys.api.product.application.usecase.FindProductByTerm;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
@@ -28,6 +25,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @AllArgsConstructor
 public class ProductController implements ProductsApiDelegate {
@@ -41,6 +42,8 @@ public class ProductController implements ProductsApiDelegate {
   private final TokenService tokenService;
 
   private final AddReviewToProduct addReviewToProduct;
+
+  private final FindProductByTerm findProductByTerm;
 
   @Override
   public ResponseEntity<ProductResponse> createProduct(UUID xRequestID,
@@ -105,11 +108,13 @@ public class ProductController implements ProductsApiDelegate {
       String userAgent
   ) {
     // 1. Call the use case
+    final List <Product> products = findProductByTerm.query(query);
     // 2. Map the API response
+    List<ProductResponse> responseProducts = productResponseMapper.toResponseList(products);
     // 3. Wrap in your composite response (ProductSearchResponse)
+    ProductSearchResponse productSearchResponse = new ProductSearchResponse().content(responseProducts);
     // 4. Return with 200 OK
-
-    return ResponseEntity.ok(new ProductSearchResponse());
+    return ResponseEntity.ok(productSearchResponse);
   }
 
   @Override
