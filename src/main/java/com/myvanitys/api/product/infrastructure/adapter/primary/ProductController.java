@@ -3,12 +3,14 @@ package com.myvanitys.api.product.infrastructure.adapter.primary;
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
+import com.myvanitys.api.model.v1.ProductSearchResponse;
 import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
+import com.myvanitys.api.product.application.usecase.FindProductByTerm;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
@@ -41,6 +43,8 @@ public class ProductController implements ProductsApiDelegate {
 
   private final AddReviewToProduct addReviewToProduct;
 
+  private final FindProductByTerm findProductByTerm;
+
   @Override
   public ResponseEntity<ProductResponse> createProduct(UUID xRequestID,
       UUID xFlowID,
@@ -62,10 +66,8 @@ public class ProductController implements ProductsApiDelegate {
         userId
     );
 
-    // Execute the use case
     Product createdProduct = createProductUseCase.execute(command);
 
-    // Map the response
     ProductResponse response = productResponseMapper.toResponse(createdProduct);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -88,20 +90,31 @@ public class ProductController implements ProductsApiDelegate {
       String acceptLanguage,
       String userAgent) {
 
-    // Wrap the raw UUID in a domain-specific identifier
     final EntityId userIdValue = getUserId();
 
-    // Create the query object
     FindProductUserQuery query = new FindProductUserQuery(userIdValue);
-
-    // Execute the use case to fetch domain products
     List<Product> domainProducts = findProductUserUseCase.query(query);
-
-    // Map domain products to API response objects
     List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
 
-    // Return the response with status 200 OK
     return ResponseEntity.ok(responseProducts);
+  }
+
+  @Override
+  public ResponseEntity<ProductSearchResponse> searchProducts(
+      String query,
+      UUID xRequestID,
+      UUID xFlowID,
+      String acceptLanguage,
+      String userAgent
+  ) {
+
+    final List <Product> products = findProductByTerm.query(query);
+
+    List<ProductResponse> responseProducts = productResponseMapper.toResponseList(products);
+
+    ProductSearchResponse productSearchResponse = new ProductSearchResponse().content(responseProducts);
+
+    return ResponseEntity.ok(productSearchResponse);
   }
 
   @Override
