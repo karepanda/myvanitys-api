@@ -107,13 +107,13 @@ public class ProductController implements ProductsApiDelegate {
       String acceptLanguage,
       String userAgent
   ) {
-    // 1. Call the use case
+
     final List <Product> products = findProductByTerm.query(query);
-    // 2. Map the API response
+
     List<ProductResponse> responseProducts = productResponseMapper.toResponseList(products);
-    // 3. Wrap in your composite response (ProductSearchResponse)
+
     ProductSearchResponse productSearchResponse = new ProductSearchResponse().content(responseProducts);
-    // 4. Return with 200 OK
+
     return ResponseEntity.ok(productSearchResponse);
   }
 
