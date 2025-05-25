@@ -1,5 +1,9 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
@@ -24,10 +28,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -54,10 +54,8 @@ public class ProductController implements ProductsApiDelegate {
 
     final EntityId userId = getUserId();
 
-    // Create EntityId for categoryId
     EntityId categoryId = new EntityId(createProductRequest.getCategoryId());
 
-    // Create command with all necessary data
     CreateProductCommand command = new CreateProductCommand(
         createProductRequest.getName(),
         createProductRequest.getBrand(),
@@ -71,15 +69,6 @@ public class ProductController implements ProductsApiDelegate {
     ProductResponse response = productResponseMapper.toResponse(createdProduct);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
-  }
-
-  private EntityId getUserId() {
-    // Extract the bearer token from the authorization header
-    String bearerToken = extractBearerToken();
-
-    // Get the userId from the token
-    UUID userIdValue = tokenService.extractUserId(bearerToken);
-    return new EntityId(userIdValue);
   }
 
   @Override
@@ -108,7 +97,7 @@ public class ProductController implements ProductsApiDelegate {
       String userAgent
   ) {
 
-    final List <Product> products = findProductByTerm.query(query);
+    final List<Product> products = findProductByTerm.query(query);
 
     List<ProductResponse> responseProducts = productResponseMapper.toResponseList(products);
 
@@ -125,13 +114,8 @@ public class ProductController implements ProductsApiDelegate {
       String userAgent,
       AddReviewRequest addReviewRequest) {
 
-    // Get the user ID from the token
     final EntityId userId = getUserId();
-
-    // Create EntityId for productId
     EntityId productEntityId = new EntityId(productId);
-
-    // Create command with all necessary data
     AddReviewToProductCommand command = new AddReviewToProductCommand(
         userId,
         productEntityId,
@@ -144,8 +128,14 @@ public class ProductController implements ProductsApiDelegate {
 
     ProductResponse response = productResponseMapper.toResponse(updatedProduct);
 
-    // Return placeholder for implementation
     return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+  }
+
+  private EntityId getUserId() {
+
+    String bearerToken = extractBearerToken();
+    UUID userIdValue = tokenService.extractUserId(bearerToken);
+    return new EntityId(userIdValue);
   }
 
   private String extractBearerToken() {
