@@ -2,7 +2,7 @@ package com.myvanitys.api.product.application.usecase;
 
 import com.myvanitys.api.product.application.port.primary.FindProductAllUseCase;
 import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
+import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,14 +12,11 @@ import java.util.List;
 @AllArgsConstructor
 public class FindProductAll implements FindProductAllUseCase {
 
-    private final JpaProductRepository jpaProductRepository;
-
-    private final FindProductService findProductService;
+    private final ProductRepository productRepository;
 
     public List<Product> query() {
-        final var productEntities = jpaProductRepository.findAll();
-
-        return findProductService.findProducts(productEntities);
+        return productRepository.findAll();
+        
     }
 
 
