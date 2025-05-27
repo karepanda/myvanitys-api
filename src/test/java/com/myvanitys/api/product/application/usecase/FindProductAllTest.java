@@ -15,7 +15,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class FindProductTest {
+class FindProductAllTest {
 
     @Mock
     private ProductRepository productRepository;
