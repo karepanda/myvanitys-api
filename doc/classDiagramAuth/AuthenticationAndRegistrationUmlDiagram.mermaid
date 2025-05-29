@@ -1,0 +1,58 @@
+classDiagram
+    %% Interfaces de Caso de Uso
+    class RegisterUserUseCase {
+        <<interface>>
+        + register(command: RegisterUserCommand): void
+    }
+    
+    class GoogleAuthenticationUseCase {
+        <<interface>>
+        + authenticate(command: GoogleAuthCommand): UserSession
+    }
+    
+    %% Comandos para los Casos de Uso
+    class RegisterUserCommand {
+        - email: String
+        - name: String
+        - pictureUrl: String
+        + RegisterUserCommand(email, name, pictureUrl)
+        + getters()
+    }
+    
+    class GoogleAuthCommand {
+        - token: String
+        + GoogleAuthCommand(token)
+        + getToken(): String
+    }
+    
+    %% Servicios que implementan los Casos de Uso
+    class RegisterUserService {
+        - userRepository: UserRepository
+        + RegisterUserService(userRepository)
+        + register(command: RegisterUserCommand): void
+    }
+    
+    class GoogleAuthenticationService {
+        - googleAuthClient: GoogleAuthClient
+        - userRepository: UserRepository
+        - tokenGenerator: TokenGenerator
+        + GoogleAuthenticationService(googleAuthClient, userRepository, tokenGenerator)
+        + authenticate(command: GoogleAuthCommand): UserSession
+    }
+
+    %% Relaciones entre clases
+    RegisterUserUseCase <|.. RegisterUserService : implementa
+    GoogleAuthenticationUseCase <|.. GoogleAuthenticationService : implementa
+    
+    RegisterUserService --> RegisterUserCommand : usa
+    GoogleAuthenticationService --> GoogleAuthCommand : usa
+    
+    GoogleAuthenticationService ..> UserSession : produce
+    GoogleAuthenticationService --> GoogleAuthClient : usa
+    GoogleAuthenticationService --> TokenGenerator : usa
+    GoogleAuthenticationService --> UserRepository : usa
+    
+    RegisterUserService --> UserRepository : usa
+    
+    GoogleAuthenticationUseCase ..> UserSession : produce
+    RegisterUserUseCase ..> User : produce
