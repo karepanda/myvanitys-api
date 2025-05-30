@@ -1,0 +1,62 @@
+classDiagram
+    %% Puertos Primarios (Interfaces de entrada)
+    class RegisterUserUseCase {
+        <<puertoprimario>>
+        + register(command: RegisterUserCommand): UserRegistrationResult
+    }
+    
+    class GoogleAuthenticationUseCase {
+        <<puertoprimario>>
+        + authenticate(command: GoogleAuthCommand): UserSession
+    }
+    
+    %% Comandos (Objetos de transferencia de datos para casos de uso)
+    class RegisterUserCommand {
+        <<comando>>
+        - email: String
+        - name: String
+        - pictureUrl: String
+        + RegisterUserCommand(email, name, pictureUrl)
+        + getters()
+    }
+    
+    class GoogleAuthCommand {
+        <<comando>>
+        - token: String
+        + GoogleAuthCommand(token)
+        + getToken(): String
+    }
+    
+    %% Resultados de operaciones
+    class UserRegistrationResult {
+        <<resultado>>
+        - session: UserSession
+        + UserRegistrationResult(session)
+        + session(): UserSession
+    }
+    
+    %% Servicios (Implementaciones de los puertos primarios)
+    class GoogleAuthentication {
+        <<servicio>>
+        - googleAuthClient: GoogleAuthClient
+        - userRepository: UserRepository
+        - tokenGenerator: TokenGenerator
+        + GoogleAuthentication(googleAuthClient, userRepository, tokenGenerator)
+        + authenticate(command: GoogleAuthCommand): UserSession
+    }
+    
+    class RegisterUser {
+        <<servicio>>
+        - userRepository: UserRepository
+        + RegisterUser(userRepository)
+        + register(command: RegisterUserCommand): UserRegistrationResult
+    }
+
+    %% Relaciones entre clases
+    RegisterUserUseCase <|.. RegisterUser : implementa
+    GoogleAuthenticationUseCase <|.. GoogleAuthentication : implementa
+    
+    RegisterUser --> RegisterUserCommand : usa
+    GoogleAuthentication --> GoogleAuthCommand : usa
+    
+    RegisterUser ..> UserRegistrationResult : produce
