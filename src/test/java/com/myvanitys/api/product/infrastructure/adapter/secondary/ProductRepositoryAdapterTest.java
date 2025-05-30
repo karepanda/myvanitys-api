@@ -419,4 +419,193 @@ class ProductRepositoryAdapterTest {
 
   }
 
+  @Nested
+  @DisplayName("findAll")
+  class findAll{
+    @Test
+    void when_thereAreProducts_then_returnsListOfAllProducts() {
+      // Given
+      // Definir IDs de productos
+      final EntityId productEntityId1 = EntityId.newId();
+      final EntityId productEntityId2 = EntityId.newId();
+
+      // Definir IDs de categorías
+      final UUID categoryId1 = UUID.randomUUID();
+      final UUID categoryId2 = UUID.randomUUID();
+
+      // Crear entidades de producto con IDs de categoría específicos
+      final ProductEntity productEntity1 = new ProductEntity();
+      productEntity1.setProductId(productEntityId1.getValue());
+      productEntity1.setName("Product 1");
+      productEntity1.setCategoryId(categoryId1);
+
+      final ProductEntity productEntity2 = new ProductEntity();
+      productEntity2.setProductId(productEntityId2.getValue());
+      productEntity2.setName("Product 2");
+      productEntity2.setCategoryId(categoryId2);
+
+      // Preparar entidades de categoría
+      final CategoryEntity categoryEntity1 = new CategoryEntity();
+      categoryEntity1.setCategoryId(categoryId1);
+      categoryEntity1.setName("Category 1");
+
+      final CategoryEntity categoryEntity2 = new CategoryEntity();
+      categoryEntity2.setCategoryId(categoryId2);
+      categoryEntity2.setName("Category 2");
+
+      // Preparar objetos de dominio
+      final Category category1 = new Category(new EntityId(categoryId1), "Category 1");
+      final Category category2 = new Category(new EntityId(categoryId2), "Category 2");
+
+      final var reviews01 = new ArrayList<>(
+              List.of(
+                      Review.createWithExistingId(
+                              EntityId.newId(),
+                              EntityId.newId(),
+                              ReviewDetails.of(5, "Great review", Instant.now(), Instant.now(), null)
+                      )
+              )
+      );
+
+      final var reviews02 = new ArrayList<>(
+              List.of(
+                      Review.createWithExistingId(
+                              EntityId.newId(),
+                              EntityId.newId(),
+                              ReviewDetails.of(4, "Good review", Instant.now(), Instant.now(), null)
+                      )
+              )
+      );
+
+      // Crear productos de dominio
+      final Product product1 = Product.reconstruct(
+              productEntityId1,
+              "Product 1",
+              "Brand 1",
+              category1,
+              "#FFFFFF",
+              reviews01,
+              null
+      );
+
+      final Product product2 = Product.reconstruct(
+              productEntityId2,
+              "Product 2",
+              "Brand 2",
+              category2,
+              "#000000",
+              reviews02,
+              null
+      );
+
+      // Configurar mocks para el repositorio de productos
+      when(jpaProductRepository.findAll()).thenReturn(List.of(productEntity1, productEntity2));
+
+      // Configurar mocks para categorías
+      when(jpaCategoryRepository.findById(categoryId1)).thenReturn(Optional.of(categoryEntity1));
+      when(jpaCategoryRepository.findById(categoryId2)).thenReturn(Optional.of(categoryEntity2));
+      when(categoryMapper.toDomain(categoryEntity1)).thenReturn(category1);
+      when(categoryMapper.toDomain(categoryEntity2)).thenReturn(category2);
+
+      // Configurar mocks para reviews
+      when(jpaProductRepository.findReviewsByProductIdAndUserId(productEntityId1.getValue()))
+              .thenReturn(List.of(new ReviewEntity()));
+      when(jpaProductRepository.findReviewsByProductIdAndUserId(productEntityId2.getValue()))
+              .thenReturn(List.of(new ReviewEntity()));
+      when(reviewMapper.toDomain(any(ReviewEntity.class)))
+              .thenReturn(reviews01.getFirst())
+              .thenReturn(reviews02.getFirst());
+
+      // Configurar mocks para mapper de productos
+      when(productMapper.toDomain(eq(productEntity1), eq(category1), anyList())).thenReturn(product1);
+      when(productMapper.toDomain(eq(productEntity2), eq(category2), anyList())).thenReturn(product2);
+
+      // When
+      final List<Product> result = target.findAll();
+
+      // Then
+      assertThat(result)
+              .hasSize(2)
+              .containsExactly(product1, product2);
+
+      verify(jpaProductRepository).findAll();
+      verify(jpaCategoryRepository).findById(categoryId1);
+      verify(jpaCategoryRepository).findById(categoryId2);
+      verify(categoryMapper).toDomain(categoryEntity1);
+      verify(categoryMapper).toDomain(categoryEntity2);
+      verify(jpaProductRepository).findReviewsByProductIdAndUserId(productEntityId1.getValue());
+      verify(jpaProductRepository).findReviewsByProductIdAndUserId(productEntityId2.getValue());
+      verify(productMapper).toDomain(eq(productEntity1), eq(category1), anyList());
+      verify(productMapper).toDomain(eq(productEntity2), eq(category2), anyList());
+    }
+
+    @Test
+    void when_noProductsExist_then_returnsEmptyList() {
+      // Given
+      when(jpaProductRepository.findAll()).thenReturn(List.of());
+
+      // When
+      final List<Product> result = target.findAll();
+
+      // Then
+      assertThat(result).isEmpty();
+      verify(jpaProductRepository).findAll();
+      verify(jpaCategoryRepository, never()).findById(any());
+      verify(categoryMapper, never()).toDomain(any());
+      verify(productMapper, never()).toDomain(any(), any(), anyList());
+    }
+
+    @Test
+    void when_dataAccessExceptionOccurs_then_throwsDatabaseException() {
+      // Given
+      when(jpaProductRepository.findAll()).thenThrow(mock(DataAccessException.class));
+
+      // When & Then
+      assertThatThrownBy(() -> target.findAll())
+              .isInstanceOf(DatabaseException.class)
+              .hasMessageContaining("Find all products");
+
+      verify(jpaProductRepository).findAll();
+      verify(jpaCategoryRepository, never()).findById(any());
+      verify(categoryMapper, never()).toDomain(any());
+      verify(productMapper, never()).toDomain(any(), any(), anyList());
+    }
+
+    @Test
+    void when_nullCategoryProduct_then_filtersOutNullProducts() {
+      // Given
+      final EntityId productEntityId = EntityId.newId();
+      final UUID categoryId = UUID.randomUUID();
+
+      final ProductEntity productEntity = new ProductEntity();
+      productEntity.setProductId(productEntityId.getValue());
+      productEntity.setName("Product 1");
+      productEntity.setCategoryId(categoryId);
+
+      final CategoryEntity categoryEntity = new CategoryEntity();
+      categoryEntity.setCategoryId(categoryId);
+      categoryEntity.setName("Category 1");
+
+      final Category category = new Category(new EntityId(categoryId), "Category 1");
+
+      when(jpaProductRepository.findAll()).thenReturn(List.of(productEntity));
+      when(jpaCategoryRepository.findById(categoryId)).thenReturn(Optional.of(categoryEntity));
+      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
+      when(jpaProductRepository.findReviewsByProductIdAndUserId(productEntityId.getValue()))
+              .thenReturn(List.of());
+      when(productMapper.toDomain(eq(productEntity), eq(category), anyList())).thenReturn(null);
+
+      // When
+      final List<Product> result = target.findAll();
+
+      // Then
+      assertThat(result).isEmpty();
+      verify(jpaProductRepository).findAll();
+      verify(jpaCategoryRepository).findById(categoryId);
+      verify(categoryMapper).toDomain(categoryEntity);
+      verify(productMapper).toDomain(eq(productEntity), eq(category), anyList());
+    }
+
+  }
+
 }

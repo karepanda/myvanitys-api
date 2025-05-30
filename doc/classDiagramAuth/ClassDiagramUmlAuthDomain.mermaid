@@ -1,0 +1,94 @@
+classDiagram
+    %% Clasificación por paquetes
+    
+    class DomainException {
+        <<abstract>>
+        # DomainException(message: String)
+        # DomainException(message: String, cause: Throwable)
+    }
+
+    class AuthenticationFailedException {
+        <<exception>>
+        + AuthenticationFailedException(message: String)
+    }
+    
+    class GoogleAuthException {
+        <<exception>>
+        + GoogleAuthException(message: String)
+    }
+    
+    class TokenException {
+        <<exception>>
+        + TokenException(message: String)
+    }
+    
+    class UserAlreadyExistsException {
+        <<exception>>
+        + UserAlreadyExistsException(message: String)
+    }
+    
+    class UserNotFoundException {
+        <<exception>>
+        + UserNotFoundException(message: String)
+    }
+
+    class User {
+        <<model>>
+        - id: UUID
+        - email: String
+        - name: String
+        - pictureUrl: String
+        - createdAt: LocalDateTime
+        - updatedAt: LocalDateTime
+        + User(id, email, name, pictureUrl)
+        + getters/setters()
+    }
+    
+    class UserSession {
+        <<model>>
+        - token: String
+        - user: User
+        + UserSession(token, user)
+        + getToken(): String
+        + getUser(): User
+    }
+    
+    class GoogleUserInfo {
+        <<model>>
+        - id: String
+        - email: String
+        - name: String
+        - pictureUrl: String
+        + GoogleUserInfo(id, email, name, pictureUrl)
+        + getters()
+    }
+    
+    class TokenClaims {
+        <<model>>
+        - userId: UUID
+        - email: String
+        - expirationTime: Long
+        + TokenClaims(userId, email, expirationTime)
+        + getters()
+    }
+
+    class GoogleAuthClient {
+        <<port>>
+        + getUserInfo(token: String): GoogleUserInfo
+    }
+    
+    class TokenGenerator {
+        <<port>>
+        + generateToken(claims: TokenClaims): String
+        + validateToken(token: String): TokenClaims
+    }
+
+    DomainException <|-- AuthenticationFailedException : extiende
+    DomainException <|-- GoogleAuthException : extiende
+    DomainException <|-- TokenException : extiende
+    DomainException <|-- UserAlreadyExistsException : extiende
+    DomainException <|-- UserNotFoundException : extiende
+    
+    UserSession --> User : contiene
+    TokenGenerator ..> TokenClaims : usa
+    GoogleAuthClient ..> GoogleUserInfo : produce

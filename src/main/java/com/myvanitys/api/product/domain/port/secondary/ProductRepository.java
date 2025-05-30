@@ -1,11 +1,11 @@
 package com.myvanitys.api.product.domain.port.secondary;
 
+import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
 
 /**
  * Secondary port for Product repository operations This interface is implemented by adapters in the infrastructure layer
@@ -51,5 +51,10 @@ public interface ProductRepository {
    */
   List<Product> findByUserId(UUID userId);
 
-
+  /**
+   * Find all products
+   *
+   * @return list of all products
+   */
+  List<Product> findAll();
 }

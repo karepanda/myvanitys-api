@@ -1,0 +1,97 @@
+classDiagram
+    %% Primary Adapters
+    class AuthController {
+        <<adapterprimario>>
+        +login(LoginRequest) ResponseEntity
+        +loginWithGoogle(String) ResponseEntity
+    }
+    
+    %% Secondary Adapters
+    class GoogleAuthClientAdapter {
+        <<adaptersecundario>>
+        +exchangeCodeForUserInfo(String, String) Mono~GoogleUserInfo~
+    }
+    
+    class JwtTokenGeneratorAdapter {
+        <<adaptersecundario>>
+        +generateToken(User) String
+    }
+    
+    class UserRepositoryAdapter {
+        <<adaptersecundario>>
+        +findByEmail(String) Optional~User~
+        +save(User) User
+    }
+    
+    %% Infrastructure Ports
+    class UserRepository {
+        <<port>>
+        +findByEmail(String) Optional~User~
+        +save(User) User
+    }
+    
+    %% Configuration classes
+    class JwtProperties {
+        <<config>>
+        -String secretKey
+        -Long expirationTimeInMinutes
+    }
+    
+    class GoogleClientProperties {
+        <<config>>
+        -String clientId
+        -String clientSecret
+        -String redirectUri
+    }
+    
+    class SecurityConfig {
+        <<config>>
+    }
+    
+    class WebClientConfig {
+        <<config>>
+    }
+    
+    class RestTemplateConfig {
+        <<config>>
+        +restTemplate() RestTemplate
+    }
+    
+    %% Security
+    class JwtClaimsAdapter {
+        <<security>>
+    }
+    
+    %% Persistence
+    class UserEntity {
+        <<entity>>
+        -UUID userId
+        -String email
+        -String name
+    }
+    
+    class JpaUserRepository {
+        <<repository>>
+        +findByEmail(String) Optional~UserEntity~
+    }
+    
+    %% Relationships
+    AuthController --> UserRepositoryAdapter : usa
+    GoogleAuthClientAdapter ..> GoogleClientProperties : usa
+    JwtTokenGeneratorAdapter --> JwtProperties : usa
+    UserRepositoryAdapter ..|> UserRepository : implementa
+    UserRepositoryAdapter --> JpaUserRepository : usa
+    JpaUserRepository --> UserEntity : maneja
+    SecurityConfig --> JwtProperties : configura
+    WebClientConfig --> GoogleClientProperties : configura
+    UserRepositoryAdapter --> UserEntity : mapea
+
+    %%class AuthController:::Sky
+    %%class GoogleAuthClientAdapter:::Rose
+    %%class JwtTokenGeneratorAdapter:::Rose
+    %%class UserRepositoryAdapter:::Rose
+    %%class UserRepository:::Aqua
+
+    %%classDef Rose :, stroke-width:1px, stroke-dasharray:none, stroke:#FF5978, fill:#FFDFE5, color:#8E2236
+    %%classDef Sky :, stroke-width:1px, stroke-dasharray:none, stroke:#374D7C, fill:#E2EBFF, color:#374D7C
+    %%classDef Aqua :,stroke-width:1px, stroke-dasharray:none, stroke:#46EDC8, fill:#DEFFF8, color:#378E7A

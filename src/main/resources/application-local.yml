@@ -24,8 +24,8 @@ spring:
 
 google:
   oauth2:
-    client-id: ${GOOGLE_CLIENT_ID}
-    client-secret: ${GOOGLE_CLIENT_SECRET}
+    client-id: 780556869332-1sf3nmlm6df03r73jnh8a5kll8ev3ifo.apps.googleusercontent.com
+    client-secret: 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
     redirect-uri: http://localhost:5173/callback
 
 management:

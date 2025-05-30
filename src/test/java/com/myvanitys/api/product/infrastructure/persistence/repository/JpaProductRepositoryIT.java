@@ -85,6 +85,39 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
   }
 
   @Test
+  void shouldFindAllProducts() {
+    // Given
+    CategoryEntity category = createSampleCategory("Some Category");
+    CategoryEntity savedCategory = jpaCategoryRepository.save(category);
+
+    CategoryEntity category1 = createSampleCategory("Some Category");
+    CategoryEntity savedCategory1 = jpaCategoryRepository.save(category1);
+
+    ProductEntity product = createSampleProduct("Unique Product Name", "Brand X", savedCategory);
+    ProductEntity product1 = createSampleProduct("Unique Product Name1", "Brand X1", savedCategory1);
+
+    jpaProductRepository.save(product);
+    jpaProductRepository.save(product1);
+
+    // When
+    List<ProductEntity> foundProducts = jpaProductRepository.findAll();
+
+    // Then
+    assertThat(foundProducts)
+            .hasSize(2);
+  }
+
+  @Test
+  void shouldFindAllThenReturnEmptyList() {
+    // When
+    List<ProductEntity> foundProducts = jpaProductRepository.findAll();
+
+    // Then
+    assertThat(foundProducts)
+            .isEmpty();
+  }
+
+  @Test
   void shouldFindProductByName() {
     // Given
     CategoryEntity category = createSampleCategory("Some Category");
