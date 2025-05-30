@@ -1,11 +1,5 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.myvanitys.api.common.InfrastructureException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
@@ -25,6 +19,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.util.*;
 
 @Component
 @AllArgsConstructor
@@ -158,6 +155,25 @@ public class ProductRepositoryAdapter implements ProductRepository {
       throw DatabaseException.queryError("Delete product by ID", e);
     }
   }
+
+    @Override
+    public List<Product> findAll() {
+      try {
+        List<ProductEntity> productEntities = jpaProductRepository.findAll();
+
+        return productEntities.stream()
+                .map(productEntity -> {
+                  Category category = getCategoryForProduct(productEntity);
+                  List<Review> reviews = getReviewsForProduct(productEntity.getProductId());
+                  return productMapper.toDomain(productEntity, category, reviews);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+      } catch (DataAccessException e) {
+        log.error("Error finding all products: {}", e.getMessage(), e);
+        throw DatabaseException.queryError("Find all products", e);
+      }
+    }
 
   /**
    * Helper method to get a product's category

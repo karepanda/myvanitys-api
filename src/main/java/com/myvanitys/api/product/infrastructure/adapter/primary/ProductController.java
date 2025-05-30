@@ -1,9 +1,5 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
@@ -11,6 +7,7 @@ import com.myvanitys.api.model.v1.ProductSearchResponse;
 import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
+import com.myvanitys.api.product.application.port.primary.FindProductAllUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
@@ -29,11 +26,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @AllArgsConstructor
 public class ProductController implements ProductsApiDelegate {
 
   private final FindProductUserUseCase findProductUserUseCase;
+
+  private final FindProductAllUseCase findProductAllUseCase;
 
   private final ProductResponseMapper productResponseMapper;
 
@@ -87,6 +90,19 @@ public class ProductController implements ProductsApiDelegate {
 
     return ResponseEntity.ok(responseProducts);
   }
+
+//  @Override
+//  public ResponseEntity<List<ProductResponse>> findProductsAll(
+//          UUID xRequestID,
+//          UUID xFlowID,
+//          String acceptLanguage,
+//          String userAgent) {
+//
+//    List<Product> domainProducts = findProductAllUseCase.query();
+//    List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
+//
+//    return ResponseEntity.ok(responseProducts);
+//  }
 
   @Override
   public ResponseEntity<ProductSearchResponse> searchProducts(
