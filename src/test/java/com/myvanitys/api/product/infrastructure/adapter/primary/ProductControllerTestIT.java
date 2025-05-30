@@ -1,31 +1,14 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
 import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
+import com.myvanitys.api.product.application.command.CreateProductCommand;
+import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
+import com.myvanitys.api.product.application.port.primary.FindProductAllUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
@@ -50,12 +33,26 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.*;
+
+import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 class ProductControllerTestIT extends AbstractIntegrationTest {
 
   @TestConfiguration
   static class TestConfig {
+
+    @Bean
+    @Primary
+    public CreateProductUseCase createProductUseCase() {
+      return mock(CreateProductUseCase.class);
+    }
 
     @Bean
     @Primary
@@ -87,15 +84,24 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
       return mock(FindProductByTerm.class);
     }
 
+    @Bean
+    @Primary
+    public FindProductAllUseCase findProductAllUseCase() {
+      return mock(FindProductAllUseCase.class);
+    }
+
   }
 
   @BeforeEach
   void setUp() {
-    reset(findProductUserUseCase, productResponseMapper, findProductByTerm);
+    reset(findProductUserUseCase, productResponseMapper, findProductByTerm, findProductAllUseCase, createProductUseCase, tokenService, addReviewToProduct);
   }
 
   @Autowired
   private MockMvc mockMvc;
+
+  @Autowired
+  private CreateProductUseCase createProductUseCase;
 
   @Autowired
   private FindProductUserUseCase findProductUserUseCase;
@@ -111,6 +117,9 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
   @Autowired
   private FindProductByTerm findProductByTerm;
+
+  @Autowired
+  private FindProductAllUseCase findProductAllUseCase;
 
   // Constants for required headers
   private static final String ACCEPT_LANGUAGE = "en-US";
@@ -148,38 +157,38 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     // Use factory methods to create products
     List<Product> domainProducts = Arrays.asList(
-        Product.reconstruct(
-            productId1,
-            "Product 1",
-            "Brand 1",
-            category,
-            "#FF0000",
-            new ArrayList<>(),
-            relations1
-        ),
-        Product.reconstruct(
-            productId2,
-            "Product 2",
-            "Brand 2",
-            category2,
-            "#00FF00",
-            new ArrayList<>(),
-            relations2
-        )
+            Product.reconstruct(
+                    productId1,
+                    "Product 1",
+                    "Brand 1",
+                    category,
+                    "#FF0000",
+                    new ArrayList<>(),
+                    relations1
+            ),
+            Product.reconstruct(
+                    productId2,
+                    "Product 2",
+                    "Brand 2",
+                    category2,
+                    "#00FF00",
+                    new ArrayList<>(),
+                    relations2
+            )
     );
 
     // Create API response objects
     List<ProductResponse> responseProducts = Arrays.asList(
-        new ProductResponse()
-            .id(UUID.fromString(domainProducts.get(0).getId().getValue().toString()))
-            .name(domainProducts.get(0).getName())
-            .brand(domainProducts.get(0).getBrand())
-            .colorHex(domainProducts.get(0).getColorHex()),
-        new ProductResponse()
-            .id(UUID.fromString(domainProducts.get(1).getId().getValue().toString()))
-            .name(domainProducts.get(1).getName())
-            .brand(domainProducts.get(1).getBrand())
-            .colorHex(domainProducts.get(1).getColorHex())
+            new ProductResponse()
+                    .id(UUID.fromString(domainProducts.get(0).getId().getValue().toString()))
+                    .name(domainProducts.get(0).getName())
+                    .brand(domainProducts.get(0).getBrand())
+                    .colorHex(domainProducts.get(0).getColorHex()),
+            new ProductResponse()
+                    .id(UUID.fromString(domainProducts.get(1).getId().getValue().toString()))
+                    .name(domainProducts.get(1).getName())
+                    .brand(domainProducts.get(1).getBrand())
+                    .colorHex(domainProducts.get(1).getColorHex())
     );
 
     // Configure mocks
@@ -189,21 +198,21 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-Request-ID", requestId.toString())
-            .header("X-Flow-ID", flowId.toString())
-            .header("Accept-Language", acceptLanguage)
-            .header("User-Agent", userAgent)
-            .header("Authorization", "Bearer 4/P7q7W91"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", acceptLanguage)
+                    .header("User-Agent", userAgent)
+                    .header("Authorization", "Bearer 4/P7q7W91"))
 
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$", hasSize(2)))
-        .andExpect(jsonPath("$[0].name").value("Product 1"))
-        .andExpect(jsonPath("$[0].brand").value("Brand 1"))
-        .andExpect(jsonPath("$[0].colorHex").value("#FF0000"))
-        .andExpect(jsonPath("$[1].name").value("Product 2"))
-        .andExpect(jsonPath("$[1].brand").value("Brand 2"))
-        .andExpect(jsonPath("$[1].colorHex").value("#00FF00"));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].name").value("Product 1"))
+            .andExpect(jsonPath("$[0].brand").value("Brand 1"))
+            .andExpect(jsonPath("$[0].colorHex").value("#FF0000"))
+            .andExpect(jsonPath("$[1].name").value("Product 2"))
+            .andExpect(jsonPath("$[1].brand").value("Brand 2"))
+            .andExpect(jsonPath("$[1].colorHex").value("#00FF00"));
 
     // Simple verification
     verify(findProductUserUseCase).query(any(FindProductUserQuery.class));
@@ -214,20 +223,20 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     // Given
     UUID userId = UUID.randomUUID();
     CreateProductRequest request = new CreateProductRequest()
-        .name("Test Product")
-        .brand("Test Brand")
-        .colorHex("#FF5733");
+            .name("Test Product")
+            .brand("Test Brand")
+            .colorHex("#FF5733");
 
     // When/Then - Test create endpoint
     mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(new ObjectMapper().writeValueAsString(request)))
-        .andExpect(status().isBadRequest());
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(new ObjectMapper().writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
 
     // When/Then - Test find by user endpoint
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
-            .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isBadRequest());
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -239,18 +248,18 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     // Configure mock to throw exception
     when(findProductUserUseCase.query(any(FindProductUserQuery.class)))
-        .thenThrow(new RuntimeException("Internal service error"));
+            .thenThrow(new RuntimeException("Internal service error"));
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-Request-ID", requestId.toString())
-            .header("X-Flow-ID", flowId.toString())
-            .header("Accept-Language", ACCEPT_LANGUAGE)
-            .header("User-Agent", USER_AGENT)
-            .header("Authorization", "Bearer 4/P7q7W91"))
-        .andExpect(status().isInternalServerError());
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT)
+                    .header("Authorization", "Bearer 4/P7q7W91"))
+            .andExpect(status().isInternalServerError());
   }
 
   @Test
@@ -262,21 +271,21 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     // Configure mock to return an empty list
     when(findProductUserUseCase.query(any(FindProductUserQuery.class)))
-        .thenReturn(Collections.emptyList());
+            .thenReturn(Collections.emptyList());
     when(productResponseMapper.toResponseList(anyList()))
-        .thenReturn(Collections.emptyList());
+            .thenReturn(Collections.emptyList());
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-Request-ID", requestId.toString())
-            .header("X-Flow-ID", flowId.toString())
-            .header("Accept-Language", ACCEPT_LANGUAGE)
-            .header("User-Agent", USER_AGENT)
-            .header("Authorization", "Bearer 4/P7q7W91"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$", hasSize(0)));
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT)
+                    .header("Authorization", "Bearer 4/P7q7W91"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(0)));
   }
 
   @Test
@@ -301,8 +310,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     EntityId reviewId = new EntityId(UUID.randomUUID());
 
     AddReviewRequest request = new AddReviewRequest()
-        .rating(5)
-        .comment("Great product");
+            .rating(5)
+            .comment("Great product");
 
     Set<ProductUserRelation> relations = new HashSet<>();
     relations.add(ProductUserRelation.reconstruct(EntityId.newId(), entityId, productId, reviewId));
@@ -312,22 +321,22 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     reviews.add(review);
 
     Product updatedProduct = Product.reconstruct(
-        productId,
-        "Product 1",
-        "Brand 1",
-        category,
-        "#FF0000",
-        reviews,
-        relations
+            productId,
+            "Product 1",
+            "Brand 1",
+            category,
+            "#FF0000",
+            reviews,
+            relations
     );
 
     // Create API response objects
     ProductResponse expectedResponse = new ProductResponse()
-        .id(productId.getValue())
-        .name("Product 1")
-        .brand("Brand 1")
-        .colorHex("#FF0000")
-        .averageRating(5.0f);
+            .id(productId.getValue())
+            .name("Product 1")
+            .brand("Brand 1")
+            .colorHex("#FF0000")
+            .averageRating(5.0f);
 
     // Configure mocks
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
@@ -336,19 +345,19 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products/{productId}/reviews", productId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-Request-ID", requestId.toString())
-            .header("X-Flow-ID", flowId.toString())
-            .header("Accept-Language", acceptLanguage)
-            .header("User-Agent", userAgent)
-            .header("Authorization", "Bearer 4/P7q7W91")
-            .content(new ObjectMapper().writeValueAsString(request)))
-        .andExpect(status().isAccepted())
-        .andExpect(jsonPath("$.id").value(productId.getValue().toString()))
-        .andExpect(jsonPath("$.name").value("Product 1"))
-        .andExpect(jsonPath("$.brand").value("Brand 1"))
-        .andExpect(jsonPath("$.colorHex").value("#FF0000"))
-        .andExpect(jsonPath("$.averageRating").value(5));
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", acceptLanguage)
+                    .header("User-Agent", userAgent)
+                    .header("Authorization", "Bearer 4/P7q7W91")
+                    .content(new ObjectMapper().writeValueAsString(request)))
+            .andExpect(status().isAccepted())
+            .andExpect(jsonPath("$.id").value(productId.getValue().toString()))
+            .andExpect(jsonPath("$.name").value("Product 1"))
+            .andExpect(jsonPath("$.brand").value("Brand 1"))
+            .andExpect(jsonPath("$.colorHex").value("#FF0000"))
+            .andExpect(jsonPath("$.averageRating").value(5));
 
     // Verify that the mocks were called
     verify(addReviewToProduct).execute(any(AddReviewToProductCommand.class));
@@ -369,39 +378,39 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
 
     List<Product> domainProducts = List.of(
-        Product.reconstruct(
-            productId1,
-            "Makeup palette",
-            "Brand X",
-            category,
-            "#FF0000",
-            new ArrayList<>(),
-            new HashSet<>()
-        ),
-        Product.reconstruct(
-            productId2,
-            "Lipstick",
-            "Makeup Brand",
-            category,
-            "#00FF00",
-            new ArrayList<>(),
-            new HashSet<>()
-        )
+            Product.reconstruct(
+                    productId1,
+                    "Makeup palette",
+                    "Brand X",
+                    category,
+                    "#FF0000",
+                    new ArrayList<>(),
+                    new HashSet<>()
+            ),
+            Product.reconstruct(
+                    productId2,
+                    "Lipstick",
+                    "Makeup Brand",
+                    category,
+                    "#00FF00",
+                    new ArrayList<>(),
+                    new HashSet<>()
+            )
     );
 
     List<ProductResponse> responseProducts = List.of(
-        new ProductResponse()
-            .id(productId1.getValue())
-            .name("Makeup palette")
-            .brand("Brand X")
-            .colorHex("#FF0000")
-            .averageRating(0.0f),
-        new ProductResponse()
-            .id(productId2.getValue())
-            .name("Lipstick")
-            .brand("Makeup Brand")
-            .colorHex("#00FF00")
-            .averageRating(0.0f)
+            new ProductResponse()
+                    .id(productId1.getValue())
+                    .name("Makeup palette")
+                    .brand("Brand X")
+                    .colorHex("#FF0000")
+                    .averageRating(0.0f),
+            new ProductResponse()
+                    .id(productId2.getValue())
+                    .name("Lipstick")
+                    .brand("Makeup Brand")
+                    .colorHex("#00FF00")
+                    .averageRating(0.0f)
     );
 
     // Configure mocks
@@ -410,18 +419,18 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products/search")
-            .param("query", searchTerm)
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-Request-ID", requestId.toString())
-            .header("X-Flow-ID", flowId.toString())
-            .header("Accept-Language", ACCEPT_LANGUAGE)
-            .header("User-Agent", USER_AGENT))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content", hasSize(2)))
-        .andExpect(jsonPath("$.content[0].name").value("Makeup palette"))
-        .andExpect(jsonPath("$.content[0].brand").value("Brand X"))
-        .andExpect(jsonPath("$.content[1].name").value("Lipstick"))
-        .andExpect(jsonPath("$.content[1].brand").value("Makeup Brand"));
+                    .param("query", searchTerm)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content", hasSize(2)))
+            .andExpect(jsonPath("$.content[0].name").value("Makeup palette"))
+            .andExpect(jsonPath("$.content[0].brand").value("Brand X"))
+            .andExpect(jsonPath("$.content[1].name").value("Lipstick"))
+            .andExpect(jsonPath("$.content[1].brand").value("Makeup Brand"));
 
     // Verify that the mocks were called
     verify(findProductByTerm).query(searchTerm);
@@ -442,39 +451,39 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
 
     List<Product> domainProducts = List.of(
-        Product.reconstruct(
-            productId1,
-            "name1",
-            "Brand1",
-            category,
-            "#FF0000",
-            new ArrayList<>(),
-            new HashSet<>()
-        ),
-        Product.reconstruct(
-            productId2,
-            "name2",
-            "Brand2",
-            category,
-            "#00FF00",
-            new ArrayList<>(),
-            new HashSet<>()
-        )
+            Product.reconstruct(
+                    productId1,
+                    "name1",
+                    "Brand1",
+                    category,
+                    "#FF0000",
+                    new ArrayList<>(),
+                    new HashSet<>()
+            ),
+            Product.reconstruct(
+                    productId2,
+                    "name2",
+                    "Brand2",
+                    category,
+                    "#00FF00",
+                    new ArrayList<>(),
+                    new HashSet<>()
+            )
     );
 
     List<ProductResponse> responseProducts = List.of(
-        new ProductResponse()
-            .id(productId1.getValue())
-            .name("Makeup palette")
-            .brand("Brand X")
-            .colorHex("#FF0000")
-            .averageRating(0.0f),
-        new ProductResponse()
-            .id(productId2.getValue())
-            .name("Lipstick")
-            .brand("Makeup Brand")
-            .colorHex("#00FF00")
-            .averageRating(0.0f)
+            new ProductResponse()
+                    .id(productId1.getValue())
+                    .name("Makeup palette")
+                    .brand("Brand X")
+                    .colorHex("#FF0000")
+                    .averageRating(0.0f),
+            new ProductResponse()
+                    .id(productId2.getValue())
+                    .name("Lipstick")
+                    .brand("Makeup Brand")
+                    .colorHex("#00FF00")
+                    .averageRating(0.0f)
     );
 
     // Configure mocks
@@ -483,14 +492,14 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products/search")
-            .param("query", searchTerm)
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-Request-ID", requestId.toString())
-            .header("X-Flow-ID", flowId.toString())
-            .header("Accept-Language", ACCEPT_LANGUAGE)
-            .header("User-Agent", USER_AGENT))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content", hasSize(0)));
+                    .param("query", searchTerm)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content", hasSize(0)));
 
     // Verify that the mocks were called
     verify(findProductByTerm).query(searchTerm);
@@ -498,4 +507,238 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     verifyNoMoreInteractions(findProductByTerm, productResponseMapper);
 
   }
+
+  @Test
+  void shouldGetAllProductsWithCollectionStatus() throws Exception {
+    // Given
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+
+    // Create domain objects
+    EntityId productId1 = new EntityId(UUID.randomUUID());
+    EntityId productId2 = new EntityId(UUID.randomUUID());
+    Category category1 = new Category(new EntityId(UUID.randomUUID()), "Category 1");
+    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Category 2");
+
+    List<Product> domainProducts = List.of(
+            Product.reconstruct(
+                    productId1,
+                    "Product 1",
+                    "Brand 1",
+                    category1,
+                    "#FF0000",
+                    new ArrayList<>(),
+                    new HashSet<>()
+            ),
+            Product.reconstruct(
+                    productId2,
+                    "Product 2",
+                    "Brand 2",
+                    category2,
+                    "#00FF00",
+                    new ArrayList<>(),
+                    new HashSet<>()
+            )
+    );
+
+    List<ProductResponse> responseProducts = List.of(
+            new ProductResponse()
+                    .id(productId1.getValue())
+                    .name("Product 1")
+                    .brand("Brand 1")
+                    .colorHex("#FF0000")
+                    .averageRating(0.0f),
+            new ProductResponse()
+                    .id(productId2.getValue())
+                    .name("Product 2")
+                    .brand("Brand 2")
+                    .colorHex("#00FF00")
+                    .averageRating(0.0f)
+    );
+
+    // Configure mocks
+    when(findProductAllUseCase.query()).thenReturn(domainProducts);
+    when(productResponseMapper.toResponseList(domainProducts)).thenReturn(responseProducts);
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].id").value(productId1.getValue().toString()))
+            .andExpect(jsonPath("$[0].name").value("Product 1"))
+            .andExpect(jsonPath("$[0].brand").value("Brand 1"))
+            .andExpect(jsonPath("$[0].colorHex").value("#FF0000"))
+            .andExpect(jsonPath("$[1].id").value(productId2.getValue().toString()))
+            .andExpect(jsonPath("$[1].name").value("Product 2"))
+            .andExpect(jsonPath("$[1].brand").value("Brand 2"))
+            .andExpect(jsonPath("$[1].colorHex").value("#00FF00"));
+
+    // Verify that the mocks were called
+    verify(findProductAllUseCase).query();
+    verify(productResponseMapper).toResponseList(domainProducts);
+    verifyNoMoreInteractions(findProductAllUseCase, productResponseMapper);
+  }
+
+  @Test
+  void shouldReturnEmptyListWhenNoProductsExist() throws Exception {
+    // Given
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+
+    // Configure mocks to return emptyList
+    when(findProductAllUseCase.query()).thenReturn(Collections.emptyList());
+    when(productResponseMapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(0)));
+
+    // Verify that the mocks were called
+    verify(findProductAllUseCase).query();
+    verify(productResponseMapper).toResponseList(Collections.emptyList());
+    verifyNoMoreInteractions(findProductAllUseCase, productResponseMapper);
+  }
+
+  @Test
+  void shouldReturnInternalServerErrorWhenFindAllProductsUseCaseFails() throws Exception {
+    // Given
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+
+    // Configure mock to throw exception
+    when(findProductAllUseCase.query()).thenThrow(new RuntimeException("Database connection error"));
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT))
+            .andExpect(status().isInternalServerError());
+
+    // Verify that the mock was called
+    verify(findProductAllUseCase).query();
+    verifyNoMoreInteractions(findProductAllUseCase, productResponseMapper);
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenRequiredHeadersAreMissingForGetAllProducts() throws Exception {
+    // When/Then - Test without required headers
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products")
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void shouldCreateProduct() throws Exception {
+    // Given
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID categoryId = UUID.randomUUID();
+
+    CreateProductRequest request = new CreateProductRequest()
+            .name("Test Product")
+            .brand("Test Brand")
+            .categoryId(categoryId)
+            .colorHex("#FF5733");
+
+    // Create domain objects
+    EntityId productId = new EntityId(UUID.randomUUID());
+    EntityId categoryEntityId = new EntityId(categoryId);
+    Category category = new Category(categoryEntityId, "Test Category");
+
+    Product createdProduct = Product.reconstruct(
+            productId,
+            "Test Product",
+            "Test Brand",
+            category,
+            "#FF5733",
+            new ArrayList<>(),
+            new HashSet<>()
+    );
+
+    ProductResponse expectedResponse = new ProductResponse()
+            .id(productId.getValue())
+            .name("Test Product")
+            .brand("Test Brand")
+            .colorHex("#FF5733")
+            .averageRating(0.0f);
+
+    // Configure mocks
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
+    when(createProductUseCase.execute(any(CreateProductCommand.class))).thenReturn(createdProduct);
+    when(productResponseMapper.toResponse(createdProduct)).thenReturn(expectedResponse);
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT)
+                    .header("Authorization", "Bearer 4/P7q7W91")
+                    .content(new ObjectMapper().writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(productId.getValue().toString()))
+            .andExpect(jsonPath("$.name").value("Test Product"))
+            .andExpect(jsonPath("$.brand").value("Test Brand"))
+            .andExpect(jsonPath("$.colorHex").value("#FF5733"))
+            .andExpect(jsonPath("$.averageRating").value(0.0));
+
+    // Verify that the mocks were called
+    verify(tokenService).extractUserId(anyString());
+    verify(createProductUseCase).execute(any(CreateProductCommand.class));
+    verify(productResponseMapper).toResponse(createdProduct);
+  }
+
+  @Test
+  void shouldReturnInternalServerErrorWhenCreateProductUseCaseFails() throws Exception {
+    // Given
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID categoryId = UUID.randomUUID();
+
+    CreateProductRequest request = new CreateProductRequest()
+            .name("Test Product")
+            .brand("Test Brand")
+            .categoryId(categoryId)
+            .colorHex("#FF5733");
+
+    // Configure mocks
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
+    when(createProductUseCase.execute(any(CreateProductCommand.class)))
+            .thenThrow(new RuntimeException("Database connection error"));
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", ACCEPT_LANGUAGE)
+                    .header("User-Agent", USER_AGENT)
+                    .header("Authorization", "Bearer 4/P7q7W91")
+                    .content(new ObjectMapper().writeValueAsString(request)))
+            .andExpect(status().isInternalServerError());
+
+    // Verify that the mock was called
+    verify(tokenService).extractUserId(anyString());
+    verify(createProductUseCase).execute(any(CreateProductCommand.class));
+    verifyNoMoreInteractions(productResponseMapper);
+  }
+
+
 }
