@@ -91,19 +91,6 @@ public class ProductController implements ProductsApiDelegate {
     return ResponseEntity.ok(responseProducts);
   }
 
-//  @Override
-//  public ResponseEntity<List<ProductResponse>> findProductsAll(
-//          UUID xRequestID,
-//          UUID xFlowID,
-//          String acceptLanguage,
-//          String userAgent) {
-//
-//    List<Product> domainProducts = findProductAllUseCase.query();
-//    List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
-//
-//    return ResponseEntity.ok(responseProducts);
-//  }
-
   @Override
   public ResponseEntity<ProductSearchResponse> searchProducts(
       String query,
@@ -146,6 +133,19 @@ public class ProductController implements ProductsApiDelegate {
 
     return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
   }
+
+  @Override
+  public ResponseEntity<List<ProductResponse>> getAllProductsWithCollectionStatus(
+    UUID xRequestID, 
+    UUID xFlowID, 
+    String acceptLanguage, 
+    String userAgent) {
+
+  List<Product> domainProducts = findProductAllUseCase.query();
+  List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
+
+  return ResponseEntity.ok(responseProducts);
+}
 
   private EntityId getUserId() {
 

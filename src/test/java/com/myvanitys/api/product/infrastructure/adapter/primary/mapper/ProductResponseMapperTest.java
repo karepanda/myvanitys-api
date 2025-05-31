@@ -2,14 +2,18 @@ package com.myvanitys.api.product.infrastructure.adapter.primary.mapper;
 
 import com.myvanitys.api.model.v1.CategoryResponse;
 import com.myvanitys.api.model.v1.ProductResponse;
+import com.myvanitys.api.model.v1.ReviewResponse;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -30,7 +34,6 @@ class ProductResponseMapperTest {
         @Test
         void when_validProduct_then_convertToResponseCorrectly(){
             // Arrange
-
             Category category = new Category(EntityId.newId(), "Category Name");
 
             Product product = Product.newProduct("Product Name", "Brand Name", "#FFFFFF");
@@ -48,6 +51,26 @@ class ProductResponseMapperTest {
             assertThat(response.getColorHex()).isEqualTo(product.getColorHex());
         }
 
+        @Test
+        void when_productWithReviews_then_mapReviewsCorrectly() {
+            // Arrange
+            Category category = new Category(EntityId.newId(), "Category Name");
+            Product product = Product.newProduct("Product Name", "Brand Name", "#FFFFFF");
+            product.assignCategory(category);
+            
+            EntityId userId = EntityId.newId();
+            product.addReviewFromUser(userId, 5, "Excellent product!");
+
+            // Act
+            ProductResponse response = mapper.toResponse(product);
+
+            // Assert
+            assertThat(response).isNotNull();
+            assertThat(response.getReviews()).isNotNull();
+            assertThat(response.getReviews()).hasSize(1);
+            assertThat(response.getReviews().getFirst().getRating()).isEqualTo(5);
+            assertThat(response.getReviews().getFirst().getComment()).isEqualTo("Excellent product!");
+        }
     }
 
     @Nested
@@ -89,6 +112,132 @@ class ProductResponseMapperTest {
         }
     }
 
+    @Nested
+    class ReviewToResponse {
+
+        @Test
+        void when_validReview_then_convertToReviewResponseCorrectly() {
+            // Arrange
+            EntityId productUserId = EntityId.newId();
+            Instant now = Instant.now();
+            ReviewDetails details = ReviewDetails.of(5, "Great product!", now, now, null);
+            Review review = Review.createWithExistingId(EntityId.newId(), productUserId, details);
+
+            // Act
+            ReviewResponse response = mapper.toReviewResponse(review);
+
+            // Assert
+            assertThat(response).isNotNull();
+            assertThat(response.getId()).isEqualTo(review.getId().getValue());
+            assertThat(response.getRating()).isEqualTo(5);
+            assertThat(response.getComment()).isEqualTo("Great product!");
+
+        }
 
 
+        @Test
+        void when_nullReview_then_returnNull() {
+            // Act
+            ReviewResponse response = mapper.toReviewResponse(null);
+
+            // Assert
+            assertThat(response).isNull();
+        }
+    }
+
+    @Nested
+    class ReviewListToResponseList {
+
+        @Test
+        void when_validReviewList_then_convertToResponseListCorrectly() {
+            // Arrange
+            EntityId productUserId1 = EntityId.newId();
+            EntityId productUserId2 = EntityId.newId();
+            Instant now = Instant.now();
+
+            ReviewDetails details1 = ReviewDetails.of(5, "Excellent!", now, null, null);
+            ReviewDetails details2 = ReviewDetails.of(4, "Very good", now, null, null);
+
+            Review review1 = Review.createWithExistingId(EntityId.newId(), productUserId1, details1);
+            Review review2 = Review.createWithExistingId(EntityId.newId(), productUserId2, details2);
+
+            List<Review> reviews = Arrays.asList(review1, review2);
+
+            // Act
+            List<ReviewResponse> responses = mapper.toReviewResponseList(reviews);
+
+            // Assert
+            assertThat(responses).hasSize(2);
+            assertThat(responses.get(0).getRating()).isEqualTo(5);
+            assertThat(responses.get(0).getComment()).isEqualTo("Excellent!");
+            assertThat(responses.get(1).getRating()).isEqualTo(4);
+            assertThat(responses.get(1).getComment()).isEqualTo("Very good");
+        }
+
+        @Test
+        void when_emptyReviewList_then_returnEmptyList() {
+            // Arrange
+            List<Review> reviews = List.of();
+
+            // Act
+            List<ReviewResponse> responses = mapper.toReviewResponseList(reviews);
+
+            // Assert
+            assertThat(responses).isEmpty();
+        }
+
+        @Test
+        void when_nullReviewList_then_returnNull() {
+            // Act
+            List<ReviewResponse> responses = mapper.toReviewResponseList(null);
+
+            // Assert
+            assertThat(responses).isNull();
+        }
+    }
+
+    @Nested
+    class HelperMethods {
+
+        @Test
+        void when_validEntityId_then_convertToUuidCorrectly() {
+            // Arrange
+            EntityId entityId = EntityId.newId();
+
+            // Act
+            var uuid = mapper.entityIdToUuid(entityId);
+
+            // Assert
+            assertThat(uuid).isEqualTo(entityId.getValue());
+        }
+
+        @Test
+        void when_nullEntityId_then_returnNull() {
+            // Act
+            var uuid = mapper.entityIdToUuid(null);
+
+            // Assert
+            assertThat(uuid).isNull();
+        }
+
+        @Test
+        void when_positiveInt_then_convertToFloat() {
+            // Act
+            Float result = mapper.intToValidatedFloat(5);
+
+            // Assert
+            assertThat(result).isEqualTo(5.0f);
+        }
+
+        @Test
+        void when_zeroOrNegativeInt_then_returnNull() {
+            // Act
+            Float resultZero = mapper.intToValidatedFloat(0);
+            Float resultNegative = mapper.intToValidatedFloat(-1);
+
+            // Assert
+            assertThat(resultZero).isNull();
+            assertThat(resultNegative).isNull();
+        }
+    }
 }
