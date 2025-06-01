@@ -1,5 +1,9 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
@@ -25,10 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -135,17 +135,28 @@ public class ProductController implements ProductsApiDelegate {
   }
 
   @Override
+  public ResponseEntity<ProductResponse> addProductToUserVanity(
+      UUID productId,
+      UUID xRequestID,
+      UUID xFlowID,
+      String acceptLanguage,
+      String userAgent) {
+
+    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+  }
+
+  @Override
   public ResponseEntity<List<ProductResponse>> getAllProductsWithCollectionStatus(
-    UUID xRequestID, 
-    UUID xFlowID, 
-    String acceptLanguage, 
-    String userAgent) {
+      UUID xRequestID,
+      UUID xFlowID,
+      String acceptLanguage,
+      String userAgent) {
 
-  List<Product> domainProducts = findProductAllUseCase.query();
-  List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
+    List<Product> domainProducts = findProductAllUseCase.query();
+    List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
 
-  return ResponseEntity.ok(responseProducts);
-}
+    return ResponseEntity.ok(responseProducts);
+  }
 
   private EntityId getUserId() {
 
