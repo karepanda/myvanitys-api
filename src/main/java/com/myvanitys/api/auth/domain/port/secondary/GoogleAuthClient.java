@@ -3,9 +3,7 @@ package com.myvanitys.api.auth.domain.port.secondary;
 import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
 import reactor.core.publisher.Mono;
 
-/**
- * Port for communicating with Google's OAuth service to authenticate users.
- */
+
 public interface GoogleAuthClient {
 
   /**

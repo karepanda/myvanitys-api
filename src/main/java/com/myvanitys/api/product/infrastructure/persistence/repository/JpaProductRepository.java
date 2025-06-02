@@ -11,9 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * JPA repository for product entities
- */
+
 @Repository
 public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID> {
 

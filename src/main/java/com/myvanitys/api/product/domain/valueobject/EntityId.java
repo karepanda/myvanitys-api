@@ -5,9 +5,7 @@ import java.util.UUID;
 
 import lombok.Getter;
 
-/**
- * Value object representing a unique entity identifier
- */
+
 @Getter
 public final class EntityId {
 

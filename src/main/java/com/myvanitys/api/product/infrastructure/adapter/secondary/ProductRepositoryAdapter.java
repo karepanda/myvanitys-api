@@ -43,16 +43,13 @@ public class ProductRepositoryAdapter implements ProductRepository {
   @Override
   public Product save(Product product) {
     try {
-      // Check if the category exists before saving the product
       UUID categoryId = product.getCategory().categoryId().getValue();
       if (!jpaCategoryRepository.existsById(categoryId)) {
         throw new RepositoryResourceNotFoundException("Category not found with ID: " + categoryId);
       }
 
-      // Convert product to entity
       ProductEntity entity = productMapper.toEntity(product);
 
-      // Set audit fields if it's a new entity
       if (entity.getCreatedAt() == null) {
         Instant now = Instant.now();
         entity.setCreatedAt(now);
@@ -61,10 +58,8 @@ public class ProductRepositoryAdapter implements ProductRepository {
         entity.setUpdatedAt(Instant.now());
       }
 
-      // Save the entity
       ProductEntity savedEntity = jpaProductRepository.save(entity);
 
-      // Return the product with its category
       return productMapper.toDomain(savedEntity, product.getCategory(), product.getReviews());
     } catch (DataAccessException e) {
       log.error("Error saving product: {}", e.getMessage(), e);
@@ -83,7 +78,6 @@ public class ProductRepositoryAdapter implements ProductRepository {
     try {
       return jpaProductRepository.findById(productId.getValue())
           .map(productEntity -> {
-            // Load the associated category
             Category category = getCategoryForProduct(productEntity);
             List<Review> reviews = getReviewsForProduct(productEntity.getProductId());
             return productMapper.toDomain(productEntity, category, reviews);
@@ -99,7 +93,6 @@ public class ProductRepositoryAdapter implements ProductRepository {
     try {
       return jpaProductRepository.findByName(productName)
           .map(productEntity -> {
-            // Load the category
             Category category = getCategoryForProduct(productEntity);
             List<Review> reviews = getReviewsUserForProduct(productEntity.getProductId(), userId.getValue());
             return productMapper.toDomain(productEntity, category, reviews);
@@ -113,26 +106,20 @@ public class ProductRepositoryAdapter implements ProductRepository {
   @Override
   public List<Product> findByUserId(UUID userId) {
     try {
-      // Get product IDs associated with the user
       List<EntityId> productIds = productUserRepository.findProductIdsByUserId(new EntityId(userId));
 
-      // Return an empty list if no products found
       if (productIds.isEmpty()) {
         return Collections.emptyList();
       }
 
-      // Convert EntityId to UUID for query
       List<UUID> productUuids = productIds.stream()
           .map(EntityId::getValue)
           .toList();
 
-      // Fetch product entities
       List<ProductEntity> productEntities = jpaProductRepository.findAllById(productUuids);
 
-      // Convert to domain objects including their categories
       return productEntities.stream()
           .map(productEntity -> {
-            // Load the category for each product
             Category category = getCategoryForProduct(productEntity);
             List<Review> reviews = getReviewsUserForProduct(productEntity.getProductId(), userId);
             return productMapper.toDomain(productEntity, category, reviews);
@@ -174,7 +161,6 @@ public class ProductRepositoryAdapter implements ProductRepository {
         throw DatabaseException.queryError("Find all products", e);
       }
     }
-
   /**
    * Helper method to get a product's category
    */

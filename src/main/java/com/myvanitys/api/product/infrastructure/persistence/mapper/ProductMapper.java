@@ -205,7 +205,7 @@ public class ProductMapper {
 
     Map<EntityId, ProductUserEntity> productUserMap = new HashMap<>();
 
-    // Carer todas las entidades ProductUser basadas en las relaciones
+
     for (ProductUserRelation relation : product.getUserRelations()) {
       ProductUserEntity productUserEntity = new ProductUserEntity();
       productUserEntity.setProductUserId(relation.getId().getValue());
@@ -216,7 +216,6 @@ public class ProductMapper {
       productUserMap.put(relation.getId(), productUserEntity);
     }
 
-    // Añadir las reviews a las entidades ProductUser correspondientes
     for (Review review : product.getReviews()) {
       EntityId productUserId = review.getProductUserId();
       ProductUserEntity productUserEntity = productUserMap.get(productUserId);

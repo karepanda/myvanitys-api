@@ -12,7 +12,6 @@ import org.mapstruct.Mapper;
 public abstract class ReviewEntityMapper {
 
   public ProductUserRelation toProductUserRelation(ProductUserRelation productUserRelation) {
-    // Check if reviewId exists. If it does not exist, we do not map the relationship.
     if (productUserRelation.getReviewId() == null) {
       return null;
     }

@@ -11,9 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-/**
- * JPA Repository for ProductUserEntity This interface is used by the ProductUserRepositoryAdapter to access the database
- */
+
 @Repository
 public interface JpaProductUserRepository extends JpaRepository<ProductUserEntity, UUID> {
 

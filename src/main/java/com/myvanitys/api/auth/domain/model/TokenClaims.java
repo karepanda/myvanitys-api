@@ -1,12 +1,10 @@
 package com.myvanitys.api.auth.domain.model;
 
-import java.time.Instant;
-
 import com.myvanitys.api.auth.domain.exception.TokenException;
 
-/**
- * Represents the claims of a token in the domain. It is a Value Object that encapsulates the authentication information.
- */
+import java.time.Instant;
+
+
 public record TokenClaims(
     User user,
     Instant issuedAt,

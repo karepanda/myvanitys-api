@@ -6,9 +6,7 @@ import java.util.Optional;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 
-/**
- * Secondary port for Category repository operations This interface is implemented by adapters in the infrastructure layer
- */
+
 public interface CategoryRepository {
 
   /**

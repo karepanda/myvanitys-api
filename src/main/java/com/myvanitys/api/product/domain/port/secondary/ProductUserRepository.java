@@ -7,9 +7,7 @@ import java.util.UUID;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 
-/**
- * Secondary port for product-user relationship operations
- */
+
 public interface ProductUserRepository {
 
   /**

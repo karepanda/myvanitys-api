@@ -20,9 +20,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Adapter for the ReviewRepository interface Implements the application's output port for review persistence operations
- */
+
 @Component
 @AllArgsConstructor
 public class ReviewRepositoryAdapter implements ReviewRepository {
@@ -37,23 +35,18 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
   @Transactional
   public Review save(Review review) {
     try {
-      // First, verify that the product-user relation exists
       final EntityId productUserId = getEntityId(review);
 
-      // Convert review to entity
       ReviewEntity entity = reviewMapper.toEntity(review);
 
-      // Set timestamps if needed
       Instant now = Instant.now();
       if (entity.getCreatedAt() == null) {
         entity.setCreatedAt(now);
       }
       entity.setUpdatedAt(now);
 
-      // Save entity
       ReviewEntity savedEntity = jpaReviewRepository.save(entity);
 
-      // Convert back to domain
       return reviewMapper.toDomain(savedEntity);
     } catch (DataAccessException e) {
       throw new DatabaseException("Error saving review", e);
@@ -76,7 +69,6 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       UUID uuid = reviewId.getValue();
       return jpaReviewRepository.findById(uuid)
           .flatMap(reviewEntity -> {
-            // Get the product-user relation
             UUID productUserUUID = reviewEntity.getProductUserId();
             return jpaProductUserRepository.findById(productUserUUID)
                 .map(productUserEntity -> {
@@ -105,16 +97,13 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
     try {
       UUID uuid = productId.getValue();
 
-      // Find all product-user relations for this product
       List<ProductUserEntity> productUserEntities = jpaProductUserRepository.findByProductId(uuid);
 
-      // Map to collect reviews for each product-user relation
       return productUserEntities.stream()
           .flatMap(productUserEntity -> {
             UUID productUserUUID = productUserEntity.getProductUserId();
             EntityId productUserEntityId = new EntityId(productUserUUID);
 
-            // Find reviews for this product-user relation
             return jpaReviewRepository.findByProductUserId(productUserUUID)
                 .stream()
                 .map(reviewEntity -> reviewMapper.toDomain(reviewEntity));
@@ -130,16 +119,13 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
     try {
       UUID uuid = userId.getValue();
 
-      // Find all product-user relations for this user
       List<ProductUserEntity> productUserEntities = jpaProductUserRepository.findByUserId(uuid);
 
-      // Map to collect reviews for each product-user relation
       return productUserEntities.stream()
           .flatMap(productUserEntity -> {
             UUID productUserUUID = productUserEntity.getProductUserId();
             EntityId productUserEntityId = new EntityId(productUserUUID);
 
-            // Find reviews for this product-user relation
             return jpaReviewRepository.findByProductUserId(productUserUUID)
                 .stream()
                 .map(reviewEntity -> reviewMapper.toDomain(reviewEntity));
@@ -161,17 +147,14 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
       UUID reviewUuid = reviewId.getValue();
       UUID userUuid = userId.getValue();
 
-      // First find the review
       Optional<ReviewEntity> reviewEntityOpt = jpaReviewRepository.findById(reviewUuid);
 
       if (reviewEntityOpt.isEmpty()) {
         return false;
       }
 
-      // Get the product-user ID from the review
       UUID productUserUUID = reviewEntityOpt.get().getProductUserId();
 
-      // Check if this product-user relation belongs to the specified user
       return jpaProductUserRepository.findById(productUserUUID)
           .map(productUserEntity -> productUserEntity.getUserId().equals(userUuid))
           .orElse(false);

@@ -11,10 +11,7 @@ import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProduc
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Adapter implementation of the ProductUserRepository port from the domain This adapter connects the domain with the JPA persistence
- * infrastructure
- */
+
 @Component
 public class ProductUserRepositoryAdapter implements ProductUserRepository {
 

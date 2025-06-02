@@ -14,10 +14,7 @@ import org.mapstruct.Named;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Mapper para convertir entre Product (dominio) y ProductResponse (API). Se utiliza MapStruct para generar automáticamente la
- * implementación en tiempo de compilación.
- */
+
 @Mapper(componentModel = "spring")
 public interface ProductResponseMapper {
 
@@ -32,7 +29,6 @@ public interface ProductResponseMapper {
   @Mapping(source = "reviews", target = "reviews")
   @Mapping(target = "averageRating", expression = "java(product.getAverageRating() > 0 ? (float)product.getAverageRating() : null)")
   @Mapping(target = "createdAt", ignore = true)
-  // Ignorar ya que no está en nuestro modelo de dominio
   ProductResponse toResponse(Product product);
 
   /**

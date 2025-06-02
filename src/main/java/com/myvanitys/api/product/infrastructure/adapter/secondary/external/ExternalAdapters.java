@@ -22,6 +22,5 @@ package com.myvanitys.api.product.infrastructure.adapter.secondary.external;
  * @see com.myvanitys.api.product.domain.port.secondary
  */
 public interface ExternalAdapters {
-  // This is just a marker interface to document the purpose of this package
-  // Actual adapter implementations will be added as separate classes in this package
+
 }

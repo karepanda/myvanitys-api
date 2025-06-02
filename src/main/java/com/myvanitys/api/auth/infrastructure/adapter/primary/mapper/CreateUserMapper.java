@@ -9,7 +9,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring", nullValueCheckStrategy = org.mapstruct.NullValueCheckStrategy.ALWAYS)
 public interface CreateUserMapper {
-    //Metodo para command desde request
     default RegisterUserCommand toCommand(CreateUserRequest request) {
         if(request == null || request.getAuthProvider() == null || request.getAuthCode() == null) {
             return null;

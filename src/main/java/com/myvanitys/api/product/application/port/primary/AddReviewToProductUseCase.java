@@ -3,9 +3,7 @@ package com.myvanitys.api.product.application.port.primary;
 import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.domain.model.Product;
 
-/**
- * Input port for adding a review to a product
- */
+
 public interface AddReviewToProductUseCase {
 
   /**

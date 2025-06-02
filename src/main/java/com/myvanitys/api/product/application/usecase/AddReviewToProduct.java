@@ -19,13 +19,10 @@ public class AddReviewToProduct implements AddReviewToProductUseCase {
   @Override
   @Transactional
   public Product execute(AddReviewToProductCommand command) {
-    // Find the product
     Product product = findProductOrThrow(command.productId());
 
-    // Let the product domain entity handle the review creation
     product.addReviewFromUser(command.userId(), command.reviewDetails());
 
-    // Save the updated product aggregate
     return productRepository.save(product);
   }
 

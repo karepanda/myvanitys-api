@@ -2,9 +2,7 @@ package com.myvanitys.api.auth.domain.exception;
 
 import com.myvanitys.api.common.DomainException;
 
-/**
- * Domain exception for token related errors.
- */
+
 public class TokenException extends DomainException {
 
   public TokenException(String message) {

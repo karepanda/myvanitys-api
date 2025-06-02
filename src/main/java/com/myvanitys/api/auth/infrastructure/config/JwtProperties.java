@@ -13,5 +13,5 @@ public class JwtProperties {
 
   private String secret;
 
-  private long expiration = 86400000; // default value for expiration only
+  private long expiration = 86400000;
 }

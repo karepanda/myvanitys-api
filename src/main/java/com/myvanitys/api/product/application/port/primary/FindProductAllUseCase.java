@@ -4,9 +4,7 @@ import com.myvanitys.api.product.domain.model.Product;
 
 import java.util.List;
 
-/**
- * Caso de uso para obtener todos los productos
- */
+
 public interface FindProductAllUseCase {
 
   /**

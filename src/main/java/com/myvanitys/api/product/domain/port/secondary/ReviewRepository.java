@@ -6,9 +6,7 @@ import java.util.Optional;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 
-/**
- * Secondary port for Review repository operations This interface is implemented by adapters in the infrastructure layer
- */
+
 public interface ReviewRepository {
 
   /**

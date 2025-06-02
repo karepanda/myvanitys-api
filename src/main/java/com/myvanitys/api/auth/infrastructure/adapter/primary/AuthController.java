@@ -1,7 +1,5 @@
 package com.myvanitys.api.auth.infrastructure.adapter.primary;
 
-import java.util.UUID;
-
 import com.myvanitys.api.auth.application.port.primary.GoogleAuthenticationUseCase;
 import com.myvanitys.api.auth.application.port.primary.RegisterUserUseCase;
 import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
@@ -20,6 +18,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component
 @AllArgsConstructor
@@ -40,13 +40,10 @@ public class AuthController implements AuthenticationApiDelegate {
       UUID xFlowID,
       @Valid GoogleAuthRequest googleAuthRequest) {
 
-    // Map request to domain command
     GoogleAuthCommand command = authenticationMapper.toCommand(googleAuthRequest);
 
-    // Calling the use case
     UserSession session = googleAuthenticationUseCase.authenticateWithGoogle(command, xRequestID, xFlowID).block();
 
-    // Map user session to API response
     AuthResponse response = authenticationMapper.toResponse(session);
 
     return ResponseEntity.ok(response);

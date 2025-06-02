@@ -1,7 +1,5 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import java.util.UUID;
-
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
@@ -9,9 +7,9 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-/**
- * MapStruct mapper for converting between Review domain objects and ReviewEntity JPA entities
- */
+import java.util.UUID;
+
+
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class})
 public interface ReviewMapper {
 
@@ -26,7 +24,6 @@ public interface ReviewMapper {
       return null;
     }
 
-    // Create the ReviewDetails value object
     ReviewDetails details = ReviewDetails.of(
         entity.getRating(),
         entity.getComment(),
@@ -35,7 +32,6 @@ public interface ReviewMapper {
         entity.getDeletedAt()
     );
 
-    // Create the Review with existing ID
     return Review.createWithExistingId(
         new EntityId(entity.getReviewId()),
         EntityId.of(entity.getProductUserId()),

@@ -11,8 +11,6 @@ import org.mapstruct.NullValueCheckStrategy;
 @Mapper(componentModel = "spring", nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
 public interface AuthenticationMapper {
 
-  // Método para crear el command desde el request
-  // Como no hay redirectUri en el request, usamos un valor por defecto
   default GoogleAuthCommand toCommand(GoogleAuthRequest request) {
     if (request == null || request.getCode() == null) {
       return null;

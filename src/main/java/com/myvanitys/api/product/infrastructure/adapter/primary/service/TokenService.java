@@ -55,7 +55,7 @@ public class TokenService {
 
   private String removeBearer(String tokenHeader) {
     if (tokenHeader != null && tokenHeader.startsWith("Bearer ")) {
-      return tokenHeader.substring(7);  // "Bearer ".length() == 7
+      return tokenHeader.substring(7);
     }
     return tokenHeader;
   }

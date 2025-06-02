@@ -19,7 +19,6 @@ public record UserSession(String token, User user) {
     return new UserSession(token, user);
   }
 
-  // Métodos delegados para obtener información del User
   public String email() {
     return user.getEmail();
   }
