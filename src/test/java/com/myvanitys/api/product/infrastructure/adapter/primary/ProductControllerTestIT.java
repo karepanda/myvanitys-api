@@ -5,8 +5,10 @@ import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
+import com.myvanitys.api.product.application.command.AddProductToMyVanityCommand;
 import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
+import com.myvanitys.api.product.application.port.primary.AddProductToMyVanityUseCase;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductAllUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
@@ -29,7 +31,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -43,58 +47,60 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class ProductControllerTestIT extends AbstractIntegrationTest {
 
   @TestConfiguration
+  @Profile("test")
   static class TestConfig {
 
     @Bean
     @Primary
-    public CreateProductUseCase createProductUseCase() {
+    public CreateProductUseCase createProductUseCaseTest() {
       return mock(CreateProductUseCase.class);
     }
 
     @Bean
     @Primary
-    public FindProductUserUseCase findProductUserUseCase() {
+    public FindProductUserUseCase findProductUserUseCaseTest() {
       return mock(FindProductUserUseCase.class);
     }
 
     @Bean
     @Primary
-    public ProductResponseMapper productResponseMapper() {
+    public ProductResponseMapper productResponseMapperTest() {
       return mock(ProductResponseMapper.class);
     }
 
     @Bean
     @Primary
-    public AddReviewToProduct addReviewToProduct() {
+    public AddReviewToProduct addReviewToProductTest() {
       return mock(AddReviewToProduct.class);
     }
 
     @Bean
     @Primary
-    public TokenService tokenService() {
+    public TokenService tokenServiceTest() {
       return mock(TokenService.class);
     }
 
     @Bean
     @Primary
-    public FindProductByTerm findProductByTerm() {
+    public FindProductByTerm findProductByTermTest() {
       return mock(FindProductByTerm.class);
     }
 
     @Bean
     @Primary
-    public FindProductAllUseCase findProductAllUseCase() {
+    public FindProductAllUseCase findProductAllUseCaseTest() {
       return mock(FindProductAllUseCase.class);
     }
 
-  }
-
-  @BeforeEach
-  void setUp() {
-    reset(findProductUserUseCase, productResponseMapper, findProductByTerm, findProductAllUseCase, createProductUseCase, tokenService, addReviewToProduct);
+    @Bean
+    @Primary
+    public AddProductToMyVanityUseCase addProductToMyVanityUseCaseTest() {
+      return mock(AddProductToMyVanityUseCase.class);
+    }
   }
 
   @Autowired
@@ -121,7 +127,13 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
   @Autowired
   private FindProductAllUseCase findProductAllUseCase;
 
-  // Constants for required headers
+  @Autowired
+  private AddProductToMyVanityUseCase addProductToMyVanityUseCase;
+
+  @BeforeEach
+  void setUp() {
+    reset(findProductUserUseCase, productResponseMapper, findProductByTerm, findProductAllUseCase, createProductUseCase, tokenService, addReviewToProduct, addProductToMyVanityUseCase);
+  }
   private static final String ACCEPT_LANGUAGE = "en-US";
 
   private static final String USER_AGENT = "Mozilla/5.0 (Test)";
@@ -363,6 +375,72 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     verify(addReviewToProduct).execute(any(AddReviewToProductCommand.class));
     verify(productResponseMapper).toResponse(updatedProduct);
 
+  }
+
+  @Test
+  void shouldAddProductToUserVanity() throws Exception {
+    // Given
+    UUID productId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+    String acceptLanguage = "en-US";
+    String userAgent = "Mozilla/5.0 (Test)";
+    
+    EntityId entityUserId = new EntityId(userId);
+    EntityId entityProductId = new EntityId(productId);
+    
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+
+    Set<ProductUserRelation> relations = new HashSet<>();
+    relations.add(ProductUserRelation.create(entityProductId, entityUserId));
+
+    List<Review> reviews = new ArrayList<>();
+
+    Product addedProduct = Product.reconstruct(
+            entityProductId,
+            "Product 1",
+            "Brand 1",
+            category,
+            "#FF0000",
+            reviews,
+            relations
+    );
+    
+    // Create API response objects
+    ProductResponse expectedResponse = new ProductResponse()
+            .id(productId)
+            .name("Product 1")
+            .brand("Brand 1")
+            .colorHex("#FF0000")
+            .averageRating(0.0f);
+    
+    // Configure mocks
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
+    when(addProductToMyVanityUseCase.execute(any(AddProductToMyVanityCommand.class))).thenReturn(addedProduct);
+    when(productResponseMapper.toResponse(addedProduct)).thenReturn(expectedResponse);
+    
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products/{productId}/add-to-vanity", productId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", acceptLanguage)
+                    .header("User-Agent", userAgent)
+                    .header("Authorization", "Bearer 4/P7q7W91"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(productId.toString()))
+            .andExpect(jsonPath("$.name").value("Product 1"))
+            .andExpect(jsonPath("$.brand").value("Brand 1"))
+            .andExpect(jsonPath("$.colorHex").value("#FF0000"))
+            .andExpect(jsonPath("$.averageRating").value(0.0));
+
+    // Verify with more specific arguments
+    verify(addProductToMyVanityUseCase).execute(argThat(command -> 
+        command.productId().equals(entityProductId.getValue()) &&
+        command.userId().equals(entityUserId.getValue())
+    ));
+    verify(productResponseMapper).toResponse(addedProduct);
   }
 
   @Test
@@ -739,6 +817,4 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     verify(createProductUseCase).execute(any(CreateProductCommand.class));
     verifyNoMoreInteractions(productResponseMapper);
   }
-
-
 }
