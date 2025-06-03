@@ -1,12 +1,12 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
-import java.util.UUID;
-
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.mapstruct.Mapper;
+
+import java.util.UUID;
 
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class})
 public abstract class ReviewEntityMapper {
@@ -24,7 +24,6 @@ public abstract class ReviewEntityMapper {
     );
   }
 
-  // Inverse method to create ReviewEntity from ProductUserRelation
   public ReviewEntity toReviewEntity(ProductUserRelation productUserRelation, int rating, String comment) {
     ProductUserEntity productUserEntity = new ProductUserEntity();
     productUserEntity.setProductUserId(productUserRelation.getId().getValue());

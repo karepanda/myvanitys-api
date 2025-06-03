@@ -14,7 +14,7 @@ public class TokenException extends DomainException {
   }
 
   /**
-   * Creates an exception for invalid token
+   * Creates an exception for an invalid token
    */
   public static TokenException invalidToken(String reason) {
     return new TokenException("Invalid token: " + reason);
@@ -28,7 +28,7 @@ public class TokenException extends DomainException {
   }
 
   /**
-   * Crea una excepción para claims inválidas
+   * Creates an exception for invalid claims
    */
   public static TokenException invalidClaims(String details) {
     return new TokenException("Invalid token claims: " + details);

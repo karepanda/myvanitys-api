@@ -19,10 +19,10 @@ import java.util.UUID;
 public interface ProductResponseMapper {
 
   /**
-   * Convierte un objeto Product de dominio a ProductResponse para la API
+   * Converts a domain Product object to ProductResponse for the API
    *
-   * @param product objeto de dominio
-   * @return objeto de respuesta API
+   * @param product domain object
+   * @return API response object
    */
   @Mapping(source = "id.value", target = "id")
   @Mapping(source = "category", target = "category")
@@ -32,28 +32,28 @@ public interface ProductResponseMapper {
   ProductResponse toResponse(Product product);
 
   /**
-   * Convierte una lista de Products de dominio a lista de ProductResponse para la API
+   * Converts a list of domain Products to a list of ProductResponse for the API
    *
-   * @param products lista de objetos de dominio
-   * @return lista de objetos de respuesta API
+   * @param products list of domain objects
+   * @return list of API response objects
    */
   List<ProductResponse> toResponseList(List<Product> products);
 
   /**
-   * Convierte un objeto Category de dominio (record) a CategoryResponse para la API
+   * Converts a domain Category object (record) to CategoryResponse for the API
    *
-   * @param category objeto de dominio (record)
-   * @return objeto de respuesta API
+   * @param category domain object (record)
+   * @return API response object
    */
   @Mapping(source = "categoryId.value", target = "id")
   @Mapping(source = "name", target = "name")
   CategoryResponse toCategoryResponse(Category category);
 
   /**
-   * Convierte un objeto Review de dominio a ReviewResponse para la API
+   * Converts a domain Review object to ReviewResponse for the API
    *
-   * @param review objeto de dominio Review
-   * @return objeto de respuesta API
+   * @param review domain Review object
+   * @return API response object
    */
   @Mapping(source = "id.value", target = "id")
   @Mapping(source = "productUserId.value", target = "userId")
@@ -63,15 +63,15 @@ public interface ProductResponseMapper {
   ReviewResponse toReviewResponse(Review review);
 
   /**
-   * Convierte una lista de Reviews de dominio a lista de ReviewResponse para la API
+   * Converts a list of domain Reviews to a list of ReviewResponse for the API
    *
-   * @param reviews lista de objetos de dominio
-   * @return lista de objetos de respuesta API
+   * @param reviews list of domain objects
+   * @return list of API response objects
    */
   List<ReviewResponse> toReviewResponseList(List<Review> reviews);
 
   /**
-   * Método para manejar conversiones de EntityId a UUID
+   * Method to handle conversions from EntityId to UUID
    */
   @Named("entityIdToUuid")
   default UUID entityIdToUuid(EntityId id) {
@@ -79,7 +79,7 @@ public interface ProductResponseMapper {
   }
 
   /**
-   * Método para manejar conversiones de int a Float con validación
+   * Method to handle conversions from int to Float with validation
    */
   @Named("intToValidatedFloat")
   default Float intToValidatedFloat(int value) {

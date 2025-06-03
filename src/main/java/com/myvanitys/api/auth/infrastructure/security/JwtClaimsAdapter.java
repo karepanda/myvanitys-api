@@ -24,7 +24,6 @@ public class JwtClaimsAdapter {
       jwtClaims.put("name", claims.user().getName());
     }
 
-    // These are already included in the JWT builder, but we add them for completeness
     jwtClaims.put("iat", claims.issuedAt().getEpochSecond());
     jwtClaims.put("exp", claims.expiresAt().getEpochSecond());
 

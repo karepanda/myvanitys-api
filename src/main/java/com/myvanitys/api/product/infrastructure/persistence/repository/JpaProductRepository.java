@@ -37,7 +37,7 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
   List<ProductEntity> findByCategoryId(UUID categoryId);
 
   /**
-   * Find product by name and brand
+   * Find a product by name and brand
    */
   List<ProductEntity> findByNameOrBrand(String name, String brand);
 

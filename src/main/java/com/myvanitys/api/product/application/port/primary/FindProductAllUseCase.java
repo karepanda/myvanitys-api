@@ -8,9 +8,9 @@ import java.util.List;
 public interface FindProductAllUseCase {
 
   /**
-   * Recupera todos los productos disponibles
+   * Retrieves all available products
    *
-   * @return una lista de todos los productos
+   * @return a list of all products
    */
   List<Product> query();
 }
