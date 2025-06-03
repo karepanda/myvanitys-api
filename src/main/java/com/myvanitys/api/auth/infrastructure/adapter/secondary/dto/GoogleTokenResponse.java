@@ -1,5 +1,3 @@
-// infrastructure/adapter/secondary/dto/GoogleTokenResponse.java
-
 package com.myvanitys.api.auth.infrastructure.adapter.secondary.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

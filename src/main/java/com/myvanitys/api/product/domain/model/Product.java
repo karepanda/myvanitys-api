@@ -16,9 +16,7 @@ import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import lombok.Getter;
 import lombok.ToString;
 
-/**
- * Product aggregate root that manages reviews and user relations.
- */
+
 @Getter
 @ToString
 public class Product {
@@ -49,7 +47,6 @@ public class Product {
 
   private final Set<ProductUserRelation> userRelations = new HashSet<>();
 
-  // Constructor con acceso package-private para control de instanciación
   Product(EntityId id, String name, String brand, Category category, String colorHex) {
     validateProductDetails(name, brand, colorHex);
     this.id = Objects.requireNonNull(id, "Product ID cannot be null");
@@ -178,7 +175,7 @@ public class Product {
         .orElseThrow(() -> new ReviewValidationException(REVIEW_NOT_FOUND));
 
     if (review.isDeleted()) {
-      return review; // Already deleted, nothing to do
+      return review;
     }
 
     review.markAsDeleted();

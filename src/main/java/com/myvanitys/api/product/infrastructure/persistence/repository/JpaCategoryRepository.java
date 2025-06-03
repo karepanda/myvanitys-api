@@ -7,9 +7,7 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntit
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-/**
- * JPA Repository for CategoryEntity This interface is used by the CategoryRepositoryAdapter to access the database
- */
+
 @Repository
 public interface JpaCategoryRepository extends JpaRepository<CategoryEntity, UUID> {
 

@@ -4,9 +4,7 @@ import java.time.Instant;
 
 import com.myvanitys.api.product.domain.exception.ReviewValidationException;
 
-/**
- * Value Object that encapsulates the details of a review including its entire temporal lifecycle
- */
+
 public record ReviewDetails(int rating, String comment, Timestamp createdAt, Timestamp updatedAt, Timestamp deletedAt) {
 
   /**

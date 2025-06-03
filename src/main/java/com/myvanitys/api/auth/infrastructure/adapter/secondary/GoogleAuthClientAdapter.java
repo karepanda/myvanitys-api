@@ -57,7 +57,6 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
 
     MultiValueMap<String, String> requestBody = getTokenRequestBody(code, redirectUri);
 
-    // Log important parameters (without revealing sensitive information)
     log.debug("Token request parameters: client_id={}, redirect_uri={}, code_length={}",
         maskString(googleClientProperties.getClientId()),
         redirectUri,
@@ -140,7 +139,6 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
     );
   }
 
-  // Additional method to validate the e-mail
   private boolean isValidEmail(String email) {
     return email != null && email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
   }

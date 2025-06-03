@@ -1,9 +1,5 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
@@ -11,10 +7,11 @@ import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProduc
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Adapter implementation of the ProductUserRepository port from the domain This adapter connects the domain with the JPA persistence
- * infrastructure
- */
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+
 @Component
 public class ProductUserRepositoryAdapter implements ProductUserRepository {
 
@@ -30,7 +27,6 @@ public class ProductUserRepositoryAdapter implements ProductUserRepository {
     UUID productUuid = productId.getValue();
     UUID userUuid = userId.getValue();
 
-    // First check if this relationship already exists
     if (!jpaProductUserRepository.existsByProductIdAndUserId(productUuid, userUuid)) {
 
       ProductUserEntity entity = ProductUserEntity.builder()

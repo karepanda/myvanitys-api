@@ -1,7 +1,5 @@
 package com.myvanitys.api.auth.infrastructure.adapter.secondary;
 
-import java.time.Instant;
-
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.infrastructure.adapter.secondary.port.UserRepository;
 import com.myvanitys.api.auth.infrastructure.persistence.entity.UserEntity;
@@ -12,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
+import java.time.Instant;
 
 @Component
 @AllArgsConstructor
@@ -24,11 +24,9 @@ public class UserRepositoryAdapter implements UserRepository {
   public Mono<User> save(User user) {
     log.debug("Saving user: {}", user);
 
-    // Check if this is a new user or an existing one
     boolean isNew = user.getId() == null;
 
     if (isNew) {
-      // For new users, ensure they have an ID from the domain
       user = new User(
           EntityId.newId(),
           user.getAuthorizationId(),
@@ -39,17 +37,15 @@ public class UserRepositoryAdapter implements UserRepository {
       log.debug("Generated new ID for user: {}", user.getId());
     }
 
-    // Convert User (domain model) to UserEntity (JPA entity)
     UserEntity userEntity = mapToEntity(user, isNew);
     log.debug("Mapped to entity: {}", userEntity);
 
-    // Save the entity and map it back to the domain model
     return Mono.fromCallable(() -> {
           UserEntity savedEntity = jpaUserRepository.save(userEntity);
           log.debug("Entity saved successfully: {}", savedEntity);
           return savedEntity;
         })
-        .map(this::mapToDomain)  // Aquí usamos .map porque mapToDomain devuelve User
+        .map(this::mapToDomain)
         .onErrorResume(e -> {
           log.error("Error saving user: {}", e.getMessage(), e);
           return Mono.error(e);
@@ -99,7 +95,6 @@ public class UserRepositoryAdapter implements UserRepository {
     return entity;
   }
 
-  // Vuelve a ser un método síncrono
   private User mapToDomain(UserEntity entity) {
     if (entity == null) {
       return null;

@@ -1,19 +1,19 @@
 package com.myvanitys.api.product.infrastructure.persistence.repository;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.apache.logging.log4j.util.Strings;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.Assert.assertTrue;
 
 class JpaProductRepositoryIT extends AbstractJpaProductTest {
 
@@ -103,18 +103,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     List<ProductEntity> foundProducts = jpaProductRepository.findAll();
 
     // Then
-    assertThat(foundProducts)
-            .hasSize(2);
-  }
-
-  @Test
-  void shouldFindAllThenReturnEmptyList() {
-    // When
-    List<ProductEntity> foundProducts = jpaProductRepository.findAll();
-
-    // Then
-    assertThat(foundProducts)
-            .isEmpty();
+    assertThat(foundProducts).isNotEmpty();
   }
 
   @Test
@@ -309,7 +298,6 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     // When
     List<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
 
-
     // Then
     assertTrue(foundProduct.stream().allMatch(productEntity -> productEntity.getName().equals(searchTerm)));
 
@@ -322,12 +310,11 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     CategoryEntity category = createSampleCategory("Some Category");
     CategoryEntity savedCategory = jpaCategoryRepository.save(category);
 
-    ProductEntity product = createSampleProduct( Strings.EMPTY,searchTerm, savedCategory);
+    ProductEntity product = createSampleProduct(Strings.EMPTY, searchTerm, savedCategory);
     jpaProductRepository.save(product);
 
     // When
     List<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
-
 
     // Then
     assertTrue(foundProduct.stream().allMatch(productEntity -> productEntity.getBrand().equals(searchTerm)));

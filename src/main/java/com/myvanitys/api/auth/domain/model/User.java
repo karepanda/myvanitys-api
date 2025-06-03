@@ -1,11 +1,11 @@
 package com.myvanitys.api.auth.domain.model;
 
-import java.time.Instant;
-import java.util.Objects;
-
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.Getter;
 import lombok.NonNull;
+
+import java.time.Instant;
+import java.util.Objects;
 
 @Getter
 public class User {
@@ -47,12 +47,12 @@ public class User {
       return false;
     }
     User user = (User) obj;
-    return Objects.equals(id, user.id); // just compare the ID
+    return Objects.equals(id, user.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);  //Only id
+    return Objects.hash(id);
   }
 
   @Override

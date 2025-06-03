@@ -2,9 +2,7 @@ package com.myvanitys.api.product.domain.valueobject;
 
 import java.time.Instant;
 
-/**
- * Value object to represent a moment in time. It automatically assigns the current time when null is passed.
- */
+
 public record Timestamp(Instant value) {
 
   /**

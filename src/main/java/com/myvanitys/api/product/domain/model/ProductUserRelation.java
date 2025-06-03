@@ -5,9 +5,7 @@ import java.util.Objects;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.Getter;
 
-/**
- * Entity that represents a relationship between a product and a user. This is a building block within the Product aggregate.
- */
+
 @Getter
 public class ProductUserRelation {
 

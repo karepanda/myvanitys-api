@@ -22,34 +22,27 @@ public class CorsConfig implements WebMvcConfigurer {
         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
         .allowedHeaders("*")
         .allowCredentials(true)
-        .maxAge(3600); // 1 hour cache for CORS configuration
+        .maxAge(3600);
   }
 
-  // This bean provides more detailed CORS configuration if needed
   @Bean
   public CorsFilter corsFilter() {
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     CorsConfiguration config = new CorsConfiguration();
 
-    // Allowed origins
     config.addAllowedOrigin("https://myvanitys.com");
     config.addAllowedOrigin("https://www.myvanitys.com");
     config.addAllowedOrigin("http://localhost:5173");
-    config.addAllowedOrigin("https://www.myvanitys.com/callback"); // For local development
+    config.addAllowedOrigin("https://www.myvanitys.com/callback");
 
-    // Enable credentials (cookies, authorization headers)
     config.setAllowCredentials(true);
 
-    // Allowed HTTP methods
     config.addAllowedMethod("*");
 
-    // Allowed headers
     config.addAllowedHeader("*");
 
-    // Expose specific headers to the client
     config.addExposedHeader("Authorization");
 
-    // CORS preflight cache
     config.setMaxAge(3600L);
 
     source.registerCorsConfiguration("/**", config);

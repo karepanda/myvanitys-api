@@ -1,11 +1,5 @@
 package com.myvanitys.api.auth.infrastructure.adapter.secondary;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
-
 import com.myvanitys.api.auth.domain.exception.TokenException;
 import com.myvanitys.api.auth.domain.model.TokenClaims;
 import com.myvanitys.api.auth.domain.model.User;
@@ -15,14 +9,18 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * TokenGeneratorPort implementation using JWT
- */
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
+
+
 @Slf4j
 @Component
 public class JwtTokenGeneratorAdapter implements TokenGenerator {

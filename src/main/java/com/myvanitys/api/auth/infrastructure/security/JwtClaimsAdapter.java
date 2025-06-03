@@ -1,17 +1,15 @@
 package com.myvanitys.api.auth.infrastructure.security;
 
+import com.myvanitys.api.auth.domain.model.TokenClaims;
+import com.myvanitys.api.auth.domain.model.User;
+import com.myvanitys.api.product.domain.valueobject.EntityId;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.myvanitys.api.auth.domain.model.TokenClaims;
-import com.myvanitys.api.auth.domain.model.User;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
 
-/**
- * Adapter to convert between domain TokenClaims and JWT Claims
- */
 public class JwtClaimsAdapter {
 
   /**
@@ -26,7 +24,6 @@ public class JwtClaimsAdapter {
       jwtClaims.put("name", claims.user().getName());
     }
 
-    // These are already included in the JWT builder, but we add them for completeness
     jwtClaims.put("iat", claims.issuedAt().getEpochSecond());
     jwtClaims.put("exp", claims.expiresAt().getEpochSecond());
 

@@ -11,9 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * JPA repository for product entities
- */
+
 @Repository
 public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID> {
 
@@ -39,7 +37,7 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
   List<ProductEntity> findByCategoryId(UUID categoryId);
 
   /**
-   * Find product by name and brand
+   * Find a product by name and brand
    */
   List<ProductEntity> findByNameOrBrand(String name, String brand);
 

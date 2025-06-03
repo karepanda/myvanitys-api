@@ -10,9 +10,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 
-/**
- * Domain entity for product reviews
- */
+
 @Getter
 @ToString
 public class Review {
@@ -29,7 +27,6 @@ public class Review {
     this.details = Objects.requireNonNull(details);
   }
 
-  // ---------- CREATION METHODS ----------
 
   /**
    * Factory method for creating a new review with provided details Should only be used by the Product aggregate
@@ -54,7 +51,7 @@ public class Review {
         ReviewDetails.of(rating, comment, createdAt, updatedAt, null));
   }
 
-  // ---------- RECONSTRUCTION METHODS (FOR PERSISTENCE) ----------
+
 
   /**
    * Factory method for creating a review with an existing ID and details Should only be used by infrastructure mappers when reconstructing
@@ -74,7 +71,6 @@ public class Review {
         ReviewDetails.of(rating, comment, createdAt, updatedAt, deletedAt));
   }
 
-  // ---------- UPDATE METHODS ----------
 
   /**
    * Updates review details, preserving existing timestamps except for updatedAt
@@ -90,7 +86,6 @@ public class Review {
     this.details = newDetails;
   }
 
-  // ---------- DELETE METHODS ----------
 
   /**
    * Marks this review as deleted with the current timestamp
@@ -130,7 +125,6 @@ public class Review {
     return !this.details.isDeleted();
   }
 
-  // ---------- GETTER CONVENIENCE METHODS ----------
 
   /**
    * Gets the rating
@@ -167,7 +161,6 @@ public class Review {
     return details.deletedAt() != null ? details.deletedAt().asInstant() : null;
   }
 
-  // ---------- EQUALS/HASHCODE ----------
 
   @Override
   public boolean equals(Object o) {

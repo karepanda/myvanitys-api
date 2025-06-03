@@ -2,7 +2,6 @@ package com.myvanitys.api.product.infrastructure.adapter.secondary.external;
 
 /**
  * This is a placeholder interface for the external adapters package.
- *
  * In hexagonal architecture, secondary adapters (also called "driven adapters" or "output adapters") implement the secondary ports defined
  * in the domain to connect with external systems.
  *
@@ -22,6 +21,5 @@ package com.myvanitys.api.product.infrastructure.adapter.secondary.external;
  * @see com.myvanitys.api.product.domain.port.secondary
  */
 public interface ExternalAdapters {
-  // This is just a marker interface to document the purpose of this package
-  // Actual adapter implementations will be added as separate classes in this package
+
 }

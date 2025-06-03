@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Exception thrown when input validation fails in use cases
- */
+
 public class ValidationException extends ApplicationException {
 
   private final transient List<ValidationError> errors;

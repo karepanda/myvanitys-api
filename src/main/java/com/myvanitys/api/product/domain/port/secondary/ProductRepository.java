@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Secondary port for Product repository operations This interface is implemented by adapters in the infrastructure layer
- */
+
 public interface ProductRepository {
 
   /**

@@ -1,8 +1,5 @@
 package com.myvanitys.api.auth.application.service;
 
-import java.time.Instant;
-import java.util.UUID;
-
 import com.myvanitys.api.auth.application.port.primary.RegisterUserUseCase;
 import com.myvanitys.api.auth.application.port.primary.command.RegisterUserCommand;
 import com.myvanitys.api.auth.application.port.primary.result.UserRegistrationResult;
@@ -21,6 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -53,28 +53,22 @@ public class RegisterUser implements RegisterUserUseCase {
           log.info("Retrieved user info from Google. User ID: {}, Email: {}",
               googleUserInfo.id(), googleUserInfo.email());
 
-          // Verify if the user already exists by authorization ID
           return userRepository.findByAuthorizationId(googleUserInfo.id())
               .flatMap(existingUser -> {
                 log.warn("User with Google ID {} already exists", googleUserInfo.id());
                 return Mono.<UserRegistrationResult>error(new UserAlreadyExistsException(
                     "User with Google ID " + googleUserInfo.id() + " already exists"));
               })
-              // If it doesn't exist, create it
               .switchIfEmpty(Mono.defer(() -> createAndSaveUser(googleUserInfo, command.registrationDate())
                   .map(newUser -> {
-                    // Generate token
                     TokenClaims claims = tokenGenerator.createClaimsFromUser(newUser);
                     String token = tokenGenerator.generateToken(claims);
 
-                    // Create session
                     UserSession session = new UserSession(token, newUser);
 
-                    // Register success
                     log.info("User registered successfully. User ID: {}, Email: {}",
                         newUser.getId(), newUser.getEmail());
 
-                    // Explicitly type the result
                     return new UserRegistrationResult(session);
                   }))
               );
