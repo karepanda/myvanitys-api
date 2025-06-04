@@ -33,7 +33,7 @@ VALUES ('333e4567-e89b-12d3-a456-426614174002',
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP);
 
--- Brows product
+-- Brow product
 INSERT INTO product (product_id, category_id, version, brand, name, color_hex, created_at, updated_at)
 VALUES ('444e4567-e89b-12d3-a456-426614174003',
         '770e8400-e29b-41d4-a716-446655440003',
