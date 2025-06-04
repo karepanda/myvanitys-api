@@ -86,4 +86,13 @@ public class ProductUserRepositoryAdapter implements ProductUserRepository {
   public Optional<ProductUserEntity> findByProductIdAndUserId(UUID productId, UUID userId) {
     return jpaProductUserRepository.findByProductIdAndUserId(productId, userId);
   }
+
+  @Override
+  @Transactional
+    public void deleteByProductIdAndUserId(EntityId productId, EntityId userId) {
+        UUID productUuid = productId.getValue();
+        UUID userUuid = userId.getValue();
+
+        jpaProductUserRepository.deleteByProductIdAndUserId(productUuid, userUuid);
+    }
 }

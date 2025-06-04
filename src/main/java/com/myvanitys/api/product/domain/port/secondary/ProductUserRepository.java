@@ -1,11 +1,11 @@
 package com.myvanitys.api.product.domain.port.secondary;
 
+import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import com.myvanitys.api.product.domain.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 
 
 public interface ProductUserRepository {
@@ -75,4 +75,12 @@ public interface ProductUserRepository {
    * @return the product-user relationship if found
    */
   Optional<ProductUserEntity> findByProductIdAndUserId(UUID productId, UUID userId);
+
+  /**
+   * Delete specific relationship between a product and a user
+   *
+   * @param productId the product ID
+   * @param userId the user ID
+   */
+  void deleteByProductIdAndUserId(EntityId productId, EntityId userId);
 }
