@@ -8,7 +8,6 @@ erDiagram
     CategoryEntity {
         UUID categoryId PK "Primary Key"
         String name "NOT NULL"
-        String description
         Long version "NOT NULL"
         Date createdAt "NOT NULL"
         Date updatedAt "NOT NULL"
@@ -20,9 +19,6 @@ erDiagram
         String name "NOT NULL"
         String brand "NOT NULL"
         String colorHex
-        String description "NOT NULL"
-        Double price "NOT NULL"
-        String image "NOT NULL"
         Long version "NOT NULL"
         Date createdAt "NOT NULL"
         Date updatedAt "NOT NULL"
@@ -32,7 +28,6 @@ erDiagram
         UUID productUserId PK "Primary Key"
         UUID productId FK "Foreign Key"
         UUID userId FK "Foreign Key"
-        Boolean isFavorite "NOT NULL"
         Long version "NOT NULL"
         Date createdAt "NOT NULL"
         Date updatedAt "NOT NULL"
@@ -40,8 +35,7 @@ erDiagram
 
     ReviewEntity {
         UUID reviewId PK "Primary Key"
-        UUID productId FK "Foreign Key"
-        UUID userId FK "Foreign Key"
+        UUID productUserId FK "Foreign Key"
         Integer rating "NOT NULL"
         String comment
         Boolean isVerified "NOT NULL"
