@@ -89,10 +89,7 @@ public class ProductUserRepositoryAdapter implements ProductUserRepository {
 
   @Override
   @Transactional
-    public void deleteByProductIdAndUserId(EntityId productId, EntityId userId) {
-        UUID productUuid = productId.getValue();
-        UUID userUuid = userId.getValue();
-
-        jpaProductUserRepository.deleteByProductIdAndUserId(productUuid, userUuid);
+    public void deleteByProductIdAndUserId(UUID productId, UUID userId) {
+        jpaProductUserRepository.deleteByProductIdAndUserId(productId, userId);
     }
 }

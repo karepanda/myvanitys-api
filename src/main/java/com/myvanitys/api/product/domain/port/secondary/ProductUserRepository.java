@@ -82,5 +82,5 @@ public interface ProductUserRepository {
    * @param productId the product ID
    * @param userId the user ID
    */
-  void deleteByProductIdAndUserId(EntityId productId, EntityId userId);
+  void deleteByProductIdAndUserId(UUID productId, UUID userId);
 }

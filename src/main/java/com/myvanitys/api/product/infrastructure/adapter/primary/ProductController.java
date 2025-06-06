@@ -7,10 +7,8 @@ import com.myvanitys.api.model.v1.ProductSearchResponse;
 import com.myvanitys.api.product.application.command.AddProductToMyVanityCommand;
 import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
-import com.myvanitys.api.product.application.port.primary.AddProductToMyVanityUseCase;
-import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
-import com.myvanitys.api.product.application.port.primary.FindProductAllUseCase;
-import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
+import com.myvanitys.api.product.application.command.DeleteProductFromUserVanityCommand;
+import com.myvanitys.api.product.application.port.primary.*;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.application.usecase.FindProductByTerm;
@@ -51,6 +49,8 @@ public class ProductController implements ProductsApiDelegate {
   private final FindProductByTerm findProductByTerm;
 
   private final AddProductToMyVanityUseCase addProductToMyVanityUseCase;
+
+  private final DeleteProductFromUserVanityUseCase deleteProductFromUserVanityUseCase;
 
   @Override
   public ResponseEntity<ProductResponse> createProduct(UUID xRequestID,
@@ -167,6 +167,24 @@ public class ProductController implements ProductsApiDelegate {
     List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
 
     return ResponseEntity.ok(responseProducts);
+  }
+
+  @Override
+  public ResponseEntity<ProductResponse> deleteProductFromUserVanity(
+          EntityId productId,
+          UUID xRequestID,
+          UUID xFlowID,
+          String acceptLanguage,
+          String userAgent) {
+
+    DeleteProductFromUserVanityCommand command = new DeleteProductFromUserVanityCommand(productId, getUserId());
+
+    Product deleteProduct = deleteProductFromUserVanityUseCase.execute(command);
+
+    ProductResponse response = productResponseMapper.toResponse(deleteProduct);
+
+
+    return ResponseEntity.ok(response);
   }
 
   private EntityId getUserId() {
