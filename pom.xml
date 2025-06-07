@@ -29,7 +29,7 @@
     <dependency>
       <groupId>com.myvanitys</groupId>
       <artifactId>myvanitys-api-spec</artifactId>
-      <version>1.7.0-SNAPSHOT</version>
+      <version>1.8.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
