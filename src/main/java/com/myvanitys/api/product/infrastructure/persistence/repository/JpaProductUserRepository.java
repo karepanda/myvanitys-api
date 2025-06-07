@@ -1,15 +1,15 @@
 package com.myvanitys.api.product.infrastructure.persistence.repository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 
 @Repository
@@ -41,4 +41,12 @@ public interface JpaProductUserRepository extends JpaRepository<ProductUserEntit
   @Modifying
   @Query("DELETE FROM ProductUserEntity pu WHERE pu.productId = :productId")
   void deleteByProductId(@Param("productId") UUID productId);
+
+  /**
+   * Delete a specific relationship with a product
+   */
+  @Modifying
+  @Query("DELETE FROM ProductUserEntity pu WHERE pu.productId = :productId AND pu.userId = :userId")
+  void deleteByProductIdAndUserId(@Param("productId") UUID productId, @Param("userId") UUID userId);
+
 }

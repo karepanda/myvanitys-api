@@ -1,19 +1,6 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
 import com.myvanitys.api.product.domain.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.adapter.secondary.ProductUserRepositoryAdapter;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +10,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductUserRepositoryAdapterTest {
@@ -214,4 +211,28 @@ class ProductUserRepositoryAdapterTest {
     }
   }
 
+  @Nested
+  class DeleteByProductIdAndUserIdTest {
+
+    @Test
+    void shouldDeleteByProductIdAndUserId() {
+      // Act
+      target.deleteByProductIdAndUserId(productId.getValue(), userId.getValue());
+
+      // Assert
+      verify(jpaProductUserRepository).deleteByProductIdAndUserId(productId.getValue(), userId.getValue());
+    }
+
+    @Test
+    void shouldHandleDeleteWhenRelationshipDoesNotExist() {
+      // Arrange
+      doNothing().when(jpaProductUserRepository).deleteByProductIdAndUserId(productId.getValue(), userId.getValue());
+
+      // Act
+      target.deleteByProductIdAndUserId(productId.getValue(), userId.getValue());
+
+      // Assert
+      verify(jpaProductUserRepository).deleteByProductIdAndUserId(productId.getValue(), userId.getValue());
+    }
+  }
 }

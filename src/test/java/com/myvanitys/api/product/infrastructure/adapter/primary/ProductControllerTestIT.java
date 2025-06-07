@@ -8,10 +8,8 @@ import com.myvanitys.api.model.v1.ProductResponse;
 import com.myvanitys.api.product.application.command.AddProductToMyVanityCommand;
 import com.myvanitys.api.product.application.command.AddReviewToProductCommand;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
-import com.myvanitys.api.product.application.port.primary.AddProductToMyVanityUseCase;
-import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
-import com.myvanitys.api.product.application.port.primary.FindProductAllUseCase;
-import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
+import com.myvanitys.api.product.application.command.DeleteProductFromUserVanityCommand;
+import com.myvanitys.api.product.application.port.primary.*;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.application.usecase.FindProductByTerm;
@@ -101,6 +99,12 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     public AddProductToMyVanityUseCase addProductToMyVanityUseCaseTest() {
       return mock(AddProductToMyVanityUseCase.class);
     }
+
+    @Bean
+    @Primary
+    public DeleteProductFromUserVanityUseCase deleteProductFromUserVanityUseCaseTest() {
+      return mock(DeleteProductFromUserVanityUseCase.class);
+    }
   }
 
   @Autowired
@@ -129,10 +133,13 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
   @Autowired
   private AddProductToMyVanityUseCase addProductToMyVanityUseCase;
+  
+  @Autowired
+  private DeleteProductFromUserVanityUseCase deleteProductFromUserVanityUseCase;
 
   @BeforeEach
   void setUp() {
-    reset(findProductUserUseCase, productResponseMapper, findProductByTerm, findProductAllUseCase, createProductUseCase, tokenService, addReviewToProduct, addProductToMyVanityUseCase);
+    reset(findProductUserUseCase, productResponseMapper, findProductByTerm, findProductAllUseCase, createProductUseCase, tokenService, addReviewToProduct, addProductToMyVanityUseCase, deleteProductFromUserVanityUseCase);
   }
   private static final String ACCEPT_LANGUAGE = "en-US";
 
@@ -147,17 +154,14 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     String acceptLanguage = "en-US";
     String userAgent = "Mozilla/5.0 (Test)";
 
-    // Print the userId to debug
     System.out.println("Test userId: " + userId);
 
-    // Create domain model objects - Ensure entityId is properly constructed
     EntityId entityId = new EntityId(userId);
     System.out.println("EntityId value: " + entityId.getValue());
 
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
     Category category2 = new Category(new EntityId(UUID.randomUUID()), "Test Category2");
 
-    // Create user relations for each product
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
 
@@ -189,7 +193,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             )
     );
 
-    // Create API response objects
     List<ProductResponse> responseProducts = Arrays.asList(
             new ProductResponse()
                     .id(UUID.fromString(domainProducts.get(0).getId().getValue().toString()))
@@ -203,12 +206,10 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
                     .colorHex(domainProducts.get(1).getColorHex())
     );
 
-    // Configure mocks
     when(findProductUserUseCase.query(any(FindProductUserQuery.class))).thenReturn(domainProducts);
     when(productResponseMapper.toResponseList(domainProducts)).thenReturn(responseProducts);
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
 
-    // When/Then
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("X-Request-ID", requestId.toString())
@@ -226,7 +227,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .andExpect(jsonPath("$[1].brand").value("Brand 2"))
             .andExpect(jsonPath("$[1].colorHex").value("#00FF00"));
 
-    // Simple verification
     verify(findProductUserUseCase).query(any(FindProductUserQuery.class));
   }
 
@@ -239,13 +239,11 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .brand("Test Brand")
             .colorHex("#FF5733");
 
-    // When/Then - Test create endpoint
     mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(new ObjectMapper().writeValueAsString(request)))
             .andExpect(status().isBadRequest());
 
-    // When/Then - Test find by user endpoint
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{userId}/products", userId)
                     .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest());
@@ -258,7 +256,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     UUID flowId = UUID.randomUUID();
     UUID userId = UUID.randomUUID();
 
-    // Configure mock to throw exception
     when(findProductUserUseCase.query(any(FindProductUserQuery.class)))
             .thenThrow(new RuntimeException("Internal service error"));
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
@@ -281,7 +278,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     UUID flowId = UUID.randomUUID();
     UUID userId = UUID.randomUUID();
 
-    // Configure mock to return an empty list
     when(findProductUserUseCase.query(any(FindProductUserQuery.class)))
             .thenReturn(Collections.emptyList());
     when(productResponseMapper.toResponseList(anyList()))
@@ -309,10 +305,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     String acceptLanguage = "en-US";
     String userAgent = "Mozilla/5.0 (Test)";
 
-    // Print the userId to debug
     System.out.println("Test userId: " + userId);
 
-    // Create domain model objects - Ensure entityId is properly constructed
     EntityId entityId = new EntityId(userId);
     System.out.println("EntityId value: " + entityId.getValue());
 
@@ -342,7 +336,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             relations
     );
 
-    // Create API response objects
     ProductResponse expectedResponse = new ProductResponse()
             .id(productId.getValue())
             .name("Product 1")
@@ -350,7 +343,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .colorHex("#FF0000")
             .averageRating(5.0f);
 
-    // Configure mocks
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
     when(addReviewToProduct.execute(any(AddReviewToProductCommand.class))).thenReturn(updatedProduct);
     when(productResponseMapper.toResponse(updatedProduct)).thenReturn(expectedResponse);
@@ -371,7 +363,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .andExpect(jsonPath("$.colorHex").value("#FF0000"))
             .andExpect(jsonPath("$.averageRating").value(5));
 
-    // Verify that the mocks were called
     verify(addReviewToProduct).execute(any(AddReviewToProductCommand.class));
     verify(productResponseMapper).toResponse(updatedProduct);
 
@@ -407,7 +398,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             relations
     );
     
-    // Create API response objects
     ProductResponse expectedResponse = new ProductResponse()
             .id(productId)
             .name("Product 1")
@@ -415,7 +405,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .colorHex("#FF0000")
             .averageRating(0.0f);
     
-    // Configure mocks
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
     when(addProductToMyVanityUseCase.execute(any(AddProductToMyVanityCommand.class))).thenReturn(addedProduct);
     when(productResponseMapper.toResponse(addedProduct)).thenReturn(expectedResponse);
@@ -435,7 +424,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .andExpect(jsonPath("$.colorHex").value("#FF0000"))
             .andExpect(jsonPath("$.averageRating").value(0.0));
 
-    // Verify with more specific arguments
     verify(addProductToMyVanityUseCase).execute(argThat(command -> 
         command.productId().equals(entityProductId.getValue()) &&
         command.userId().equals(entityUserId.getValue())
@@ -450,7 +438,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     UUID flowId = UUID.randomUUID();
     final String searchTerm = "makeup";
 
-    // Create domain objects
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
@@ -491,7 +478,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
                     .averageRating(0.0f)
     );
 
-    // Configure mocks
     when(findProductByTerm.query(searchTerm)).thenReturn(domainProducts);
     when(productResponseMapper.toResponseList(domainProducts)).thenReturn(responseProducts);
 
@@ -510,7 +496,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .andExpect(jsonPath("$.content[1].name").value("Lipstick"))
             .andExpect(jsonPath("$.content[1].brand").value("Makeup Brand"));
 
-    // Verify that the mocks were called
     verify(findProductByTerm).query(searchTerm);
     verify(productResponseMapper).toResponseList(domainProducts);
     verifyNoMoreInteractions(findProductByTerm, productResponseMapper);
@@ -523,7 +508,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     UUID flowId = UUID.randomUUID();
     final String searchTerm = "Makeup";
 
-    // Create domain objects
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
     Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
@@ -564,7 +548,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
                     .averageRating(0.0f)
     );
 
-    // Configure mocks
     when(findProductByTerm.query(searchTerm)).thenReturn(Collections.emptyList());
     when(productResponseMapper.toResponseList(domainProducts)).thenReturn(responseProducts);
 
@@ -579,7 +562,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.content", hasSize(0)));
 
-    // Verify that the mocks were called
     verify(findProductByTerm).query(searchTerm);
     verify(productResponseMapper).toResponseList(Collections.emptyList());
     verifyNoMoreInteractions(findProductByTerm, productResponseMapper);
@@ -592,7 +574,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     UUID requestId = UUID.randomUUID();
     UUID flowId = UUID.randomUUID();
 
-    // Create domain objects
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
     Category category1 = new Category(new EntityId(UUID.randomUUID()), "Category 1");
@@ -634,7 +615,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
                     .averageRating(0.0f)
     );
 
-    // Configure mocks
     when(findProductAllUseCase.query()).thenReturn(domainProducts);
     when(productResponseMapper.toResponseList(domainProducts)).thenReturn(responseProducts);
 
@@ -656,7 +636,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .andExpect(jsonPath("$[1].brand").value("Brand 2"))
             .andExpect(jsonPath("$[1].colorHex").value("#00FF00"));
 
-    // Verify that the mocks were called
     verify(findProductAllUseCase).query();
     verify(productResponseMapper).toResponseList(domainProducts);
     verifyNoMoreInteractions(findProductAllUseCase, productResponseMapper);
@@ -668,7 +647,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     UUID requestId = UUID.randomUUID();
     UUID flowId = UUID.randomUUID();
 
-    // Configure mocks to return emptyList
     when(findProductAllUseCase.query()).thenReturn(Collections.emptyList());
     when(productResponseMapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
@@ -682,7 +660,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
 
-    // Verify that the mocks were called
     verify(findProductAllUseCase).query();
     verify(productResponseMapper).toResponseList(Collections.emptyList());
     verifyNoMoreInteractions(findProductAllUseCase, productResponseMapper);
@@ -694,7 +671,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     UUID requestId = UUID.randomUUID();
     UUID flowId = UUID.randomUUID();
 
-    // Configure mock to throw exception
     when(findProductAllUseCase.query()).thenThrow(new RuntimeException("Database connection error"));
 
     // When/Then
@@ -706,14 +682,13 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
                     .header("User-Agent", USER_AGENT))
             .andExpect(status().isInternalServerError());
 
-    // Verify that the mock was called
     verify(findProductAllUseCase).query();
     verifyNoMoreInteractions(findProductAllUseCase, productResponseMapper);
   }
 
   @Test
   void shouldReturnBadRequestWhenRequiredHeadersAreMissingForGetAllProducts() throws Exception {
-    // When/Then - Test without required headers
+    // When/Then 
     mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products")
                     .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest());
@@ -733,7 +708,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .categoryId(categoryId)
             .colorHex("#FF5733");
 
-    // Create domain objects
     EntityId productId = new EntityId(UUID.randomUUID());
     EntityId categoryEntityId = new EntityId(categoryId);
     Category category = new Category(categoryEntityId, "Test Category");
@@ -755,7 +729,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .colorHex("#FF5733")
             .averageRating(0.0f);
 
-    // Configure mocks
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
     when(createProductUseCase.execute(any(CreateProductCommand.class))).thenReturn(createdProduct);
     when(productResponseMapper.toResponse(createdProduct)).thenReturn(expectedResponse);
@@ -776,7 +749,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .andExpect(jsonPath("$.colorHex").value("#FF5733"))
             .andExpect(jsonPath("$.averageRating").value(0.0));
 
-    // Verify that the mocks were called
     verify(tokenService).extractUserId(anyString());
     verify(createProductUseCase).execute(any(CreateProductCommand.class));
     verify(productResponseMapper).toResponse(createdProduct);
@@ -796,7 +768,6 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             .categoryId(categoryId)
             .colorHex("#FF5733");
 
-    // Configure mocks
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
     when(createProductUseCase.execute(any(CreateProductCommand.class)))
             .thenThrow(new RuntimeException("Database connection error"));
@@ -812,9 +783,40 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
                     .content(new ObjectMapper().writeValueAsString(request)))
             .andExpect(status().isInternalServerError());
 
-    // Verify that the mock was called
     verify(tokenService).extractUserId(anyString());
     verify(createProductUseCase).execute(any(CreateProductCommand.class));
     verifyNoMoreInteractions(productResponseMapper);
   }
-}
+
+  @Test
+  void shouldDeleteProductFromUserVanity() throws Exception {
+    // Given
+    UUID productId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+    String acceptLanguage = "en-US";
+    String userAgent = "Mozilla/1.0 (Test)";
+    
+    // Configure mocks
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
+    doNothing().when(deleteProductFromUserVanityUseCase).execute(any(DeleteProductFromUserVanityCommand.class));
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/products/{productId}", productId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Request-ID", requestId.toString())
+                    .header("X-Flow-ID", flowId.toString())
+                    .header("Accept-Language", acceptLanguage)
+                    .header("User-Agent", userAgent)
+                    .header("Authorization", "Bearer valid-jwt-token-here"))
+            .andExpect(status().isNoContent());
+
+    // Verify that the use case was called with the correct parameters
+    verify(deleteProductFromUserVanityUseCase).execute(argThat(command ->
+            command.productId().equals(productId) &&
+                    command.userId().equals(userId)
+    ));
+    verify(tokenService).extractUserId(anyString());
+  }
+  }
