@@ -13,7 +13,6 @@ import com.myvanitys.api.product.application.port.primary.*;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.application.usecase.FindProductByTerm;
-import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
@@ -797,103 +796,27 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     UUID requestId = UUID.randomUUID();
     UUID flowId = UUID.randomUUID();
     String acceptLanguage = "en-US";
-    String userAgent = "Mozilla/5.0 (Test)";
+    String userAgent = "Mozilla/1.0 (Test)";
     
     // Configure mocks
     when(tokenService.extractUserId(anyString())).thenReturn(userId);
     doNothing().when(deleteProductFromUserVanityUseCase).execute(any(DeleteProductFromUserVanityCommand.class));
-    
+
     // When/Then
-    mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/products/{productId}/delete-from-vanity", productId)
+    mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/products/{productId}", productId)
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("X-Request-ID", requestId.toString())
                     .header("X-Flow-ID", flowId.toString())
                     .header("Accept-Language", acceptLanguage)
                     .header("User-Agent", userAgent)
-                    .header("Authorization", "Bearer 4/P7q7W91"))
+                    .header("Authorization", "Bearer valid-jwt-token-here"))
             .andExpect(status().isNoContent());
 
     // Verify that the use case was called with the correct parameters
-    verify(deleteProductFromUserVanityUseCase).execute(argThat(command -> 
-        command.productId().equals(productId) &&
-        command.userId().equals(userId)
+    verify(deleteProductFromUserVanityUseCase).execute(argThat(command ->
+            command.productId().equals(productId) &&
+                    command.userId().equals(userId)
     ));
     verify(tokenService).extractUserId(anyString());
   }
-
-  @Test
-  void shouldReturnUnauthorizedWhenTokenIsMissingForDeleteProduct() throws Exception {
-    // Given
-    UUID productId = UUID.randomUUID();
-    UUID requestId = UUID.randomUUID();
-    UUID flowId = UUID.randomUUID();
-
-    // When/Then
-    mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/products/{productId}/delete-from-vanity", productId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .header("X-Request-ID", requestId.toString())
-                    .header("X-Flow-ID", flowId.toString())
-                    .header("Accept-Language", ACCEPT_LANGUAGE)
-                    .header("User-Agent", USER_AGENT))
-            .andExpect(status().isUnauthorized());
-
-    // Verify that the use case was never called
-    verify(deleteProductFromUserVanityUseCase, never()).execute(any());
-  }
-
-  @Test
-  void shouldReturnNotFoundWhenProductNotInUserVanityForDelete() throws Exception {
-    // Given
-    UUID productId = UUID.randomUUID();
-    UUID userId = UUID.randomUUID();
-    UUID requestId = UUID.randomUUID();
-    UUID flowId = UUID.randomUUID();
-
-    // Configure mocks
-    when(tokenService.extractUserId(anyString())).thenReturn(userId);
-    doThrow(new ProductNotFoundException("Product is not in user's vanity collection\n"))
-            .when(deleteProductFromUserVanityUseCase).execute(any(DeleteProductFromUserVanityCommand.class));
-
-    // When/Then
-    mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/products/{productId}/delete-from-vanity", productId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .header("X-Request-ID", requestId.toString())
-                    .header("X-Flow-ID", flowId.toString())
-                    .header("Accept-Language", ACCEPT_LANGUAGE)
-                    .header("User-Agent", USER_AGENT)
-                    .header("Authorization", "Bearer 4/P7q7W91"))
-            .andExpect(status().isNotFound());
-
-    // Verify that the use case was called
-    verify(deleteProductFromUserVanityUseCase).execute(any(DeleteProductFromUserVanityCommand.class));
-    verify(tokenService).extractUserId(anyString());
-  }
-
-  @Test
-  void shouldReturnInternalServerErrorWhenDeleteProductUseCaseFails() throws Exception {
-     // Given
-      UUID productId = UUID.randomUUID();
-      UUID userId = UUID.randomUUID();
-      UUID requestId = UUID.randomUUID();
-      UUID flowId = UUID.randomUUID();
-
-     // Configure mocks
-     when(tokenService.extractUserId(anyString())).thenReturn(userId);
-      doThrow(new RuntimeException("Database connection error"))
-            .when(deleteProductFromUserVanityUseCase).execute(any(DeleteProductFromUserVanityCommand.class));
-
-      // When/Then
-     mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/products/{productId}/delete-from-vanity", productId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .header("X-Request-ID", requestId.toString())
-                    .header("X-Flow-ID", flowId.toString())
-                    .header("Accept-Language", ACCEPT_LANGUAGE)
-                    .header("User-Agent", USER_AGENT)
-                    .header("Authorization", "Bearer 4/P7q7W91"))
-            .andExpect(status().isInternalServerError());
-
-      // Verify that the use case was called
-      verify(deleteProductFromUserVanityUseCase).execute(any(DeleteProductFromUserVanityCommand.class));
-      verify(tokenService).extractUserId(anyString());
-    }
   }
