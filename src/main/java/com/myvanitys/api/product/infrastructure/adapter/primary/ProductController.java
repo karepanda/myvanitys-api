@@ -170,21 +170,18 @@ public class ProductController implements ProductsApiDelegate {
   }
 
   @Override
-  public ResponseEntity<ProductResponse> deleteProductFromUserVanity(
-          EntityId productId,
+  public ResponseEntity<Void> deleteProductByUser(
+          UUID productId,
           UUID xRequestID,
           UUID xFlowID,
           String acceptLanguage,
           String userAgent) {
 
-    DeleteProductFromUserVanityCommand command = new DeleteProductFromUserVanityCommand(productId, getUserId());
+    DeleteProductFromUserVanityCommand command = new DeleteProductFromUserVanityCommand(productId, getUserId().getValue());
 
-    Product deleteProduct = deleteProductFromUserVanityUseCase.execute(command);
+    deleteProductFromUserVanityUseCase.execute(command);
 
-    ProductResponse response = productResponseMapper.toResponse(deleteProduct);
-
-
-    return ResponseEntity.ok(response);
+    return ResponseEntity.noContent().build();
   }
 
   private EntityId getUserId() {

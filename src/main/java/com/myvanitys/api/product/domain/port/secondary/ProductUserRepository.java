@@ -77,7 +77,7 @@ public interface ProductUserRepository {
   Optional<ProductUserEntity> findByProductIdAndUserId(UUID productId, UUID userId);
 
   /**
-   * Delete specific relationship between a product and a user
+   * Delete a specific relationship between a product and a user
    *
    * @param productId the product ID
    * @param userId the user ID

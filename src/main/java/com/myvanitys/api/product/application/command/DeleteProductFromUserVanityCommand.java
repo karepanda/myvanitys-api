@@ -1,10 +1,10 @@
 package com.myvanitys.api.product.application.command;
 
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import java.util.UUID;
 
 public record DeleteProductFromUserVanityCommand(
-        EntityId productId,
-        EntityId userId
+        UUID productId,
+        UUID userId
 ) {
     public DeleteProductFromUserVanityCommand {
         if (productId == null) {
