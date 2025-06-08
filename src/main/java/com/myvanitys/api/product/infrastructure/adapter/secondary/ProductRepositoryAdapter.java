@@ -48,23 +48,19 @@ public class ProductRepositoryAdapter implements ProductRepository {
   @Override
   public Product save(Product product) {
     try {
-      // ✅ Verificar que la categoría existe usando interface de dominio
-      if (!categoryRepository.findById(product.getCategory().categoryId()).isPresent()) {
+      if (categoryRepository.findById(product.getCategory().categoryId()).isEmpty()) {
         throw new RepositoryResourceNotFoundException("Category not found with ID: " +
             product.getCategory().categoryId().getValue());
       }
 
-      // ✅ Verificar si el producto ya existe
       Optional<ProductEntity> existingProduct = jpaProductRepository.findById(product.getId().getValue());
 
       ProductEntity savedEntity;
       if (existingProduct.isPresent()) {
-        // ✅ PRODUCTO EXISTE: Solo actualizar timestamp, NO guardar para evitar conflicto Hibernate
         savedEntity = existingProduct.get();
         savedEntity.setUpdatedAt(Instant.now());
         log.debug("Product already exists, updated timestamp: {}", product.getId().getValue());
       } else {
-        // ✅ PRODUCTO NUEVO: Crear y guardar
         ProductEntity entity = productMapper.toEntity(product);
         Instant now = Instant.now();
         entity.setCreatedAt(now);
@@ -73,13 +69,10 @@ public class ProductRepositoryAdapter implements ProductRepository {
         log.debug("Created new product: {}", product.getId().getValue());
       }
 
-      // ✅ Validar que las relaciones ProductUser ya existen (flujo de negocio)
       validateProductUserRelationsExist(product);
 
-      // ✅ Guardar solo las relaciones ProductUser nuevas
       saveNewProductUserRelations(product);
 
-      // ✅ Guardar solo las reviews nuevas
       saveNewProductReviews(product);
 
       return productMapper.toDomain(savedEntity, product.getCategory(), product.getReviews());
@@ -129,7 +122,6 @@ public class ProductRepositoryAdapter implements ProductRepository {
   @Override
   public List<Product> findByUserId(UUID userId) {
     try {
-      // ✅ Usar interface de dominio
       List<EntityId> productIds = productUserRepository.findProductIdsByUserId(new EntityId(userId));
 
       if (productIds.isEmpty()) {

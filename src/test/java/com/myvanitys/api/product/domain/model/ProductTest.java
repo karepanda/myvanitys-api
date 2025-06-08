@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
@@ -78,107 +78,145 @@ class ProductTest {
   }
 
   @Test
-  void shouldAddReviewFromUser() {
+  void shouldThrowExceptionWhenAddingReviewWithoutUserRelation() {
+    // When/Then - Should throw exception because user relation doesn't exist
+    assertThatThrownBy(() -> product.addReviewFromUser(userId, 4, "Great product"))
+        .isInstanceOf(ReviewValidationException.class)
+        .hasMessageContaining("User must be associated with product before adding reviews");
+  }
+
+  @Test
+  void shouldAddReviewFromUserWhenRelationExists() {
+    // Given - Create product with existing user relation
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
+
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
     // When
-    Review review = product.addReviewFromUser(userId, 4, "Great product");
+    Review review = productWithRelation.addReviewFromUser(userId, 4, "Great product");
 
     // Then
-    assertThat(product.getReviews()).hasSize(1);
-    assertThat(product.getReviews().get(0)).isEqualTo(review);
-    assertThat(product.getAverageRating()).isEqualTo(4);
-
-    // User relation should be created
-    assertThat(product.getUserRelations()).hasSize(1);
-    Optional<ProductUserRelation> relation = product.getUserRelations().stream().findFirst();
-    assertThat(relation).isPresent();
-    assertThat(relation.get().getUserId()).isEqualTo(userId);
-    assertThat(relation.get().getProductId()).isEqualTo(productId);
-    // ❌ REMOVED: No more reviewId in relation
-    // assertThat(relation.get().getReviewId()).isEqualTo(review.getId());
+    assertThat(productWithRelation.getReviews()).hasSize(1);
+    assertThat(productWithRelation.getReviews().get(0)).isEqualTo(review);
+    assertThat(productWithRelation.getAverageRating()).isEqualTo(4);
+    assertThat(productWithRelation.getUserRelations()).hasSize(1);
   }
 
   @Test
   void shouldAddMultipleReviewsFromSameUser() {
+    // Given - Create product with existing user relation
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
+
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
     // When - User can add multiple reviews
-    Review review1 = product.addReviewFromUser(userId, 4, "First review");
-    Review review2 = product.addReviewFromUser(userId, 5, "Second review");
+    Review review1 = productWithRelation.addReviewFromUser(userId, 4, "First review");
+    Review review2 = productWithRelation.addReviewFromUser(userId, 5, "Second review");
 
     // Then
-    assertThat(product.getReviews()).hasSize(2);
-    assertThat(product.getReviews()).contains(review1, review2);
-    assertThat(product.getAverageRating()).isEqualTo(5); // (4+5)/2 = 4.5 rounded to 5
+    assertThat(productWithRelation.getReviews()).hasSize(2);
+    assertThat(productWithRelation.getReviews()).contains(review1, review2);
+    assertThat(productWithRelation.getAverageRating()).isEqualTo(5); // (4+5)/2 = 4.5 rounded to 5
 
     // Only one user relation should exist
-    assertThat(product.getUserRelations()).hasSize(1);
+    assertThat(productWithRelation.getUserRelations()).hasSize(1);
 
     // User should have multiple reviews
-    List<Review> userReviews = product.findReviewsByUser(userId);
+    List<Review> userReviews = productWithRelation.findReviewsByUser(userId);
     assertThat(userReviews).hasSize(2);
     assertThat(userReviews).contains(review1, review2);
   }
 
   @Test
   void shouldUpdateExistingReview() {
-    // Given
-    Review review = product.addReviewFromUser(userId, 3, "Initial review");
+    // Given - Create product with review
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
+
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
+    Review review = productWithRelation.addReviewFromUser(userId, 3, "Initial review");
     EntityId reviewId = review.getId();
 
-    // When - Update by review ID, not user ID
-    Review updatedReview = product.updateReview(reviewId, 5, "Updated review");
+    // When - Update by review ID
+    Review updatedReview = productWithRelation.updateReview(reviewId, 5, "Updated review");
 
     // Then
     assertThat(updatedReview).isEqualTo(review); // Same review object, just updated
     assertThat(updatedReview.getRating()).isEqualTo(5);
     assertThat(updatedReview.getComment()).isEqualTo("Updated review");
-    assertThat(product.getAverageRating()).isEqualTo(5);
+    assertThat(productWithRelation.getAverageRating()).isEqualTo(5);
   }
 
   @Test
   void shouldSoftDeleteReview() {
-    // Given
-    Review review = product.addReviewFromUser(userId, 4, "Review to delete");
-    assertThat(product.getAverageRating()).isEqualTo(4);
+    // Given - Create product with review
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
 
-    // When - Delete by review ID, not user ID
-    Review deletedReview = product.deleteReview(review.getId());
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
+    Review review = productWithRelation.addReviewFromUser(userId, 4, "Review to delete");
+    assertThat(productWithRelation.getAverageRating()).isEqualTo(4);
+
+    // When - Delete by review ID
+    Review deletedReview = productWithRelation.deleteReview(review.getId());
 
     // Then
     assertThat(deletedReview).isEqualTo(review);
     assertThat(deletedReview.isDeleted()).isTrue();
 
     // The review is still in the collection but marked as deleted
-    assertThat(product.getReviews()).hasSize(1);
+    assertThat(productWithRelation.getReviews()).hasSize(1);
 
     // The average rating should exclude deleted reviews
-    assertThat(product.getAverageRating()).isEqualTo(0);
+    assertThat(productWithRelation.getAverageRating()).isEqualTo(0);
   }
 
   @Test
   void shouldHardDeleteReview() {
-    // Given
-    Review review = product.addReviewFromUser(userId, 4, "Review to delete");
-    assertThat(product.getReviews()).hasSize(1);
+    // Given - Create product with review
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
 
-    // When - Remove by review ID, not user ID
-    boolean removed = product.removeReview(review.getId());
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
+    Review review = productWithRelation.addReviewFromUser(userId, 4, "Review to delete");
+    assertThat(productWithRelation.getReviews()).hasSize(1);
+
+    // When - Remove by review ID
+    boolean removed = productWithRelation.removeReview(review.getId());
 
     // Then
     assertThat(removed).isTrue();
-    assertThat(product.getReviews()).isEmpty();
-    assertThat(product.getAverageRating()).isEqualTo(0);
+    assertThat(productWithRelation.getReviews()).isEmpty();
+    assertThat(productWithRelation.getAverageRating()).isEqualTo(0);
 
     // The user relation should still exist
-    assertThat(product.getUserRelations()).hasSize(1);
+    assertThat(productWithRelation.getUserRelations()).hasSize(1);
   }
 
   @Test
   void shouldFindReviewsByUser() {
-    // Given
-    Review review1 = product.addReviewFromUser(userId, 4, "First review");
-    Review review2 = product.addReviewFromUser(userId, 5, "Second review");
+    // Given - Create product with reviews
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
+
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
+    Review review1 = productWithRelation.addReviewFromUser(userId, 4, "First review");
+    Review review2 = productWithRelation.addReviewFromUser(userId, 5, "Second review");
 
     // When
-    List<Review> userReviews = product.findReviewsByUser(userId);
+    List<Review> userReviews = productWithRelation.findReviewsByUser(userId);
 
     // Then
     assertThat(userReviews).hasSize(2);
@@ -187,15 +225,21 @@ class ProductTest {
 
   @Test
   void shouldFindActiveReviewsByUser() {
-    // Given
-    Review review1 = product.addReviewFromUser(userId, 4, "First review");
-    Review review2 = product.addReviewFromUser(userId, 5, "Second review");
+    // Given - Create product with reviews
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
+
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
+    Review review1 = productWithRelation.addReviewFromUser(userId, 4, "First review");
+    Review review2 = productWithRelation.addReviewFromUser(userId, 5, "Second review");
 
     // Delete one review
-    product.deleteReview(review1.getId());
+    productWithRelation.deleteReview(review1.getId());
 
     // When
-    List<Review> activeReviews = product.findActiveReviewsByUser(userId);
+    List<Review> activeReviews = productWithRelation.findActiveReviewsByUser(userId);
 
     // Then
     assertThat(activeReviews).hasSize(1);
@@ -205,63 +249,87 @@ class ProductTest {
 
   @Test
   void shouldCalculateAverageRatingCorrectly() {
-    // Given
+    // Given - Create product with multiple user relations
     EntityId user1 = new EntityId(UUID.randomUUID());
     EntityId user2 = new EntityId(UUID.randomUUID());
     EntityId user3 = new EntityId(UUID.randomUUID());
 
-    Review review1 = product.addReviewFromUser(user1, 5, "Excellent");
-    Review review2 = product.addReviewFromUser(user2, 3, "Average");
-    Review review3 = product.addReviewFromUser(user3, 4, "Good");
+    ProductUserRelation relation1 = ProductUserRelation.create(productId, user1);
+    ProductUserRelation relation2 = ProductUserRelation.create(productId, user2);
+    ProductUserRelation relation3 = ProductUserRelation.create(productId, user3);
+
+    Product productWithRelations = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(relation1, relation2, relation3));
+
+    Review review1 = productWithRelations.addReviewFromUser(user1, 5, "Excellent");
+    Review review2 = productWithRelations.addReviewFromUser(user2, 3, "Average");
+    Review review3 = productWithRelations.addReviewFromUser(user3, 4, "Good");
 
     // When
-    product.calculateAverageRating();
+    productWithRelations.calculateAverageRating();
 
     // Then
-    assertThat(product.getAverageRating()).isEqualTo(4); // (5+3+4)/3 = 4
+    assertThat(productWithRelations.getAverageRating()).isEqualTo(4); // (5+3+4)/3 = 4
 
     // Soft delete one review
-    product.deleteReview(review2.getId());
+    productWithRelations.deleteReview(review2.getId());
 
     // Recalculate
-    product.calculateAverageRating();
+    productWithRelations.calculateAverageRating();
 
     // Average should now exclude the deleted review
-    assertThat(product.getAverageRating()).isEqualTo(5); // (5+4)/2 = 4.5 rounded to 5
+    assertThat(productWithRelations.getAverageRating()).isEqualTo(5); // (5+4)/2 = 4.5 rounded to 5
   }
 
   @Test
   void shouldCheckIfUserHasReviews() {
-    // Given - Initially no reviews
+    // Given - Initially no reviews and no relation
     assertThat(product.hasReviewFrom(userId)).isFalse();
 
+    // Given - Create product with user relation
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
+
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
+    // Initially no reviews even with relation
+    assertThat(productWithRelation.hasReviewFrom(userId)).isFalse();
+
     // When - Add a review
-    product.addReviewFromUser(userId, 4, "Test review");
+    productWithRelation.addReviewFromUser(userId, 4, "Test review");
 
     // Then
-    assertThat(product.hasReviewFrom(userId)).isTrue();
+    assertThat(productWithRelation.hasReviewFrom(userId)).isTrue();
 
     // When - Add another review (same user)
-    product.addReviewFromUser(userId, 5, "Another review");
+    productWithRelation.addReviewFromUser(userId, 5, "Another review");
 
     // Then - Still true
-    assertThat(product.hasReviewFrom(userId)).isTrue();
+    assertThat(productWithRelation.hasReviewFrom(userId)).isTrue();
   }
 
   @Test
   void shouldHandleDeletedReviewsInHasReviewFrom() {
-    // Given
-    Review review1 = product.addReviewFromUser(userId, 4, "First review");
-    Review review2 = product.addReviewFromUser(userId, 5, "Second review");
+    // Given - Create product with user relation and reviews
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
 
-    assertThat(product.hasReviewFrom(userId)).isTrue();
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
+    Review review1 = productWithRelation.addReviewFromUser(userId, 4, "First review");
+    Review review2 = productWithRelation.addReviewFromUser(userId, 5, "Second review");
+
+    assertThat(productWithRelation.hasReviewFrom(userId)).isTrue();
 
     // When - Delete all reviews
-    product.deleteReview(review1.getId());
-    product.deleteReview(review2.getId());
+    productWithRelation.deleteReview(review1.getId());
+    productWithRelation.deleteReview(review2.getId());
 
     // Then - User has no active reviews
-    assertThat(product.hasReviewFrom(userId)).isFalse();
+    assertThat(productWithRelation.hasReviewFrom(userId)).isFalse();
   }
 
   @Test
@@ -301,22 +369,41 @@ class ProductTest {
   }
 
   @Test
-  void shouldAllowReviewAfterUserRelationExists() {
-    // Given - Create user relation first (simulate user interaction with product)
-    product.addReviewFromUser(userId, 3, "Initial review");
+  void shouldReturnEmptyListForUserWithNoRelation() {
+    // Even if there are reviews from other users, this user has no relation
+    EntityId otherUserId = new EntityId(UUID.randomUUID());
+    ProductUserRelation otherRelation = ProductUserRelation.create(productId, otherUserId);
 
-    // User relation now exists
-    assertThat(product.getUserRelations()).hasSize(1);
+    Product productWithOtherRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(otherRelation));
 
-    // When - Add more reviews (uses existing relation)
-    Review review2 = product.addReviewFromUser(userId, 4, "Second review");
-    Review review3 = product.addReviewFromUser(userId, 5, "Third review");
+    productWithOtherRelation.addReviewFromUser(otherUserId, 5, "Other user review");
+
+    // When searching for userId (who has no relation)
+    List<Review> userReviews = productWithOtherRelation.findReviewsByUser(userId);
+    List<Review> activeReviews = productWithOtherRelation.findActiveReviewsByUser(userId);
 
     // Then
-    assertThat(product.getReviews()).hasSize(3);
-    assertThat(product.getUserRelations()).hasSize(1); // Still only one relation
+    assertThat(userReviews).isEmpty();
+    assertThat(activeReviews).isEmpty();
+  }
 
-    List<Review> userReviews = product.findReviewsByUser(userId);
-    assertThat(userReviews).hasSize(3);
+  @Test
+  void shouldThrowExceptionWhenUpdatingDeletedReview() {
+    // Given - Create product with review and then delete it
+    ProductUserRelation userRelation = ProductUserRelation.create(productId, userId);
+
+    Product productWithRelation = Product.reconstruct(
+        productId, "Test Product", "Test Brand", category, "#FFFFFF",
+        List.of(), Set.of(userRelation));
+
+    Review review = productWithRelation.addReviewFromUser(userId, 4, "Review to delete");
+    productWithRelation.deleteReview(review.getId());
+
+    // When/Then - Try to update the deleted review
+    assertThatThrownBy(() -> productWithRelation.updateReview(review.getId(), 5, "Updated"))
+        .isInstanceOf(ReviewValidationException.class)
+        .hasMessageContaining("Cannot update a deleted review");
   }
 }

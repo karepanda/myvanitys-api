@@ -1,6 +1,5 @@
 package com.myvanitys.api.product.domain.model;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,8 +18,6 @@ import lombok.ToString;
 @Getter
 @ToString
 public class Product {
-
-  public static final String USER_HAS_NO_RELATION = "User has no relation with this product";
 
   public static final String REVIEW_NOT_FOUND = "Review not found";
 
@@ -93,9 +90,9 @@ public class Product {
     this.colorHex = colorHex;
   }
 
-  // ✅ CORREGIDO: Sin linkToReview, simplemente agregar review
+  // ✅ CORREGIDO: No crear relaciones automáticamente, solo buscar existentes
   public Review addReviewFromUser(EntityId userId, ReviewDetails details) {
-    ProductUserRelation relation = findOrCreateUserRelation(userId);
+    ProductUserRelation relation = findUserRelationOrThrow(userId);
 
     Review review = Review.createFor(relation.getId(), details);
     addReview(review);
@@ -108,24 +105,11 @@ public class Product {
     return addReviewFromUser(userId, ReviewDetails.create(rating, comment));
   }
 
-  public Review addReviewFromUser(EntityId userId, int rating, String comment, Instant createdAt, Instant updatedAt) {
-    return addReviewFromUser(userId, ReviewDetails.of(rating, comment, createdAt, updatedAt, null));
-  }
+  // ❌ ELIMINADO: addReviewFromUser con timestamps - no se usa
 
-  // ✅ CORREGIDO: Buscar review directamente por ID, no por relación
-  public Review updateReview(EntityId reviewId, ReviewDetails details) {
-    Review review = findReviewById(reviewId)
-        .orElseThrow(() -> new ReviewValidationException(REVIEW_NOT_FOUND));
+  // ❌ ELIMINADO: addUserToProduct - no se usa actualmente
 
-    if (review.isDeleted()) {
-      throw new ReviewValidationException(CANNOT_UPDATE_DELETED_REVIEW);
-    }
-
-    review.updateDetails(details);
-    calculateAverageRating();
-
-    return review;
-  }
+  // ❌ ELIMINADO: updateReview con ReviewDetails - no se usa
 
   public Review updateReview(EntityId reviewId, int rating, String comment) {
     Review review = findReviewById(reviewId)
@@ -197,7 +181,6 @@ public class Product {
         .toList();
   }
 
-  // ✅ CORREGIDO: Obtener reviews activas de un usuario
   public List<Review> findActiveReviewsByUser(EntityId userId) {
     return findReviewsByUser(userId).stream()
         .filter(Review::isActive)
@@ -210,11 +193,21 @@ public class Product {
         .findFirst();
   }
 
-  // ✅ NUEVO: Helper para encontrar relación sin crear
+  // ✅ CORREGIDO: Buscar relación por userId Y productId
   private Optional<ProductUserRelation> findUserRelation(EntityId userId) {
     return userRelations.stream()
-        .filter(r -> r.getUserId().equals(userId))
+        .filter(r -> r.getUserId().equals(userId) && r.getProductId().equals(this.id))
         .findFirst();
+  }
+
+  // ✅ CORREGIDO: Buscar relación o lanzar excepción, usando ambos IDs
+  private ProductUserRelation findUserRelationOrThrow(EntityId userId) {
+    return userRelations.stream()
+        .filter(r -> r.getUserId().equals(userId) && r.getProductId().equals(this.id))
+        .findFirst()
+        .orElseThrow(() -> new ReviewValidationException(
+            "User must be associated with product before adding reviews. " +
+                "UserId: " + userId.getValue() + ", ProductId: " + this.id.getValue()));
   }
 
   private void validateProductDetails(String name, String brand, String colorHex) {
@@ -234,17 +227,6 @@ public class Product {
         !colorHex.matches("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")) {
       throw new ProductValidationException("Invalid color hex format");
     }
-  }
-
-  private ProductUserRelation findOrCreateUserRelation(EntityId userId) {
-    return userRelations.stream()
-        .filter(r -> r.getUserId().equals(userId))
-        .findFirst()
-        .orElseGet(() -> {
-          ProductUserRelation newRelation = ProductUserRelation.create(id, userId);
-          userRelations.add(newRelation);
-          return newRelation;
-        });
   }
 
   private void addReview(Review review) {
@@ -276,11 +258,7 @@ public class Product {
     return Collections.unmodifiableSet(userRelations);
   }
 
-  public int getActiveReviewCount() {
-    return (int) reviews.stream()
-        .filter(Review::isActive)
-        .count();
-  }
+  // ❌ ELIMINADO: getActiveReviewCount - no se usa
 
   @Override
   public boolean equals(Object o) {
