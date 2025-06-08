@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,6 +35,9 @@ public class ProductUserEntity {
   @Column(name = "product_user_id", nullable = false, unique = true)
   private UUID productUserId;
 
+  @Version
+  private Long version;
+
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
@@ -45,8 +49,8 @@ public class ProductUserEntity {
   @ToString.Exclude
   private List<ReviewEntity> reviews;
 
-  @Column(name = "delete_at")
-  private Instant deleteAt;
+  @Column(name = "deleted_at")
+  private Instant deletedAt;
 
   @Column(name = "created_at")
   private Instant createdAt;

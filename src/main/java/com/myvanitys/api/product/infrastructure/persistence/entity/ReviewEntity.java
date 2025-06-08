@@ -5,10 +5,9 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,9 +25,11 @@ import lombok.NoArgsConstructor;
 public class ReviewEntity {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
   @Column(name = "review_id")
   private UUID reviewId;
+
+  @Version
+  private Long version;
 
   @Column(nullable = false)
   private int rating;
