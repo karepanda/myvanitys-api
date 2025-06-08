@@ -1,5 +1,7 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
+import java.util.UUID;
+
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
@@ -7,17 +9,11 @@ import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.UUID;
-
-
 @Mapper(componentModel = "spring", uses = {EntityIdMapper.class})
 public interface ReviewMapper {
 
   /**
-   * Converts a ReviewEntity to a domain Review object. This is implemented manually due to the factory method requirements.
-   *
-   * @param entity The entity to convert
-   * @return The domain Review object
+   * Converts a ReviewEntity to a domain Review object.
    */
   default Review toDomain(ReviewEntity entity) {
     if (entity == null) {
@@ -41,9 +37,6 @@ public interface ReviewMapper {
 
   /**
    * Converts a domain Review object to a ReviewEntity.
-   *
-   * @param review The domain object to convert
-   * @return The corresponding ReviewEntity
    */
   @Mapping(source = "id", target = "reviewId")
   @Mapping(source = "productUserId", target = "productUserId")
@@ -56,10 +49,6 @@ public interface ReviewMapper {
 
   /**
    * Converts a domain Review object to a ReviewEntity with explicit product-user ID.
-   *
-   * @param review The domain object to convert
-   * @param productUserId The UUID of the product-user relation
-   * @return The corresponding ReviewEntity
    */
   @Mapping(source = "review.id", target = "reviewId")
   @Mapping(source = "productUserId", target = "productUserId")

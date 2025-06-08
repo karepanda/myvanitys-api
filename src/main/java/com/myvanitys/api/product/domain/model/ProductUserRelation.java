@@ -5,7 +5,6 @@ import java.util.Objects;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import lombok.Getter;
 
-
 @Getter
 public class ProductUserRelation {
 
@@ -14,8 +13,6 @@ public class ProductUserRelation {
   private final EntityId productId;
 
   private final EntityId userId;
-
-  private EntityId reviewId;
 
   private ProductUserRelation(EntityId id, EntityId productId, EntityId userId) {
     this.id = Objects.requireNonNull(id, "Id cannot be null");
@@ -27,22 +24,8 @@ public class ProductUserRelation {
     return new ProductUserRelation(EntityId.newId(), productId, userId);
   }
 
-  public static ProductUserRelation reconstruct(EntityId id, EntityId productId, EntityId userId, EntityId reviewId) {
-    ProductUserRelation relation = new ProductUserRelation(id, productId, userId);
-    relation.reviewId = reviewId;
-    return relation;
-  }
-
-  public boolean hasReview() {
-    return reviewId != null;
-  }
-
-  public void linkToReview(EntityId reviewId) {
-    this.reviewId = Objects.requireNonNull(reviewId, "Review ID cannot be null");
-  }
-
-  public void unlinkReview() {
-    this.reviewId = null;
+  public static ProductUserRelation reconstruct(EntityId id, EntityId productId, EntityId userId) {
+    return new ProductUserRelation(id, productId, userId);
   }
 
   @Override
@@ -69,7 +52,6 @@ public class ProductUserRelation {
         "id=" + id +
         ", productId=" + productId +
         ", userId=" + userId +
-        ", reviewId=" + reviewId +
         '}';
   }
 }

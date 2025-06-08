@@ -16,20 +16,15 @@ import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import lombok.Getter;
 import lombok.ToString;
 
-
 @Getter
 @ToString
 public class Product {
 
   public static final String USER_HAS_NO_RELATION = "User has no relation with this product";
 
-  public static final String USER_HAS_NO_REVIEW = "User has no review for this product";
-
   public static final String REVIEW_NOT_FOUND = "Review not found";
 
   public static final String CANNOT_UPDATE_DELETED_REVIEW = "Cannot update a deleted review";
-
-  public static final String USER_ALREADY_HAS_REVIEW = "User already has a review for this product";
 
   private final EntityId id;
 
@@ -98,18 +93,11 @@ public class Product {
     this.colorHex = colorHex;
   }
 
+  // ✅ CORREGIDO: Sin linkToReview, simplemente agregar review
   public Review addReviewFromUser(EntityId userId, ReviewDetails details) {
     ProductUserRelation relation = findOrCreateUserRelation(userId);
 
-    if (relation.hasReview()) {
-      Optional<Review> existingReview = findReviewById(relation.getReviewId());
-      if (existingReview.isPresent() && existingReview.get().isActive()) {
-        throw new ReviewValidationException(USER_ALREADY_HAS_REVIEW);
-      }
-    }
-
     Review review = Review.createFor(relation.getId(), details);
-    relation.linkToReview(review.getId());
     addReview(review);
     calculateAverageRating();
 
@@ -124,14 +112,9 @@ public class Product {
     return addReviewFromUser(userId, ReviewDetails.of(rating, comment, createdAt, updatedAt, null));
   }
 
-  public Review updateReview(EntityId userId, ReviewDetails details) {
-    ProductUserRelation relation = findUserRelationOrThrow(userId);
-
-    if (!relation.hasReview()) {
-      throw new ReviewValidationException(USER_HAS_NO_REVIEW);
-    }
-
-    Review review = findReviewById(relation.getReviewId())
+  // ✅ CORREGIDO: Buscar review directamente por ID, no por relación
+  public Review updateReview(EntityId reviewId, ReviewDetails details) {
+    Review review = findReviewById(reviewId)
         .orElseThrow(() -> new ReviewValidationException(REVIEW_NOT_FOUND));
 
     if (review.isDeleted()) {
@@ -144,14 +127,8 @@ public class Product {
     return review;
   }
 
-  public Review updateReview(EntityId userId, int rating, String comment) {
-    ProductUserRelation relation = findUserRelationOrThrow(userId);
-
-    if (!relation.hasReview()) {
-      throw new ReviewValidationException(USER_HAS_NO_REVIEW);
-    }
-
-    Review review = findReviewById(relation.getReviewId())
+  public Review updateReview(EntityId reviewId, int rating, String comment) {
+    Review review = findReviewById(reviewId)
         .orElseThrow(() -> new ReviewValidationException(REVIEW_NOT_FOUND));
 
     if (review.isDeleted()) {
@@ -164,14 +141,8 @@ public class Product {
     return review;
   }
 
-  public Review deleteReview(EntityId userId) {
-    ProductUserRelation relation = findUserRelationOrThrow(userId);
-
-    if (!relation.hasReview()) {
-      throw new ReviewValidationException(USER_HAS_NO_REVIEW);
-    }
-
-    Review review = findReviewById(relation.getReviewId())
+  public Review deleteReview(EntityId reviewId) {
+    Review review = findReviewById(reviewId)
         .orElseThrow(() -> new ReviewValidationException(REVIEW_NOT_FOUND));
 
     if (review.isDeleted()) {
@@ -184,27 +155,14 @@ public class Product {
     return review;
   }
 
-  public boolean removeReviewByUser(EntityId userId) {
-    Optional<ProductUserRelation> relationOpt = userRelations.stream()
-        .filter(r -> r.getUserId().equals(userId))
-        .findFirst();
-
-    if (relationOpt.isEmpty() || !relationOpt.get().hasReview()) {
-      return false;
-    }
-
-    ProductUserRelation relation = relationOpt.get();
-    EntityId reviewId = relation.getReviewId();
-
+  public boolean removeReview(EntityId reviewId) {
     Optional<Review> reviewOpt = findReviewById(reviewId);
     if (reviewOpt.isEmpty()) {
       return false;
     }
 
     boolean removed = reviews.remove(reviewOpt.get());
-
     if (removed) {
-      relation.unlinkReview();
       calculateAverageRating();
     }
 
@@ -212,24 +170,50 @@ public class Product {
   }
 
   public boolean hasReviewFrom(EntityId userId) {
-    return userRelations.stream()
-        .filter(r -> r.getUserId().equals(userId) && r.hasReview())
-        .findFirst()
-        .flatMap(r -> findReviewById(r.getReviewId()))
-        .map(Review::isActive)
-        .orElse(false);
+    EntityId productUserId = findUserRelation(userId)
+        .map(ProductUserRelation::getId)
+        .orElse(null);
+
+    if (productUserId == null) {
+      return false;
+    }
+
+    return reviews.stream()
+        .filter(review -> review.getProductUserId().equals(productUserId))
+        .anyMatch(Review::isActive);
   }
 
-  public Optional<Review> findReviewByUser(EntityId userId) {
-    return userRelations.stream()
-        .filter(r -> r.getUserId().equals(userId) && r.hasReview())
-        .findFirst()
-        .flatMap(r -> findReviewById(r.getReviewId()));
+  public List<Review> findReviewsByUser(EntityId userId) {
+    EntityId productUserId = findUserRelation(userId)
+        .map(ProductUserRelation::getId)
+        .orElse(null);
+
+    if (productUserId == null) {
+      return Collections.emptyList();
+    }
+
+    return reviews.stream()
+        .filter(review -> review.getProductUserId().equals(productUserId))
+        .toList();
+  }
+
+  // ✅ CORREGIDO: Obtener reviews activas de un usuario
+  public List<Review> findActiveReviewsByUser(EntityId userId) {
+    return findReviewsByUser(userId).stream()
+        .filter(Review::isActive)
+        .toList();
   }
 
   public Optional<Review> findReviewById(EntityId reviewId) {
     return reviews.stream()
         .filter(r -> r.getId().equals(reviewId))
+        .findFirst();
+  }
+
+  // ✅ NUEVO: Helper para encontrar relación sin crear
+  private Optional<ProductUserRelation> findUserRelation(EntityId userId) {
+    return userRelations.stream()
+        .filter(r -> r.getUserId().equals(userId))
         .findFirst();
   }
 
@@ -250,13 +234,6 @@ public class Product {
         !colorHex.matches("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")) {
       throw new ProductValidationException("Invalid color hex format");
     }
-  }
-
-  private ProductUserRelation findUserRelationOrThrow(EntityId userId) {
-    return userRelations.stream()
-        .filter(r -> r.getUserId().equals(userId))
-        .findFirst()
-        .orElseThrow(() -> new ReviewValidationException(USER_HAS_NO_RELATION));
   }
 
   private ProductUserRelation findOrCreateUserRelation(EntityId userId) {
