@@ -5,11 +5,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import com.myvanitys.api.common.InfrastructureException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
@@ -19,8 +21,11 @@ import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.CategoryMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
+import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductUserRelationMapper;
+import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +49,10 @@ public class ProductRepositoryAdapter implements ProductRepository {
   private final ProductMapper productMapper;
 
   private final CategoryMapper categoryMapper;
+
+  private final ProductUserRelationMapper productUserRelationMapper;
+
+  private final ReviewMapper reviewMapper;
 
   @Override
   public Product save(Product product) {
@@ -70,12 +79,10 @@ public class ProductRepositoryAdapter implements ProductRepository {
       }
 
       validateProductUserRelationsExist(product);
-
       saveNewProductUserRelations(product);
-
       saveNewProductReviews(product);
 
-      return productMapper.toDomain(savedEntity, product.getCategory(), product.getReviews());
+      return reconstructProductWithAllData(savedEntity);
 
     } catch (DataAccessException e) {
       log.error("Error saving product: {}", e.getMessage(), e);
@@ -93,11 +100,7 @@ public class ProductRepositoryAdapter implements ProductRepository {
   public Optional<Product> findById(EntityId productId) {
     try {
       return jpaProductRepository.findById(productId.getValue())
-          .map(productEntity -> {
-            Category category = getCategoryForProduct(productEntity);
-            List<Review> reviews = getReviewsForProduct(productEntity.getProductId());
-            return productMapper.toDomain(productEntity, category, reviews);
-          });
+          .map(this::reconstructProductWithAllData);
     } catch (DataAccessException e) {
       log.error("Error finding product by ID: {}", e.getMessage(), e);
       throw DatabaseException.queryError("Find product by ID", e);
@@ -111,7 +114,16 @@ public class ProductRepositoryAdapter implements ProductRepository {
           .map(productEntity -> {
             Category category = getCategoryForProduct(productEntity);
             List<Review> reviews = getReviewsUserForProduct(productEntity.getProductId(), userId);
-            return productMapper.toDomain(productEntity, category, reviews);
+            Set<ProductUserRelation> relations = getRelationsForProduct(productEntity.getProductId());
+            return Product.reconstruct(
+                new EntityId(productEntity.getProductId()),
+                productEntity.getName(),
+                productEntity.getBrand(),
+                category,
+                productEntity.getColorHex(),
+                reviews,
+                relations
+            );
           });
     } catch (DataAccessException e) {
       log.error("Error finding product by name: {}", e.getMessage(), e);
@@ -138,7 +150,16 @@ public class ProductRepositoryAdapter implements ProductRepository {
           .map(productEntity -> {
             Category category = getCategoryForProduct(productEntity);
             List<Review> reviews = getReviewsUserForProduct(productEntity.getProductId(), new EntityId(userId));
-            return productMapper.toDomain(productEntity, category, reviews);
+            Set<ProductUserRelation> relations = getRelationsForProduct(productEntity.getProductId());
+            return Product.reconstruct(
+                new EntityId(productEntity.getProductId()),
+                productEntity.getName(),
+                productEntity.getBrand(),
+                category,
+                productEntity.getColorHex(),
+                reviews,
+                relations
+            );
           })
           .toList();
     } catch (DataAccessException e) {
@@ -165,17 +186,32 @@ public class ProductRepositoryAdapter implements ProductRepository {
       List<ProductEntity> productEntities = jpaProductRepository.findAll();
 
       return productEntities.stream()
-          .map(productEntity -> {
-            Category category = getCategoryForProduct(productEntity);
-            List<Review> reviews = getReviewsForProduct(productEntity.getProductId());
-            return productMapper.toDomain(productEntity, category, reviews);
-          })
+          .map(this::reconstructProductWithAllData)
           .filter(Objects::nonNull)
           .toList();
     } catch (DataAccessException e) {
       log.error("Error finding all products: {}", e.getMessage(), e);
       throw DatabaseException.queryError("Find all products", e);
     }
+  }
+
+  /**
+   * Reconstructs a complete Product domain object with all its data
+   */
+  private Product reconstructProductWithAllData(ProductEntity productEntity) {
+    Category category = getCategoryForProduct(productEntity);
+    List<Review> reviews = getReviewsForProduct(productEntity.getProductId());
+    Set<ProductUserRelation> relations = getRelationsForProduct(productEntity.getProductId());
+
+    return Product.reconstruct(
+        new EntityId(productEntity.getProductId()),
+        productEntity.getName(),
+        productEntity.getBrand(),
+        category,
+        productEntity.getColorHex(),
+        reviews,
+        relations
+    );
   }
 
   private void validateProductUserRelationsExist(Product product) {
@@ -228,30 +264,48 @@ public class ProductRepositoryAdapter implements ProductRepository {
   }
 
   /**
-   * Get reviews for a specific user and product using ReviewRepository
+   * ✅ OPTIMIZADO: Get reviews for a specific user and product using JpaProductRepository
    */
   private List<Review> getReviewsUserForProduct(UUID productId, EntityId userId) {
     try {
-      return reviewRepository.findByUserId(userId).stream()
-          .filter(review -> productUserRepository.findByProductIdAndUserId(productId, userId.getValue())
-              .map(relation -> review.getProductUserId().getValue().equals(relation.getProductUserId()))
-              .orElse(false))
+      List<ReviewEntity> reviewEntities = jpaProductRepository.findReviewsByProductIdAndUserId(
+          productId, userId.getValue());
+
+      return reviewEntities.stream()
+          .map(reviewMapper::toDomain)
           .toList();
     } catch (DataAccessException e) {
-      log.error("Error loading reviews for product: {}", e.getMessage(), e);
+      log.error("Error loading reviews for product and user: {}", e.getMessage(), e);
       throw DatabaseException.queryError("Find reviews by product ID and user ID", e);
     }
   }
 
   /**
-   * Get all reviews for a product using ReviewRepository
+   * ✅ OPTIMIZADO: Get all reviews for a product using JpaProductRepository
    */
   private List<Review> getReviewsForProduct(UUID productId) {
     try {
-      return reviewRepository.findByProductId(new EntityId(productId));
+      List<ReviewEntity> reviewEntities = jpaProductRepository.findReviewsByProductId(productId);
+
+      return reviewEntities.stream()
+          .map(reviewMapper::toDomain)
+          .toList();
     } catch (DataAccessException e) {
       log.error("Error loading reviews for product: {}", e.getMessage(), e);
       throw DatabaseException.queryError("Find reviews by product ID", e);
+    }
+  }
+
+  /**
+   * Get all user relations for a product using ProductUserRepository
+   */
+  private Set<ProductUserRelation> getRelationsForProduct(UUID productId) {
+    try {
+      List<ProductUserRelation> relations = productUserRepository.findByProductId(productId);
+      return Set.copyOf(relations);
+    } catch (DataAccessException e) {
+      log.error("Error loading relations for product: {}", e.getMessage(), e);
+      throw DatabaseException.queryError("Find relations by product ID", e);
     }
   }
 }

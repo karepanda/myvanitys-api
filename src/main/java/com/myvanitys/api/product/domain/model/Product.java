@@ -90,7 +90,6 @@ public class Product {
     this.colorHex = colorHex;
   }
 
-  // ✅ CORREGIDO: No crear relaciones automáticamente, solo buscar existentes
   public Review addReviewFromUser(EntityId userId, ReviewDetails details) {
     ProductUserRelation relation = findUserRelationOrThrow(userId);
 
@@ -104,12 +103,6 @@ public class Product {
   public Review addReviewFromUser(EntityId userId, int rating, String comment) {
     return addReviewFromUser(userId, ReviewDetails.create(rating, comment));
   }
-
-  // ❌ ELIMINADO: addReviewFromUser con timestamps - no se usa
-
-  // ❌ ELIMINADO: addUserToProduct - no se usa actualmente
-
-  // ❌ ELIMINADO: updateReview con ReviewDetails - no se usa
 
   public Review updateReview(EntityId reviewId, int rating, String comment) {
     Review review = findReviewById(reviewId)

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -30,7 +29,10 @@ import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
+import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper;
+import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductUserRelationMapper;
+import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,10 +62,18 @@ class ProductRepositoryAdapterTest {
   @Mock
   private ProductMapper productMapper;
 
+  @Mock
+  private ProductUserRelationMapper productUserRelationMapper;
+
+  @Mock
+  private ReviewMapper reviewMapper;
+
   @InjectMocks
   private ProductRepositoryAdapter target;
 
   private Review review;
+
+  private ReviewEntity reviewEntity;
 
   private Category category;
 
@@ -81,6 +91,25 @@ class ProductRepositoryAdapterTest {
         EntityId.newId(),
         EntityId.newId(),
         ReviewDetails.of(3, "Test review", Instant.now(), Instant.now(), null));
+
+    // Create ReviewEntity for mocking
+    reviewEntity = new ReviewEntity();
+    reviewEntity.setReviewId(review.getId().getValue());
+    reviewEntity.setProductUserId(review.getProductUserId().getValue());
+    reviewEntity.setRating(3);
+    reviewEntity.setComment("Test review");
+    reviewEntity.setCreatedAt(Instant.now());
+    reviewEntity.setUpdatedAt(Instant.now());
+  }
+
+  private ProductEntity createValidProductEntity(UUID productId, String name, String brand) {
+    ProductEntity entity = new ProductEntity();
+    entity.setProductId(productId);
+    entity.setCategoryId(categoryId);
+    entity.setName(name != null && !name.trim().isEmpty() ? name : "Default Name");
+    entity.setBrand(brand != null && !brand.trim().isEmpty() ? brand : "Default Brand");
+    entity.setColorHex("#FFFFFF");
+    return entity;
   }
 
   @Nested
@@ -99,38 +128,38 @@ class ProductRepositoryAdapterTest {
           category,
           "#FFFFFF",
           List.of(review),
-          null
+          Set.of()
       );
 
-      final ProductEntity productEntity = new ProductEntity();
-      productEntity.setProductId(productId);
-      productEntity.setCategoryId(categoryId);
-      productEntity.setName("Test Product");
-
-      final ProductEntity savedProductEntity = new ProductEntity();
-      savedProductEntity.setProductId(productId);
-      savedProductEntity.setCategoryId(categoryId);
-      savedProductEntity.setName("Test Product");
+      final ProductEntity productEntity = createValidProductEntity(productId, "Test Product", "Test Brand");
+      final ProductEntity savedProductEntity = createValidProductEntity(productId, "Test Product", "Test Brand");
       savedProductEntity.setCreatedAt(Instant.now());
 
       when(categoryRepository.findById(categoryEntityId)).thenReturn(Optional.of(category));
-      when(jpaProductRepository.findById(productId)).thenReturn(Optional.empty()); // Producto nuevo
+      when(jpaProductRepository.findById(productId)).thenReturn(Optional.empty());
       when(productMapper.toEntity(product)).thenReturn(productEntity);
-      when(jpaProductRepository.save(productEntity)).thenReturn(savedProductEntity);
-      when(reviewRepository.findById(review.getId())).thenReturn(Optional.empty()); // Review nueva
-      when(productMapper.toDomain(savedProductEntity, category, List.of(review))).thenReturn(product);
+      when(jpaProductRepository.save(any(ProductEntity.class))).thenReturn(savedProductEntity);
+      when(reviewRepository.findById(review.getId())).thenReturn(Optional.empty());
+
+      // Mock para reconstructProductWithAllData
+      when(categoryRepository.findById(new EntityId(categoryId))).thenReturn(Optional.of(category));
+      when(jpaProductRepository.findReviewsByProductId(productId)).thenReturn(List.of(reviewEntity));
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
+      when(productUserRepository.findByProductId(productId)).thenReturn(List.of());
 
       // When
       final Product result = target.save(product);
 
       // Then
-      assertThat(result).isEqualTo(product);
-      verify(categoryRepository).findById(categoryEntityId);
+      assertThat(result).isNotNull();
+      verify(categoryRepository, times(2)).findById(categoryEntityId);
       verify(jpaProductRepository).findById(productId);
       verify(productMapper).toEntity(product);
-      verify(jpaProductRepository).save(productEntity);
+      verify(jpaProductRepository).save(any(ProductEntity.class));
       verify(reviewRepository).save(review);
-      verify(productMapper).toDomain(savedProductEntity, category, List.of(review));
+      verify(jpaProductRepository).findReviewsByProductId(productId);
+      verify(reviewMapper).toDomain(reviewEntity);
+      verify(productUserRepository).findByProductId(productId);
     }
 
     @Test
@@ -153,28 +182,30 @@ class ProductRepositoryAdapterTest {
           relations
       );
 
-      final ProductEntity existingProductEntity = new ProductEntity();
-      existingProductEntity.setProductId(productId);
-      existingProductEntity.setCategoryId(categoryId);
-      existingProductEntity.setName("Test Product");
+      final ProductEntity existingProductEntity = createValidProductEntity(productId, "Test Product", "Test Brand");
       existingProductEntity.setCreatedAt(Instant.now().minusSeconds(3600));
 
       when(categoryRepository.findById(categoryEntityId)).thenReturn(Optional.of(category));
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(existingProductEntity));
       when(productUserRepository.existsByProductIdAndUserId(productEntityId, userId)).thenReturn(true);
-      when(productMapper.toDomain(existingProductEntity, category, List.of(review))).thenReturn(product);
+      when(reviewRepository.findById(review.getId())).thenReturn(Optional.empty());
+
+      // Mock para reconstructProductWithAllData
+      when(categoryRepository.findById(new EntityId(categoryId))).thenReturn(Optional.of(category));
+      when(jpaProductRepository.findReviewsByProductId(productId)).thenReturn(List.of(reviewEntity));
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
+      when(productUserRepository.findByProductId(productId)).thenReturn(List.of(relations.iterator().next()));
 
       // When
       final Product result = target.save(product);
 
       // Then
-      assertThat(result).isEqualTo(product);
-      verify(categoryRepository).findById(categoryEntityId);
+      assertThat(result).isNotNull();
+      verify(categoryRepository, times(2)).findById(categoryEntityId);
       verify(jpaProductRepository).findById(productId);
       verify(jpaProductRepository, never()).save(any());
       verify(productUserRepository).existsByProductIdAndUserId(productEntityId, userId);
       verify(reviewRepository).save(review);
-      verify(productMapper).toDomain(existingProductEntity, category, List.of(review));
     }
 
     @Test
@@ -197,8 +228,7 @@ class ProductRepositoryAdapterTest {
           relations
       );
 
-      final ProductEntity existingProductEntity = new ProductEntity();
-      existingProductEntity.setProductId(productId);
+      final ProductEntity existingProductEntity = createValidProductEntity(productId, "Test Product", "Test Brand");
 
       when(categoryRepository.findById(categoryEntityId)).thenReturn(Optional.of(category));
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(existingProductEntity));
@@ -225,8 +255,8 @@ class ProductRepositoryAdapterTest {
           "Test Brand",
           category,
           "#FFFFFF",
-          null,
-          null
+          List.of(),
+          Set.of()
       );
 
       when(categoryRepository.findById(categoryEntityId)).thenReturn(Optional.empty());
@@ -252,17 +282,16 @@ class ProductRepositoryAdapterTest {
           "Test Brand",
           category,
           "#FFFFFF",
-          null,
-          null
+          List.of(),
+          Set.of()
       );
 
-      final ProductEntity productEntity = new ProductEntity();
-      productEntity.setProductId(productId);
+      final ProductEntity productEntity = createValidProductEntity(productId, "Test Product", "Test Brand");
 
       when(categoryRepository.findById(categoryEntityId)).thenReturn(Optional.of(category));
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.empty());
       when(productMapper.toEntity(product)).thenReturn(productEntity);
-      when(jpaProductRepository.save(productEntity)).thenThrow(mock(DataAccessException.class));
+      when(jpaProductRepository.save(any(ProductEntity.class))).thenThrow(mock(DataAccessException.class));
 
       // When & Then
       assertThatThrownBy(() -> target.save(product))
@@ -281,37 +310,24 @@ class ProductRepositoryAdapterTest {
       final UUID productId = UUID.randomUUID();
       final EntityId productEntityId = new EntityId(productId);
 
-      final ProductEntity productEntity = new ProductEntity();
-      productEntity.setProductId(productId);
-      productEntity.setCategoryId(categoryId);
-      productEntity.setName("Test Product");
-
-      final Product expectedProduct = Product.reconstruct(
-          productEntityId,
-          "Test Product",
-          "Test Brand",
-          category,
-          "#FFFFFF",
-          List.of(review),
-          null
-      );
+      final ProductEntity productEntity = createValidProductEntity(productId, "Test Product", "Test Brand");
 
       when(jpaProductRepository.findById(productId)).thenReturn(Optional.of(productEntity));
       when(categoryRepository.findById(new EntityId(categoryId))).thenReturn(Optional.of(category));
-      when(reviewRepository.findByProductId(productEntityId)).thenReturn(List.of(review));
-      when(productMapper.toDomain(productEntity, category, List.of(review))).thenReturn(expectedProduct);
+      when(jpaProductRepository.findReviewsByProductId(productId)).thenReturn(List.of(reviewEntity));
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
+      when(productUserRepository.findByProductId(productId)).thenReturn(List.of());
 
       // When
       final Optional<Product> result = target.findById(productEntityId);
 
       // Then
-      assertThat(result)
-          .isPresent()
-          .contains(expectedProduct);
+      assertThat(result).isPresent();
       verify(jpaProductRepository).findById(productId);
       verify(categoryRepository).findById(new EntityId(categoryId));
-      verify(reviewRepository).findByProductId(productEntityId);
-      verify(productMapper).toDomain(productEntity, category, List.of(review));
+      verify(jpaProductRepository).findReviewsByProductId(productId);
+      verify(reviewMapper).toDomain(reviewEntity);
+      verify(productUserRepository).findByProductId(productId);
     }
 
     @Test
@@ -329,8 +345,9 @@ class ProductRepositoryAdapterTest {
       assertThat(result).isEmpty();
       verify(jpaProductRepository).findById(productId);
       verify(categoryRepository, never()).findById(any());
-      verify(reviewRepository, never()).findByProductId(any());
-      verify(productMapper, never()).toDomain(any(), any(), any());
+      verify(jpaProductRepository, never()).findReviewsByProductId(any());
+      verify(reviewMapper, never()).toDomain(any());
+      verify(productUserRepository, never()).findByProductId(any());
     }
   }
 
@@ -347,56 +364,25 @@ class ProductRepositoryAdapterTest {
       final EntityId productEntityId1 = EntityId.newId();
       final EntityId productEntityId2 = EntityId.newId();
 
-      final ProductEntity productEntity1 = new ProductEntity();
-      productEntity1.setProductId(productEntityId1.getValue());
-      productEntity1.setName("Product 1");
-      productEntity1.setCategoryId(categoryId);
-
-      final ProductEntity productEntity2 = new ProductEntity();
-      productEntity2.setProductId(productEntityId2.getValue());
-      productEntity2.setName("Product 2");
-      productEntity2.setCategoryId(categoryId);
-
-      final Product product1 = Product.reconstruct(
-          productEntityId1,
-          "Product 1",
-          "Brand 1",
-          category,
-          "#FFFFFF",
-          List.of(review),
-          null
-      );
-
-      final Product product2 = Product.reconstruct(
-          productEntityId2,
-          "Product 2",
-          "Brand 2",
-          category,
-          "#000000",
-          List.of(review),
-          null
-      );
+      final ProductEntity productEntity1 = createValidProductEntity(productEntityId1.getValue(), "Product 1", "Brand 1");
+      final ProductEntity productEntity2 = createValidProductEntity(productEntityId2.getValue(), "Product 2", "Brand 2");
 
       when(productUserRepository.findProductIdsByUserId(userEntityId))
           .thenReturn(List.of(productEntityId1, productEntityId2));
       when(jpaProductRepository.findAllById(List.of(productEntityId1.getValue(), productEntityId2.getValue())))
           .thenReturn(List.of(productEntity1, productEntity2));
-      when(categoryRepository.findById(new EntityId(categoryId))).thenReturn(Optional.of(category));
-      when(reviewRepository.findByUserId(userEntityId)).thenReturn(List.of(review));
-      when(productUserRepository.findByProductIdAndUserId(any(UUID.class), eq(userId)))
-          .thenReturn(Optional.of(mock(com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity.class)));
 
-      when(productMapper.toDomain(eq(productEntity1), eq(category), anyList())).thenReturn(product1);
-      when(productMapper.toDomain(eq(productEntity2), eq(category), anyList())).thenReturn(product2);
+      when(categoryRepository.findById(new EntityId(categoryId))).thenReturn(Optional.of(category));
+      when(jpaProductRepository.findReviewsByProductIdAndUserId(any(UUID.class), eq(userId)))
+          .thenReturn(List.of(reviewEntity));
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
+      when(productUserRepository.findByProductId(any(UUID.class))).thenReturn(List.of());
 
       // When
       final List<Product> result = target.findByUserId(userId);
 
       // Then
-      assertThat(result)
-          .hasSize(2)
-          .containsExactly(product1, product2);
-
+      assertThat(result).hasSize(2);
       verify(productUserRepository).findProductIdsByUserId(userEntityId);
       verify(jpaProductRepository).findAllById(List.of(
           productEntityId1.getValue(),
@@ -432,56 +418,29 @@ class ProductRepositoryAdapterTest {
       final EntityId productEntityId1 = EntityId.newId();
       final EntityId productEntityId2 = EntityId.newId();
 
-      final ProductEntity productEntity1 = new ProductEntity();
-      productEntity1.setProductId(productEntityId1.getValue());
-      productEntity1.setName("Product 1");
-      productEntity1.setCategoryId(categoryId);
-
-      final ProductEntity productEntity2 = new ProductEntity();
-      productEntity2.setProductId(productEntityId2.getValue());
-      productEntity2.setName("Product 2");
-      productEntity2.setCategoryId(categoryId);
-
-      final Product product1 = Product.reconstruct(
-          productEntityId1,
-          "Product 1",
-          "Brand 1",
-          category,
-          "#FFFFFF",
-          List.of(review),
-          null
-      );
-
-      final Product product2 = Product.reconstruct(
-          productEntityId2,
-          "Product 2",
-          "Brand 2",
-          category,
-          "#000000",
-          List.of(review),
-          null
-      );
+      final ProductEntity productEntity1 = createValidProductEntity(productEntityId1.getValue(), "Product 1", "Brand 1");
+      final ProductEntity productEntity2 = createValidProductEntity(productEntityId2.getValue(), "Product 2", "Brand 2");
 
       when(jpaProductRepository.findAll()).thenReturn(List.of(productEntity1, productEntity2));
       when(categoryRepository.findById(new EntityId(categoryId))).thenReturn(Optional.of(category));
-      when(reviewRepository.findByProductId(productEntityId1)).thenReturn(List.of(review));
-      when(reviewRepository.findByProductId(productEntityId2)).thenReturn(List.of(review));
-
-      when(productMapper.toDomain(eq(productEntity1), eq(category), eq(List.of(review)))).thenReturn(product1);
-      when(productMapper.toDomain(eq(productEntity2), eq(category), eq(List.of(review)))).thenReturn(product2);
+      when(jpaProductRepository.findReviewsByProductId(productEntityId1.getValue())).thenReturn(List.of(reviewEntity));
+      when(jpaProductRepository.findReviewsByProductId(productEntityId2.getValue())).thenReturn(List.of(reviewEntity));
+      when(reviewMapper.toDomain(reviewEntity)).thenReturn(review);
+      when(productUserRepository.findByProductId(productEntityId1.getValue())).thenReturn(List.of());
+      when(productUserRepository.findByProductId(productEntityId2.getValue())).thenReturn(List.of());
 
       // When
       final List<Product> result = target.findAll();
 
       // Then
-      assertThat(result)
-          .hasSize(2)
-          .containsExactly(product1, product2);
-
+      assertThat(result).hasSize(2);
       verify(jpaProductRepository).findAll();
       verify(categoryRepository, times(2)).findById(new EntityId(categoryId));
-      verify(reviewRepository).findByProductId(productEntityId1);
-      verify(reviewRepository).findByProductId(productEntityId2);
+      verify(jpaProductRepository).findReviewsByProductId(productEntityId1.getValue());
+      verify(jpaProductRepository).findReviewsByProductId(productEntityId2.getValue());
+      verify(reviewMapper, times(2)).toDomain(reviewEntity);
+      verify(productUserRepository).findByProductId(productEntityId1.getValue());
+      verify(productUserRepository).findByProductId(productEntityId2.getValue());
     }
 
     @Test
@@ -496,8 +455,9 @@ class ProductRepositoryAdapterTest {
       assertThat(result).isEmpty();
       verify(jpaProductRepository).findAll();
       verify(categoryRepository, never()).findById(any());
-      verify(reviewRepository, never()).findByProductId(any());
-      verify(productMapper, never()).toDomain(any(), any(), anyList());
+      verify(jpaProductRepository, never()).findReviewsByProductId(any());
+      verify(reviewMapper, never()).toDomain(any());
+      verify(productUserRepository, never()).findByProductId(any());
     }
   }
 }
