@@ -8,7 +8,7 @@ CREATE TABLE review
     created_at      TIMESTAMP,
     updated_at      TIMESTAMP,
     deleted_at      TIMESTAMP,
-    CONSTRAINT fk_product_user FOREIGN KEY (product_user_id) REFERENCES product_user (product_user_id)
+    CONSTRAINT fk_product_user FOREIGN KEY (product_user_id) REFERENCES product_user (product_user_id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_review_product_user_id ON review (product_user_id);

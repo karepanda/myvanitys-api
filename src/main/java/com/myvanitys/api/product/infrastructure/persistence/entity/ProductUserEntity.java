@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -44,7 +45,7 @@ public class ProductUserEntity {
   @Column(name = "product_id", nullable = false)
   private UUID productId;
 
-  @OneToMany
+  @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
   @JoinColumn(name = "product_user_id", referencedColumnName = "product_user_id")
   @ToString.Exclude
   private List<ReviewEntity> reviews;
