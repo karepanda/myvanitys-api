@@ -1,10 +1,8 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -21,15 +19,17 @@ import org.mapstruct.Mapper;
 import org.springframework.stereotype.Component;
 
 @Component
-@Mapper(componentModel = "spring", uses = {EntityIdMapper.class, CategoryMapper.class})
+@Mapper(componentModel = "spring", uses = {EntityIdMapper.class, CategoryMapper.class, ReviewMapper.class, ReviewEntityMapper.class})
 public class ProductMapper {
+
+  public static final String CATEGORY_CANNOT_BE_NULL = "Category cannot be null";
 
   public Product toDomain(ProductEntity productEntity, Category category, List<Review> reviews) {
     if (productEntity == null) {
       return null;
     }
 
-    Objects.requireNonNull(category, "Category cannot be null");
+    Objects.requireNonNull(category, CATEGORY_CANNOT_BE_NULL);
     EntityId id = new EntityId(productEntity.getProductId());
 
     return Product.reconstruct(
@@ -74,7 +74,7 @@ public class ProductMapper {
   }
 
   public List<Product> toDomainList(List<ProductEntity> productEntities, Category category, List<Review> reviews) {
-    Objects.requireNonNull(category, "Category cannot be null");
+    Objects.requireNonNull(category, CATEGORY_CANNOT_BE_NULL);
 
     return productEntities == null
         ? List.of()
@@ -99,12 +99,13 @@ public class ProductMapper {
             .toList();
   }
 
-  public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers, Category category) {
+  public Product toDomainWithRelations(ProductEntity productEntity, List<ProductUserEntity> productUsers, Category category,
+      ReviewEntityMapper reviewEntityMapper) {
     if (productEntity == null) {
       return null;
     }
 
-    Objects.requireNonNull(category, "Category cannot be null");
+    Objects.requireNonNull(category, CATEGORY_CANNOT_BE_NULL);
     EntityId id = new EntityId(productEntity.getProductId());
 
     if (productUsers == null || productUsers.isEmpty()) {
@@ -123,7 +124,7 @@ public class ProductMapper {
     List<Review> reviews = new ArrayList<>();
 
     productUsers.forEach(pu -> {
-      ProductUserRelation relation = toProductUserRelation(pu);
+      ProductUserRelation relation = reviewEntityMapper.toProductUserRelation(pu);
       relations.add(relation);
 
       if (pu.getReviews() != null) {
@@ -154,12 +155,7 @@ public class ProductMapper {
     EntityId productId = new EntityId(productUserEntity.getProductId());
     EntityId userId = new EntityId(productUserEntity.getUserId());
 
-    EntityId reviewId = null;
-    if (productUserEntity.getReviews() != null && !productUserEntity.getReviews().isEmpty()) {
-      reviewId = new EntityId(productUserEntity.getReviews().getFirst().getReviewId());
-    }
-
-    return ProductUserRelation.reconstruct(id, productId, userId, reviewId);
+    return ProductUserRelation.reconstruct(id, productId, userId);
   }
 
   public Review toReview(ReviewEntity reviewEntity, EntityId productUserId) {
@@ -198,34 +194,35 @@ public class ProductMapper {
         .build();
   }
 
-  public List<ProductUserEntity> toProductUserEntityList(Product product) {
+  public List<ProductUserEntity> toProductUserEntityList(Product product, ReviewEntityMapper reviewEntityMapper) {
     if (product == null) {
       return List.of();
     }
 
-    Map<EntityId, ProductUserEntity> productUserMap = new HashMap<>();
+    return product.getUserRelations().stream()
+        .map(reviewEntityMapper::toProductUserEntity)
+        .toList();
+  }
 
-
-    for (ProductUserRelation relation : product.getUserRelations()) {
-      ProductUserEntity productUserEntity = new ProductUserEntity();
-      productUserEntity.setProductUserId(relation.getId().getValue());
-      productUserEntity.setProductId(relation.getProductId().getValue());
-      productUserEntity.setUserId(relation.getUserId().getValue());
-      productUserEntity.setReviews(new ArrayList<>());
-
-      productUserMap.put(relation.getId(), productUserEntity);
+  public List<ReviewEntity> toReviewEntityList(List<Review> reviews, ReviewMapper reviewMapper) {
+    if (reviews == null) {
+      return List.of();
     }
 
-    for (Review review : product.getReviews()) {
-      EntityId productUserId = review.getProductUserId();
-      ProductUserEntity productUserEntity = productUserMap.get(productUserId);
+    return reviews.stream()
+        .map(reviewMapper::toEntity)
+        .filter(Objects::nonNull)
+        .toList();
+  }
 
-      if (productUserEntity != null) {
-        ReviewEntity reviewEntity = toReviewEntity(review);
-        productUserEntity.getReviews().add(reviewEntity);
-      }
+  public List<Review> toReviewList(List<ReviewEntity> reviewEntities) {
+    if (reviewEntities == null) {
+      return List.of();
     }
 
-    return new ArrayList<>(productUserMap.values());
+    return reviewEntities.stream()
+        .map(entity -> toReview(entity, new EntityId(entity.getProductUserId())))
+        .filter(Objects::nonNull)
+        .toList();
   }
 }

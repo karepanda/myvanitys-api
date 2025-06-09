@@ -17,8 +17,6 @@ class ProductUserRelationTest {
 
   private EntityId userId;
 
-  private EntityId reviewId;
-
   private ProductUserRelation relation;
 
   @BeforeEach
@@ -26,10 +24,9 @@ class ProductUserRelationTest {
     id = new EntityId(UUID.randomUUID());
     productId = new EntityId(UUID.randomUUID());
     userId = new EntityId(UUID.randomUUID());
-    reviewId = new EntityId(UUID.randomUUID());
 
-    // Usar reconstruct en lugar del constructor
-    relation = ProductUserRelation.reconstruct(id, productId, userId, null);
+    // ✅ CORREGIDO: Solo 3 parámetros, sin reviewId
+    relation = ProductUserRelation.reconstruct(id, productId, userId);
   }
 
   @Test
@@ -37,38 +34,26 @@ class ProductUserRelationTest {
     assertThat(relation.getId()).isEqualTo(id);
     assertThat(relation.getProductId()).isEqualTo(productId);
     assertThat(relation.getUserId()).isEqualTo(userId);
-    assertThat(relation.getReviewId()).isNull();
   }
 
   @Test
-  void shouldInitializeWithReviewId() {
-    // Usar reconstruct en lugar del constructor
-    ProductUserRelation relationWithReview = ProductUserRelation.reconstruct(id, productId, userId, reviewId);
+  void shouldCreateNewRelation() {
+    // Test para el método create
+    ProductUserRelation newRelation = ProductUserRelation.create(productId, userId);
 
-    assertThat(relationWithReview.getId()).isEqualTo(id);
-    assertThat(relationWithReview.getProductId()).isEqualTo(productId);
-    assertThat(relationWithReview.getUserId()).isEqualTo(userId);
-    assertThat(relationWithReview.getReviewId()).isEqualTo(reviewId);
-  }
-
-  @Test
-  void shouldSetReviewId() {
-    assertThat(relation.getReviewId()).isNull();
-
-    // Usar linkToReview en lugar de setReviewId
-    relation.linkToReview(reviewId);
-
-    assertThat(relation.getReviewId()).isEqualTo(reviewId);
+    assertThat(newRelation.getId()).isNotNull();
+    assertThat(newRelation.getProductId()).isEqualTo(productId);
+    assertThat(newRelation.getUserId()).isEqualTo(userId);
   }
 
   @Test
   void equalsAndHashCodeShouldWorkBasedOnUserIdAndProductId() {
-    // Usar reconstruct en lugar del constructor
+    // ✅ CORREGIDO: Solo 3 parámetros
     ProductUserRelation sameRelation = ProductUserRelation.reconstruct(
-        new EntityId(UUID.randomUUID()), productId, userId, new EntityId(UUID.randomUUID()));
+        new EntityId(UUID.randomUUID()), productId, userId);
 
     ProductUserRelation differentRelation = ProductUserRelation.reconstruct(
-        new EntityId(UUID.randomUUID()), new EntityId(UUID.randomUUID()), new EntityId(UUID.randomUUID()), null);
+        new EntityId(UUID.randomUUID()), new EntityId(UUID.randomUUID()), new EntityId(UUID.randomUUID()));
 
     assertThat(relation)
         .isEqualTo(sameRelation)
@@ -86,46 +71,49 @@ class ProductUserRelationTest {
 
   @Test
   void shouldThrowExceptionWhenRequiredFieldsAreNull() {
-    // Usar reconstruct en lugar del constructor
-    assertThatThrownBy(() -> ProductUserRelation.reconstruct(null, productId, userId, reviewId))
+    assertThatThrownBy(() -> ProductUserRelation.reconstruct(null, productId, userId))
         .isInstanceOf(NullPointerException.class);
 
-    assertThatThrownBy(() -> ProductUserRelation.reconstruct(id, null, userId, reviewId))
+    assertThatThrownBy(() -> ProductUserRelation.reconstruct(id, null, userId))
         .isInstanceOf(NullPointerException.class);
 
-    assertThatThrownBy(() -> ProductUserRelation.reconstruct(id, productId, null, reviewId))
+    assertThatThrownBy(() -> ProductUserRelation.reconstruct(id, productId, null))
         .isInstanceOf(NullPointerException.class);
   }
 
   @Test
-  void shouldCreateNewRelation() {
-    // Test para el método create
-    ProductUserRelation newRelation = ProductUserRelation.create(productId, userId);
+  void shouldBeEqualWhenSameUserAndProduct() {
+    ProductUserRelation relation1 = ProductUserRelation.create(productId, userId);
+    ProductUserRelation relation2 = ProductUserRelation.create(productId, userId);
 
-    assertThat(newRelation.getId()).isNotNull();
-    assertThat(newRelation.getProductId()).isEqualTo(productId);
-    assertThat(newRelation.getUserId()).isEqualTo(userId);
-    assertThat(newRelation.getReviewId()).isNull();
+    assertThat(relation1).isEqualTo(relation2);
+    assertThat(relation1.hashCode()).isEqualTo(relation2.hashCode());
   }
 
   @Test
-  void shouldCheckIfRelationHasReview() {
-    // Probar el método hasReview
-    assertThat(relation.hasReview()).isFalse();
+  void shouldNotBeEqualWhenDifferentUser() {
+    EntityId differentUserId = new EntityId(UUID.randomUUID());
+    ProductUserRelation differentUserRelation = ProductUserRelation.create(productId, differentUserId);
 
-    relation.linkToReview(reviewId);
-
-    assertThat(relation.hasReview()).isTrue();
+    assertThat(relation).isNotEqualTo(differentUserRelation);
   }
 
   @Test
-  void shouldUnlinkReview() {
-    relation.linkToReview(reviewId);
-    assertThat(relation.getReviewId()).isEqualTo(reviewId);
+  void shouldNotBeEqualWhenDifferentProduct() {
+    EntityId differentProductId = new EntityId(UUID.randomUUID());
+    ProductUserRelation differentProductRelation = ProductUserRelation.create(differentProductId, userId);
 
-    relation.unlinkReview();
-
-    assertThat(relation.getReviewId()).isNull();
-    assertThat(relation.hasReview()).isFalse();
+    assertThat(relation).isNotEqualTo(differentProductRelation);
   }
+
+  @Test
+  void shouldHaveConsistentToString() {
+    String toString = relation.toString();
+
+    assertThat(toString).contains("ProductUserRelation");
+    assertThat(toString).contains(id.toString());
+    assertThat(toString).contains(productId.toString());
+    assertThat(toString).contains(userId.toString());
+  }
+
 }

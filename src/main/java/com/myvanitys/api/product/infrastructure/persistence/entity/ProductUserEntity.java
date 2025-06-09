@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -11,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,19 +36,22 @@ public class ProductUserEntity {
   @Column(name = "product_user_id", nullable = false, unique = true)
   private UUID productUserId;
 
+  @Version
+  private Long version;
+
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
   @Column(name = "product_id", nullable = false)
   private UUID productId;
 
-  @OneToMany
+  @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
   @JoinColumn(name = "product_user_id", referencedColumnName = "product_user_id")
   @ToString.Exclude
   private List<ReviewEntity> reviews;
 
-  @Column(name = "delete_at")
-  private Instant deleteAt;
+  @Column(name = "deleted_at")
+  private Instant deletedAt;
 
   @Column(name = "created_at")
   private Instant createdAt;

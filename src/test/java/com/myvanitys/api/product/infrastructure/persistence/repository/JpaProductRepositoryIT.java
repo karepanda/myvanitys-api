@@ -32,6 +32,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
 
     // Crear y guardar el ProductUserEntity
     ProductUserEntity productUser = new ProductUserEntity();
+    productUser.setProductUserId(UUID.randomUUID());
     productUser.setProductId(savedProduct.getProductId());
     final var userid = UUID.randomUUID();
     productUser.setProductUserId(UUID.randomUUID());
@@ -42,6 +43,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
 
     // Luego crear y guardar la ReviewEntity
     ReviewEntity review = new ReviewEntity();
+    review.setReviewId(UUID.randomUUID());
     review.setRating(5);
     review.setComment("Great product!");
     review.setProductUserId(savedProductUser.getProductUserId());

@@ -1,16 +1,15 @@
 package com.myvanitys.api.product.infrastructure.persistence.repository;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 
 @Repository
 public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID> {
@@ -51,5 +50,5 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
 
   @Query(
       "SELECT r FROM ReviewEntity r JOIN ProductUserEntity pu ON r.productUserId = pu.productUserId WHERE pu.productId = :productId")
-  List<ReviewEntity> findReviewsByProductIdAndUserId(@Param("productId") UUID productId);
+  List<ReviewEntity> findReviewsByProductId(@Param("productId") UUID productId);
 }
