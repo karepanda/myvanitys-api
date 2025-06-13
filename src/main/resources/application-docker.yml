@@ -1,0 +1,48 @@
+---
+spring:
+  datasource:
+    hikari:
+      connectionTimeout: 30000
+      maximumPoolSize: 5
+    url: jdbc:postgresql://postgres:5432/myvanitysdb
+    username: myvanitys
+    password: secret
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# OAuth configuration para Docker
+google:
+  oauth2:
+    client-id: 780556869332-1sf3nmlm6df03r73jnh8a5kll8ev3ifo.apps.googleusercontent.com
+    client-secret: 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
+    redirect-uri: http://localhost:5173/callback
+
+management:
+  security:
+    enabled: false
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: WARN
+      flywaydb: INFO
+      springframework: INFO
+
+# Docker environment
+jwt:
+  secret: "docker_development_secret_key_which_is_at_least_32_chars_long"
+  expiration: 3600  # 1 hour
+  issuer: "myvanitys-docker"
