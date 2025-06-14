@@ -1,11 +1,7 @@
-# Dockerfile con credenciales incluidas (SOLO PARA DEMO DE TESIS)
+# Dockerfile para API - Sin credenciales (repositorio público)
 FROM eclipse-temurin:21-jdk-jammy AS build
 
 WORKDIR /app
-
-# Credenciales como argumentos de build
-ARG GITHUB_USERNAME=kksven
-ARG GITHUB_TOKEN=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
 
 # Copiar archivos del wrapper
 COPY mvnw .
@@ -15,17 +11,26 @@ COPY .mvn .mvn
 # Dar permisos
 RUN chmod +x mvnw
 
-# Copiar pom.xml
+# Copiar pom.xml y dependencias locales para demo
 COPY pom.xml .
+COPY libs/ libs/
 
-# Descargar dependencias con credenciales
-RUN ./mvnw dependency:resolve -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
+# Instalar la dependencia local en el repositorio Maven del contenedor
+RUN ./mvnw install:install-file \
+  -Dfile=libs/myvanitys-api-spec-1.8.1-SNAPSHOT.jar \
+  -DgroupId=com.myvanitys \
+  -DartifactId=myvanitys-api-spec \
+  -Dversion=1.8.1-SNAPSHOT \
+  -Dpackaging=jar
+
+# Descargar dependencias usando perfil demo
+RUN ./mvnw dependency:resolve -Pdemo
 
 # Copiar código fuente
 COPY src ./src
 
-# Construir la aplicación
-RUN ./mvnw clean package -DskipTests -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
+# Construir la aplicación usando perfil demo
+RUN ./mvnw clean package -DskipTests -Pdemo
 
 # Etapa de runtime
 FROM eclipse-temurin:21-jre-jammy
