@@ -1,43 +1,41 @@
-# Dockerfile para API - Sin credenciales (repositorio público)
-FROM eclipse-temurin:21-jdk-jammy AS build
+# Dockerfile con Alpine (más ligero) para Java 23
+FROM maven:3-eclipse-temurin-23 AS build
 
 WORKDIR /app
 
-# Copiar archivos del wrapper
-COPY mvnw .
-COPY mvnw.cmd .
-COPY .mvn .mvn
-
-# Dar permisos
-RUN chmod +x mvnw
-
-# Copiar pom.xml y dependencias locales para demo
+# Copia archivos necesarios
 COPY pom.xml .
 COPY libs/ libs/
 
-# Instalar la dependencia local en el repositorio Maven del contenedor
-RUN ./mvnw install:install-file \
-  -Dfile=libs/myvanitys-api-spec-1.8.1-SNAPSHOT.jar \
-  -DgroupId=com.myvanitys \
-  -DartifactId=myvanitys-api-spec \
-  -Dversion=1.8.1-SNAPSHOT \
-  -Dpackaging=jar
+# Instala dependencia personalizada
+RUN mvn install:install-file \
+    -Dfile=libs/myvanitys-api-spec-1.8.1-SNAPSHOT.jar \
+    -DgroupId=com.myvanitys \
+    -DartifactId=myvanitys-api-spec \
+    -Dversion=1.8.1-SNAPSHOT \
+    -Dpackaging=jar
 
-# Descargar dependencias usando perfil demo
-RUN ./mvnw dependency:resolve -Pdemo
+# Copia código fuente
+COPY src/ src/
 
-# Copiar código fuente
-COPY src ./src
+# Copia mvnw si existe
+COPY mvnw* ./
+COPY .mvn/ .mvn/
 
-# Construir la aplicación usando perfil demo
-RUN ./mvnw clean package -DskipTests -Pdemo
+# Construye aplicación
+RUN if [ -f "./mvnw" ]; then \
+        chmod +x ./mvnw && ./mvnw clean package -DskipTests; \
+    else \
+        mvn clean package -DskipTests; \
+    fi
 
-# Etapa de runtime
-FROM eclipse-temurin:21-jre-jammy
-
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Runtime Alpine (más ligero)
+FROM eclipse-temurin:23-jre-alpine
 
 WORKDIR /app
+
+# Instala curl para health checks
+RUN apk add --no-cache curl
 
 COPY --from=build /app/target/*.jar app.jar
 
