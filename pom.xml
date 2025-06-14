@@ -24,19 +24,8 @@
   <properties>
     <java.version>21</java.version>
   </properties>
+
   <dependencies>
-    <!-- API specification dependency -->
-    <dependency>
-      <groupId>com.myvanitys</groupId>
-      <artifactId>myvanitys-api-spec</artifactId>
-      <version>1.8.0-SNAPSHOT</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-simple</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
@@ -87,7 +76,6 @@
       <version>1.20.6</version>
       <scope>test</scope>
     </dependency>
-
 
     <dependency>
       <!-- Spring Data JPA -->
@@ -205,9 +193,53 @@
       <artifactId>jacoco-maven-plugin</artifactId>
       <version>0.8.13</version>
     </dependency>
-
   </dependencies>
 
+  <!-- PERFILES MAVEN - Van aquí, después de dependencies y antes de build -->
+  <profiles>
+    <!-- Perfil para producción/desarrollo (GitHub) - ACTIVO POR DEFECTO -->
+    <profile>
+      <id>github</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <!-- API specification dependency desde GitHub -->
+        <dependency>
+          <groupId>com.myvanitys</groupId>
+          <artifactId>myvanitys-api-spec</artifactId>
+          <version>1.8.1-SNAPSHOT</version>
+          <exclusions>
+            <exclusion>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-simple</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <!-- Perfil para demo de tesis (JAR en repositorio local) -->
+    <profile>
+      <id>demo</id>
+      <dependencies>
+        <!-- API specification dependency desde repositorio local -->
+        <dependency>
+          <groupId>com.myvanitys</groupId>
+          <artifactId>myvanitys-api-spec</artifactId>
+          <version>1.8.1-SNAPSHOT</version>
+          <exclusions>
+            <exclusion>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-simple</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
+      <repositories>
+      </repositories>
+    </profile>
+  </profiles>
   <build>
     <plugins>
       <plugin>
@@ -298,9 +330,6 @@
           </execution>
         </executions>
       </plugin>
-
-
     </plugins>
   </build>
-
 </project>
