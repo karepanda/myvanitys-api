@@ -298,7 +298,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product);
 
     // When
-    List<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
+    List<ProductEntity> foundProduct = jpaProductRepository.searchByNameOrBrand("product name");
 
     // Then
     assertTrue(foundProduct.stream().allMatch(productEntity -> productEntity.getName().equals(searchTerm)));
@@ -316,7 +316,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     jpaProductRepository.save(product);
 
     // When
-    List<ProductEntity> foundProduct = jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm);
+    List<ProductEntity> foundProduct = jpaProductRepository.searchByNameOrBrand("product brand");
 
     // Then
     assertTrue(foundProduct.stream().allMatch(productEntity -> productEntity.getBrand().equals(searchTerm)));

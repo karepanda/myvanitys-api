@@ -41,7 +41,7 @@ class FinProductByTermTest {
             Product product2 = Product.newProduct("Product 2", "Brand 2", "#00FF00");
             List<Product> expectedProducts = List.of(product1, product2);
 
-            when(jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm))
+            when(jpaProductRepository.searchByNameOrBrand(searchTerm))
                     .thenReturn(productEntities);
             when(findProductService.findProducts(productEntities))
                     .thenReturn(expectedProducts);
@@ -51,7 +51,7 @@ class FinProductByTermTest {
 
             // Assert
             assertThat(result).isEqualTo(expectedProducts);
-            verify(jpaProductRepository).findByNameOrBrand(searchTerm, searchTerm);
+            verify(jpaProductRepository).searchByNameOrBrand(searchTerm);
             verify(findProductService).findProducts(productEntities);
             verifyNoMoreInteractions(jpaProductRepository, findProductService);
         }
@@ -63,7 +63,7 @@ class FinProductByTermTest {
             List<ProductEntity> emptyEntities = List.of();
             List<Product> emptyProducts = List.of();
 
-            when(jpaProductRepository.findByNameOrBrand(searchTerm, searchTerm))
+            when(jpaProductRepository.searchByNameOrBrand(searchTerm))
                     .thenReturn(emptyEntities);
             when(findProductService.findProducts(emptyEntities))
                     .thenReturn(emptyProducts);
@@ -73,7 +73,7 @@ class FinProductByTermTest {
 
             // Assert
             assertThat(result).isEmpty();
-            verify(jpaProductRepository).findByNameOrBrand(searchTerm, searchTerm);
+            verify(jpaProductRepository).searchByNameOrBrand(searchTerm);
             verify(findProductService).findProducts(emptyEntities);
             verifyNoMoreInteractions(jpaProductRepository, findProductService);
         }

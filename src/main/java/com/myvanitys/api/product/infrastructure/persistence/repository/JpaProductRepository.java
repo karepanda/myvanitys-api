@@ -36,9 +36,10 @@ public interface JpaProductRepository extends JpaRepository<ProductEntity, UUID>
   List<ProductEntity> findByCategoryId(UUID categoryId);
 
   /**
-   * Find a product by name and brand
+   * Finds products whose name or brand contains the term, ignoring case.
    */
-  List<ProductEntity> findByNameOrBrand(String name, String brand);
+  @Query("SELECT p FROM ProductEntity p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :term, '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :term, '%'))")
+  List<ProductEntity> searchByNameOrBrand(@Param("term") String term);
 
   @Query("SELECT p FROM ProductEntity p JOIN CategoryEntity c ON p.categoryId = c.categoryId WHERE c.name = :categoryName")
   List<ProductEntity> findByCategoryName(@Param("categoryName") String categoryName);

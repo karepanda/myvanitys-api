@@ -18,7 +18,7 @@ public class FindProductByTerm implements FindProductByTermUseCase {
 
     @Override
     public List<Product> query(String term) {
-        final var productEntities = jpaProductRepository.findByNameOrBrand(term, term);
+        final var productEntities = jpaProductRepository.searchByNameOrBrand(term.trim());
 
         return findProductService.findProducts(productEntities);
     }
