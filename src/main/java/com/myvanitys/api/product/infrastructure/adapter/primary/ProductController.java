@@ -1,5 +1,6 @@
 package com.myvanitys.api.product.infrastructure.adapter.primary;
 
+import com.myvanitys.api.auth.infrastructure.security.AuthenticatedUserContext;
 import com.myvanitys.api.model.v1.AddReviewRequest;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
@@ -15,16 +16,12 @@ import com.myvanitys.api.product.application.usecase.FindProductByTerm;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
-import com.myvanitys.api.product.infrastructure.adapter.primary.service.TokenService;
 import com.myvanitys.api.product.infrastructure.exception.UnauthorizedException;
 import com.myvanitys.api.rest.v1.ProductsApiDelegate;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Instant;
 import java.util.List;
@@ -42,7 +39,7 @@ public class ProductController implements ProductsApiDelegate {
 
   private final CreateProductUseCase createProductUseCase;
 
-  private final TokenService tokenService;
+  private final AuthenticatedUserContext authenticatedUserContext;
 
   private final AddReviewToProduct addReviewToProduct;
 
@@ -86,9 +83,13 @@ public class ProductController implements ProductsApiDelegate {
       String acceptLanguage,
       String userAgent) {
 
-    final EntityId userIdValue = getUserId();
+    final EntityId authenticatedUserId = getUserId();
 
-    FindProductUserQuery query = new FindProductUserQuery(userIdValue);
+    if (!authenticatedUserId.getValue().equals(userId)) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    FindProductUserQuery query = new FindProductUserQuery(authenticatedUserId);
     List<Product> domainProducts = findProductUserUseCase.query(query);
     List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
 
@@ -185,26 +186,11 @@ public class ProductController implements ProductsApiDelegate {
   }
 
   private EntityId getUserId() {
-
-    String bearerToken = extractBearerToken();
-    UUID userIdValue = tokenService.extractUserId(bearerToken);
+    UUID userIdValue = authenticatedUserContext.getUserId();
+    if (userIdValue == null) {
+      throw new UnauthorizedException("No authenticated user in request context");
+    }
     return new EntityId(userIdValue);
-  }
-
-  private String extractBearerToken() {
-    ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-    if (attributes == null) {
-      throw new UnauthorizedException("No request context available");
-    }
-
-    HttpServletRequest request = attributes.getRequest();
-    String authorization = request.getHeader("Authorization");
-
-    if (authorization != null && authorization.startsWith("Bearer ")) {
-      return authorization.substring(7);
-    }
-
-    throw new UnauthorizedException("No bearer token found");
   }
 
 

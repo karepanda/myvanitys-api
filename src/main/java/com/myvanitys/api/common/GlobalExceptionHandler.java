@@ -115,7 +115,7 @@ public class GlobalExceptionHandler {
         .detail("Token verification failed " + ex.getMessage())
         .instance(PRODUCT_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
   }
 
   @ExceptionHandler(GoogleAuthException.class)

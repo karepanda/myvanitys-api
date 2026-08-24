@@ -120,7 +120,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleUnauthorizedException_DebeRetornarBadRequest() {
+    void handleUnauthorizedException_DebeRetornarUnauthorized() {
         // Arrange
         UnauthorizedException ex = new UnauthorizedException("No autorizado");
 
@@ -128,7 +128,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ProblemDetail> response = exceptionHandler.handleMissingHeaderExceptions(ex);
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(401, response.getBody().getStatus());
         assertEquals("Infrastructure validation error", response.getBody().getTitle());
