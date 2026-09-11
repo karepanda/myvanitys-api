@@ -1,52 +1,53 @@
-# Dockerfile simple y confiable - usa Maven directo
+# Simple and reliable Dockerfile - uses direct Maven
 FROM maven:3-eclipse-temurin-23 AS build
 
 WORKDIR /app
 
-# Copia archivos de configuración Maven (importante para settings.xml)
+# Copy Maven configuration files (important for settings.xml)
 COPY .mvn/ .mvn/
 COPY pom.xml .
 COPY libs/ libs/
 
-# Instala dependencia personalizada
-RUN mvn install:install-file \
-    -Dfile=libs/myvanitys-api-spec-1.8.1-SNAPSHOT.jar \
+# Install custom dependency
+RUN VERSION=$(mvn help:evaluate -Dexpression=myvanitys-api-spec.version -q -DforceStdout) && \
+    mvn install:install-file \
+    -Dfile=libs/myvanitys-api-spec-${VERSION}.jar \
     -DgroupId=com.myvanitys \
     -DartifactId=myvanitys-api-spec \
-    -Dversion=1.8.1-SNAPSHOT \
+    -Dversion=${VERSION} \
     -Dpackaging=jar
 
-# Copia código fuente
+# Copy source code
 COPY src/ src/
 
-# Construye aplicación usando Maven directo (siempre funciona)
+# Build application using direct Maven (always works)
 RUN mvn clean package -DskipTests
 
-# Runtime Alpine optimizado
+# Optimized Alpine Runtime
 FROM eclipse-temurin:23-jre-alpine
 
 WORKDIR /app
 
-# Instala herramientas útiles
+# Install useful tools
 RUN apk add --no-cache curl tzdata
 
-# Establece zona horaria
+# Set timezone
 ENV TZ=Europe/Madrid
 
-# Crea usuario no-root para seguridad
+# Create non-root user for security
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
-# Copia el JAR construido
+# Copy built JAR
 COPY --from=build /app/target/*.jar app.jar
 
-# Cambia ownership
+# Change ownership
 RUN chown appuser:appgroup app.jar
 
-# Cambiar a usuario no-root
+# Switch to non-root user
 USER appuser
 
-# Variables JVM optimizadas
+# Optimized JVM variables
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:+UseContainerSupport"
 
 EXPOSE 8080

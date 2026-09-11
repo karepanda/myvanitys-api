@@ -23,6 +23,7 @@
 
   <properties>
     <java.version>21</java.version>
+    <myvanitys-api-spec.version>1.10.0-SNAPSHOT</myvanitys-api-spec.version>
   </properties>
 
   <dependencies>
@@ -208,7 +209,7 @@
         <dependency>
           <groupId>com.myvanitys</groupId>
           <artifactId>myvanitys-api-spec</artifactId>
-          <version>1.8.1-SNAPSHOT</version>
+          <version>${myvanitys-api-spec.version}</version>
           <exclusions>
             <exclusion>
               <groupId>org.slf4j</groupId>
@@ -219,15 +220,13 @@
       </dependencies>
     </profile>
 
-    <!-- Perfil para demo de tesis (JAR en repositorio local) -->
     <profile>
       <id>demo</id>
       <dependencies>
-        <!-- API specification dependency desde repositorio local -->
         <dependency>
           <groupId>com.myvanitys</groupId>
           <artifactId>myvanitys-api-spec</artifactId>
-          <version>1.8.1-SNAPSHOT</version>
+          <version>${myvanitys-api-spec.version}</version>
           <exclusions>
             <exclusion>
               <groupId>org.slf4j</groupId>
