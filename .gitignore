@@ -48,3 +48,5 @@ replay_pid*
 
 ### Others ###
 .DS_Store
+### Local spec jar (resolved via CI/Docker build args, not committed) ###
+libs/*.jar
