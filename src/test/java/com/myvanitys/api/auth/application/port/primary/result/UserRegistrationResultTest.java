@@ -2,12 +2,12 @@ package com.myvanitys.api.auth.application.port.primary.result;
 
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.model.UserSession;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 

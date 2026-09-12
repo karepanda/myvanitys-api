@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 
 import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.common.ValidationException.ValidationError;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 
 public record CreateProductCommand(
     String name,

@@ -4,7 +4,7 @@ import com.myvanitys.api.auth.application.port.primary.command.RegisterUserComma
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.model.v1.CreateUserRequest;
 import com.myvanitys.api.model.v1.UserCreatedResponse;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -1,0 +1,26 @@
+sequenceDiagram
+    autonumber
+    participant C as Mobile Client
+    participant A as MyVanitys API
+
+    Note over C,A: Operation 1 — Add a product to your vanity
+    C->>A: POST /products/{productId}/add-to-vanity  + Bearer token
+    alt Token missing, invalid, or expired
+        A-->>C: 401 ProblemDetail
+    else Already in your vanity
+        A-->>C: 500 ProblemDetail (generic server error)
+    else Product does not exist
+        A-->>C: 500 ProblemDetail (generic server error)
+    else Added
+        A-->>C: 200 ProductResponse (inUserCollection = true)
+    end
+
+    Note over C,A: Operation 2 — Remove a product from your vanity
+    C->>A: DELETE /products/{productId}  + Bearer token
+    alt Token missing, invalid, or expired
+        A-->>C: 401 ProblemDetail
+    else Not in your vanity
+        A-->>C: 400 ProblemDetail (product not found)
+    else Removed
+        A-->>C: 204 No Content
+    end

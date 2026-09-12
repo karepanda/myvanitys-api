@@ -5,6 +5,9 @@ spring:
     name: myvanitys-api
   profiles:
     active: local
+  threads:
+    virtual:
+      enabled: true
 openapi:
   myVanitysProduct:
     base-path: /api/v1
@@ -30,12 +33,6 @@ management:
       only-when-up: true
       probes:
         enabled: true
-
-# OAuth Configuration base
-google:
-  client:
-    id: ${GOOGLE_CLIENT_ID}
-    secret: ${GOOGLE_CLIENT_SECRET}
 
 # JWT Configuration base
 jwt:

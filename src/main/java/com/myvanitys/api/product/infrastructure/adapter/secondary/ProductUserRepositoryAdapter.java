@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductUserRelationMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;

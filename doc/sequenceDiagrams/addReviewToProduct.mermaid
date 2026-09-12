@@ -1,0 +1,21 @@
+sequenceDiagram
+    autonumber
+    participant C as Mobile Client
+    participant A as MyVanitys API
+
+    C->>A: POST /products/{productId}/reviews  { rating, comment }  + Bearer token
+
+    alt Token missing, invalid, or expired
+        A-->>C: 401 ProblemDetail
+    else Authorized
+        alt Product does not exist
+            A-->>C: 400 ProblemDetail (product not found)
+        else Product exists
+            alt Product is not in your vanity
+                A-->>C: 500 ProblemDetail (generic server error)
+                Note over C: Add the product to your vanity first.
+            else Review added
+                A-->>C: 202 ProductResponse (product with the new review)
+            end
+        end
+    end

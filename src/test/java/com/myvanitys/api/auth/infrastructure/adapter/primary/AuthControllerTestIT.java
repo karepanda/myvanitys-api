@@ -11,11 +11,11 @@ import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.Authenticati
 import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.CreateUserMapper;
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.model.v1.CreateUserRequest;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;

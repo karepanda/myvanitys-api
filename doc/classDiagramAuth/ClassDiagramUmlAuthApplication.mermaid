@@ -1,62 +1,56 @@
 classDiagram
-    %% Puertos Primarios (Interfaces de entrada)
+    %% Primary ports and application services for the auth context.
+    %% NAMING NOTE: auth keeps use cases in application.service and commands in
+    %% application.port.primary.command; product uses application.usecase + application.command.
+
     class RegisterUserUseCase {
-        <<puertoprimario>>
-        + register(command: RegisterUserCommand): UserRegistrationResult
-    }
-    
-    class GoogleAuthenticationUseCase {
-        <<puertoprimario>>
-        + authenticate(command: GoogleAuthCommand): UserSession
-    }
-    
-    %% Comandos (Objetos de transferencia de datos para casos de uso)
-    class RegisterUserCommand {
-        <<comando>>
-        - email: String
-        - name: String
-        - pictureUrl: String
-        + RegisterUserCommand(email, name, pictureUrl)
-        + getters()
-    }
-    
-    class GoogleAuthCommand {
-        <<comando>>
-        - token: String
-        + GoogleAuthCommand(token)
-        + getToken(): String
-    }
-    
-    %% Resultados de operaciones
-    class UserRegistrationResult {
-        <<resultado>>
-        - session: UserSession
-        + UserRegistrationResult(session)
-        + session(): UserSession
-    }
-    
-    %% Servicios (Implementaciones de los puertos primarios)
-    class GoogleAuthentication {
-        <<servicio>>
-        - googleAuthClient: GoogleAuthClient
-        - userRepository: UserRepository
-        - tokenGenerator: TokenGenerator
-        + GoogleAuthentication(googleAuthClient, userRepository, tokenGenerator)
-        + authenticate(command: GoogleAuthCommand): UserSession
-    }
-    
-    class RegisterUser {
-        <<servicio>>
-        - userRepository: UserRepository
-        + RegisterUser(userRepository)
-        + register(command: RegisterUserCommand): UserRegistrationResult
+        <<primaryPort>>
+        +execute(command: RegisterUserCommand, requestId: UUID, flowId: UUID) Mono~UserRegistrationResult~
     }
 
-    %% Relaciones entre clases
-    RegisterUserUseCase <|.. RegisterUser : implementa
-    GoogleAuthenticationUseCase <|.. GoogleAuthentication : implementa
-    
-    RegisterUser --> RegisterUserCommand : usa
-    GoogleAuthentication --> GoogleAuthCommand : usa
-    
-    RegisterUser ..> UserRegistrationResult : produce
+    class GoogleAuthenticationUseCase {
+        <<primaryPort>>
+        +authenticateWithGoogle(command: GoogleAuthCommand, requestId: UUID, flowId: UUID) Mono~UserSession~
+    }
+
+    class RegisterUserCommand {
+        <<command>>
+        -provider: String
+        -code: String
+        -redirectUri: String
+        -registrationDate: Instant
+    }
+
+    class GoogleAuthCommand {
+        <<command>>
+        -code: String
+        -redirectUri: String
+    }
+
+    class UserRegistrationResult {
+        <<result>>
+        -session: UserSession
+    }
+
+    class RegisterUser {
+        <<service>>
+        -googleAuthClient: GoogleAuthClient
+        -userRepository: UserRepository
+        -tokenGenerator: TokenGenerator
+    }
+
+    class GoogleAuthentication {
+        <<service>>
+        -googleAuthClient: GoogleAuthClient
+        -userRepository: UserRepository
+        -tokenGenerator: TokenGenerator
+    }
+
+    RegisterUserUseCase <|.. RegisterUser : implements
+    GoogleAuthenticationUseCase <|.. GoogleAuthentication : implements
+
+    RegisterUser ..> RegisterUserCommand : uses
+    RegisterUser ..> UserRegistrationResult : produces
+    GoogleAuthentication ..> GoogleAuthCommand : uses
+
+    %% UserRepository lives in auth.infrastructure.adapter.secondary.port (not domain.port.secondary).

@@ -1,60 +1,58 @@
 erDiagram
-    CategoryEntity ||--o{ ProductEntity : "contains"
-    ProductEntity ||--o{ ProductUserEntity : "has"
-    ProductEntity ||--o{ ReviewEntity : "has"
-    ProductUserEntity }o--|| UserEntity : "belongs_to"
-    UserEntity ||--o{ ReviewEntity : "writes"
+    %% Source of truth: src/main/resources/db/migration (V1-V5).
+    %% Note: product_user.user_id has NO database FK constraint; the link to "user" is logical only.
 
-    CategoryEntity {
-        UUID categoryId PK "Primary Key"
-        String name "NOT NULL"
-        Long version "NOT NULL"
-        Date createdAt "NOT NULL"
-        Date updatedAt "NOT NULL"
+    category ||--o{ product : "categorizes"
+    product ||--o{ product_user : "collected in"
+    product_user ||--o{ review : "receives"
+    "user" ||--o{ product_user : "collects"
+
+    category {
+        UUID category_id PK
+        BIGINT version "NOT NULL"
+        VARCHAR name
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
-    ProductEntity {
-        UUID productId PK "Primary Key"
-        UUID categoryId FK "Foreign Key"
-        String name "NOT NULL"
-        String brand "NOT NULL"
-        String colorHex
-        Long version "NOT NULL"
-        Date createdAt "NOT NULL"
-        Date updatedAt "NOT NULL"
+    "user" {
+        UUID user_id PK
+        VARCHAR token "NOT NULL, UNIQUE"
+        BIGINT version "NOT NULL"
+        VARCHAR email
+        VARCHAR name
+        TIMESTAMP created_at "NOT NULL"
+        TIMESTAMP updated_at
     }
 
-    ProductUserEntity {
-        UUID productUserId PK "Primary Key"
-        UUID productId FK "Foreign Key"
-        UUID userId FK "Foreign Key"
-        Long version "NOT NULL"
-        Date createdAt "NOT NULL"
-        Date updatedAt "NOT NULL"
+    product {
+        UUID product_id PK
+        UUID category_id FK "NOT NULL, references category"
+        BIGINT version "NOT NULL"
+        VARCHAR brand
+        VARCHAR name "NOT NULL"
+        VARCHAR color_hex
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
-    ReviewEntity {
-        UUID reviewId PK "Primary Key"
-        UUID productUserId FK "Foreign Key"
-        Integer rating "NOT NULL"
-        String comment
-        Boolean isVerified "NOT NULL"
-        Long version "NOT NULL"
-        Date createdAt "NOT NULL"
-        Date updatedAt "NOT NULL"
+    product_user {
+        UUID product_user_id PK
+        BIGINT version "NOT NULL"
+        UUID user_id "NOT NULL, logical reference"
+        UUID product_id FK "NOT NULL, references product"
+        TIMESTAMP deleted_at
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
-    UserEntity {
-        UUID userId PK "Primary Key"
-        String username "NOT NULL, UNIQUE"
-        String email "NOT NULL, UNIQUE"
-        String password "NOT NULL"
-        Boolean isActive "NOT NULL"
-        Boolean isVerified "NOT NULL"
-        String verificationCode
-        String resetPasswordToken
-        Date resetPasswordTokenExpiry
-        Long version "NOT NULL"
-        Date createdAt "NOT NULL"
-        Date updatedAt "NOT NULL"
+    review {
+        UUID review_id PK
+        UUID product_user_id FK "NOT NULL, references product_user"
+        BIGINT version "NOT NULL"
+        INTEGER rating "NOT NULL"
+        VARCHAR comment "NOT NULL"
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        TIMESTAMP deleted_at
     }

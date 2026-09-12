@@ -1,7 +1,7 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
 import com.myvanitys.api.product.domain.model.Category;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

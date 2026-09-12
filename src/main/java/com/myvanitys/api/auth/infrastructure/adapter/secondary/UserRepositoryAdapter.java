@@ -4,7 +4,7 @@ import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.infrastructure.adapter.secondary.port.UserRepository;
 import com.myvanitys.api.auth.infrastructure.persistence.entity.UserEntity;
 import com.myvanitys.api.auth.infrastructure.persistence.repository.JpaUserRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

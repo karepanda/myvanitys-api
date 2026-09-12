@@ -1,6 +1,6 @@
 package com.myvanitys.api.auth.domain.model;
 
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import lombok.Getter;
 import lombok.NonNull;
 

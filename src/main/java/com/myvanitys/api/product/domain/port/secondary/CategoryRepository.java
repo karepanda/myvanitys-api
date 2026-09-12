@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.myvanitys.api.product.domain.model.Category;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 
 
 public interface CategoryRepository {

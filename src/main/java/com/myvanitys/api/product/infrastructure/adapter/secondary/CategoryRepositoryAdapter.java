@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.CategoryMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;

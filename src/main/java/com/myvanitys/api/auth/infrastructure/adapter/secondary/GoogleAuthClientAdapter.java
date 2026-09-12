@@ -1,7 +1,7 @@
 package com.myvanitys.api.auth.infrastructure.adapter.secondary;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;

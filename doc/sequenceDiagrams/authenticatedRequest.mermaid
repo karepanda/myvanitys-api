@@ -1,0 +1,15 @@
+sequenceDiagram
+    autonumber
+    participant C as Mobile Client
+    participant A as MyVanitys API
+
+    C->>A: Any protected request with header "Authorization: Bearer <token>"
+
+    alt Token missing, invalid, or expired
+        A-->>C: 401 ProblemDetail (Authentication Required)
+        Note over C: Re-authenticate via POST /auth/google, then retry.
+    else Valid token
+        A-->>C: 2xx response for the requested endpoint
+    end
+
+    Note over C,A: Applies to every endpoint except POST /auth/google and POST /auth/register.

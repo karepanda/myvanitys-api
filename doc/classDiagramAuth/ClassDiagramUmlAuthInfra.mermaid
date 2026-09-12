@@ -1,97 +1,125 @@
 classDiagram
-    %% Primary Adapters
+    %% Auth infrastructure: primary adapter, secondary adapters, security, config, persistence.
+
+    %% --- Primary adapter ---
     class AuthController {
-        <<adapterprimario>>
-        +login(LoginRequest) ResponseEntity
-        +loginWithGoogle(String) ResponseEntity
+        <<primaryAdapter>>
+        +authenticateWithGoogle(xRequestID, xFlowID, GoogleAuthRequest) ResponseEntity~AuthResponse~
+        +createUser(xRequestID, xFlowID, CreateUserRequest) ResponseEntity~UserCreatedResponse~
     }
-    
-    %% Secondary Adapters
+    class AuthenticationMapper {
+        <<mapper>>
+    }
+    class CreateUserMapper {
+        <<mapper>>
+    }
+
+    %% --- Secondary adapters ---
     class GoogleAuthClientAdapter {
-        <<adaptersecundario>>
-        +exchangeCodeForUserInfo(String, String) Mono~GoogleUserInfo~
+        <<secondaryAdapter>>
+        +exchangeCodeForUserInfo(authorizationCode: String, redirectUri: String) Mono~GoogleUserInfo~
     }
-    
     class JwtTokenGeneratorAdapter {
-        <<adaptersecundario>>
-        +generateToken(User) String
+        <<secondaryAdapter>>
+        +generateToken(claims: TokenClaims) String
+        +createClaimsFromUser(user: User) TokenClaims
+        +extractUserId(token: String) UUID
+        +validateToken(token: String) TokenClaims
     }
-    
     class UserRepositoryAdapter {
-        <<adaptersecundario>>
-        +findByEmail(String) Optional~User~
-        +save(User) User
+        <<secondaryAdapter>>
+        +save(user: User) Mono~User~
+        +findByAuthorizationId(authorizationId: String) Mono~User~
     }
-    
-    %% Infrastructure Ports
+
+    %% --- Ports (note: UserRepository is an infra-layer port, unlike the domain ports) ---
+    class GoogleAuthClient {
+        <<secondaryPort>>
+    }
+    class TokenGenerator {
+        <<secondaryPort>>
+    }
     class UserRepository {
         <<port>>
-        +findByEmail(String) Optional~User~
-        +save(User) User
+        +save(user: User) Mono~User~
+        +findByAuthorizationId(authorizationId: String) Mono~User~
     }
-    
-    %% Configuration classes
+
+    %% --- Security ---
+    class JwtAuthenticationFilter {
+        <<filter>>
+        +doFilterInternal(request, response, filterChain) void
+    }
+    class TokenService {
+        <<service>>
+        +extractUserId(tokenHeader: String) UUID
+        +isValidToken(tokenHeader: String) boolean
+    }
+    class JwtClaimsAdapter {
+        <<security>>
+        +toJwtClaims(claims: TokenClaims) Map
+        +fromJwtClaims(jwtClaims: Map, issuedAt: Instant, expiresAt: Instant) TokenClaims
+    }
+    class AuthenticatedUserContext {
+        <<requestScope>>
+        +getUserId() UUID
+        +setUserId(userId: UUID) void
+    }
+
+    %% --- Config ---
     class JwtProperties {
-        <<config>>
-        -String secretKey
-        -Long expirationTimeInMinutes
+        -secret: String
+        -expiration: long
     }
-    
     class GoogleClientProperties {
-        <<config>>
-        -String clientId
-        -String clientSecret
-        -String redirectUri
+        -clientId: String
+        -clientSecret: String
+        -redirectUri: String
     }
-    
     class SecurityConfig {
-        <<config>>
+        +jwtSigningKey(jwtProperties: JwtProperties) Key
     }
-    
     class WebClientConfig {
         <<config>>
     }
-    
     class RestTemplateConfig {
         <<config>>
-        +restTemplate() RestTemplate
     }
-    
-    %% Security
-    class JwtClaimsAdapter {
-        <<security>>
-    }
-    
-    %% Persistence
+
+    %% --- Persistence ---
     class UserEntity {
         <<entity>>
-        -UUID userId
-        -String email
-        -String name
+        -version: Long
+        -userId: UUID
+        -token: String
+        -email: String
+        -name: String
+        -createdAt: Instant
+        -updatedAt: Instant
     }
-    
     class JpaUserRepository {
         <<repository>>
-        +findByEmail(String) Optional~UserEntity~
     }
-    
-    %% Relationships
-    AuthController --> UserRepositoryAdapter : usa
-    GoogleAuthClientAdapter ..> GoogleClientProperties : usa
-    JwtTokenGeneratorAdapter --> JwtProperties : usa
-    UserRepositoryAdapter ..|> UserRepository : implementa
-    UserRepositoryAdapter --> JpaUserRepository : usa
-    JpaUserRepository --> UserEntity : maneja
-    SecurityConfig --> JwtProperties : configura
-    WebClientConfig --> GoogleClientProperties : configura
-    UserRepositoryAdapter --> UserEntity : mapea
 
-    %%class AuthController:::Sky
-    %%class GoogleAuthClientAdapter:::Rose
-    %%class JwtTokenGeneratorAdapter:::Rose
-    %%class UserRepositoryAdapter:::Rose
-    %%class UserRepository:::Aqua
+    %% --- Relationships ---
+    AuthController ..> AuthenticationMapper : uses
+    AuthController ..> CreateUserMapper : uses
 
-    %%classDef Rose :, stroke-width:1px, stroke-dasharray:none, stroke:#FF5978, fill:#FFDFE5, color:#8E2236
-    %%classDef Sky :, stroke-width:1px, stroke-dasharray:none, stroke:#374D7C, fill:#E2EBFF, color:#374D7C
-    %%classDef Aqua :,stroke-width:1px, stroke-dasharray:none, stroke:#46EDC8, fill:#DEFFF8, color:#378E7A
+    GoogleAuthClientAdapter ..|> GoogleAuthClient : implements
+    GoogleAuthClientAdapter ..> GoogleClientProperties : uses
+    GoogleAuthClientAdapter ..> WebClientConfig : uses
+
+    JwtTokenGeneratorAdapter ..|> TokenGenerator : implements
+    JwtTokenGeneratorAdapter ..> JwtProperties : uses
+    JwtTokenGeneratorAdapter ..> JwtClaimsAdapter : uses
+
+    UserRepositoryAdapter ..|> UserRepository : implements
+    UserRepositoryAdapter --> JpaUserRepository : uses
+    UserRepositoryAdapter --> UserEntity : maps
+
+    TokenService --> TokenGenerator : uses
+    JwtAuthenticationFilter --> TokenService : uses
+    JwtAuthenticationFilter --> AuthenticatedUserContext : populates
+
+    SecurityConfig --> JwtProperties : configures
+    JpaUserRepository --> UserEntity : manages

@@ -1,0 +1,21 @@
+sequenceDiagram
+    autonumber
+    participant C as Mobile Client
+    participant A as MyVanitys API
+
+    C->>A: POST /products  { name, brand, categoryId, colorHex }  + Bearer token
+
+    alt Token missing, invalid, or expired
+        A-->>C: 401 ProblemDetail
+    else Authorized
+        alt You already have a product with the same name
+            A-->>C: 201 ProductResponse (existing product)
+            Note over C: The product is associated with you; no new product is created.
+        else New product name
+            opt categoryId does not match a known category
+                A-->>C: 500 ProblemDetail (generic server error)
+                Note over C: The category is required and must exist.
+            end
+            A-->>C: 201 ProductResponse (new product, in your collection)
+        end
+    end

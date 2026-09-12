@@ -5,10 +5,10 @@ import java.net.URI;
 import java.util.Set;
 import java.util.UUID;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.myvanitys.api.model.v1.ProblemDetail;
-import com.myvanitys.api.product.infrastructure.adapter.primary.service.TokenService;
-import com.myvanitys.api.product.infrastructure.exception.UnauthorizedException;
+import com.myvanitys.api.auth.infrastructure.security.TokenService;
+import com.myvanitys.api.common.UnauthorizedException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

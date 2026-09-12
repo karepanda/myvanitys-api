@@ -2,9 +2,8 @@ package com.myvanitys.api.product.application.usecase;
 
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
-import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
+import com.myvanitys.api.common.valueobject.EntityId;
+import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,10 +21,7 @@ import static org.mockito.Mockito.when;
 class FindProductByUserTest {
 
     @Mock
-    private JpaProductRepository jpaProductRepository;
-
-    @Mock
-    private FindProductService findProductService;
+    private ProductRepository productRepository;
 
     @InjectMocks
     private FindProductByUser target;
@@ -39,16 +35,11 @@ class FindProductByUserTest {
             final EntityId userId = new EntityId(userIdValue);
             final FindProductUserQuery query = new FindProductUserQuery(userId);
 
-            final ProductEntity productEntity1 = new ProductEntity();
-            final ProductEntity productEntity2 = new ProductEntity();
-            final List<ProductEntity> productEntities = List.of(productEntity1, productEntity2);
-
             final Product product1 = Product.newProduct("Product 1", "Brand 1", "#FF0000");
             final Product product2 = Product.newProduct("Product 2", "Brand 2", "#00FF00");
             final List<Product> expectedProducts = List.of(product1, product2);
 
-            when(jpaProductRepository.findByUserId(userIdValue)).thenReturn(productEntities);
-            when(findProductService.findProducts(productEntities)).thenReturn(expectedProducts);
+            when(productRepository.findAllProductDetailsByUserId(userIdValue)).thenReturn(expectedProducts);
 
             // Act
             final List<Product> result = target.query(query);
@@ -63,11 +54,8 @@ class FindProductByUserTest {
             final UUID userIdValue = UUID.fromString("22222222-2222-2222-2222-222222222222");
             final EntityId userId = new EntityId(userIdValue);
             final FindProductUserQuery query = new FindProductUserQuery(userId);
-            final List<ProductEntity> productEntities = List.of();
-            final List<Product> expectedProducts = List.of();
 
-            when(jpaProductRepository.findByUserId(userIdValue)).thenReturn(productEntities);
-            when(findProductService.findProducts(productEntities)).thenReturn(expectedProducts);
+            when(productRepository.findAllProductDetailsByUserId(userIdValue)).thenReturn(List.of());
 
             // Act
             final List<Product> result = target.query(query);

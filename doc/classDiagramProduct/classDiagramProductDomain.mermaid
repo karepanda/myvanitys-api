@@ -1,124 +1,164 @@
 classDiagram
-    %% Models
+    %% Product domain: aggregate, value objects, domain service, and secondary ports.
+
     class Product {
-        -EntityId id
-        -String name
-        -String brand
-        -Category category
-        -String colorHex
-        -Set~Review~ reviews
-        -Set~ProductUserRelation~ userRelations
-        +addReview(Review)
-        +removeReview(Review)
-        +addUserRelation(ProductUserRelation)
-        +removeUserRelation(ProductUserRelation)
-        +getActiveReviews()
+        <<aggregateRoot>>
+        -id: EntityId
+        -name: String
+        -brand: String
+        -category: Category
+        -colorHex: String
+        -averageRating: int
+        -reviews: List~Review~
+        -userRelations: Set~ProductUserRelation~
+        +create(name, brand, category, colorHex) Product
+        +newProduct(name, brand, colorHex) Product
+        +reconstruct(id, name, brand, category, colorHex, reviews, userRelations) Product
+        +assignCategory(category: Category) void
+        +updateDetails(name, brand, category, colorHex) void
+        +addReviewFromUser(userId: EntityId, details: ReviewDetails) Review
+        +updateReview(reviewId: EntityId, rating: int, comment: String) Review
+        +deleteReview(reviewId: EntityId) Review
+        +removeReview(reviewId: EntityId) boolean
+        +hasReviewFrom(userId: EntityId) boolean
+        +findReviewsByUser(userId: EntityId) List~Review~
+        +findActiveReviewsByUser(userId: EntityId) List~Review~
+        +findReviewById(reviewId: EntityId) Optional~Review~
+        +getReviews() List~Review~
+        +getUserRelations() Set~ProductUserRelation~
     }
 
     class Category {
-        -EntityId categoryId
-        -String name
+        <<record>>
+        -categoryId: EntityId
+        -name: String
     }
 
     class Review {
-        -EntityId id
-        -EntityId productUserId
-        -ReviewDetails details
-        +updateDetails(int, String)
-        +markAsDeleted()
-        +isDeleted()
-        +isActive()
+        -id: EntityId
+        -productUserId: EntityId
+        -details: ReviewDetails
+        +createWithExistingId(id, productUserId, details) Review
+        +updateDetails(rating: int, comment: String) void
+        +markAsDeleted() void
+        +isDeleted() boolean
+        +isActive() boolean
+        +getRating() int
+        +getComment() String
     }
 
     class ProductUserRelation {
-        -EntityId id
-        -EntityId userId
-        -boolean isFavorite
+        -id: EntityId
+        -productId: EntityId
+        -userId: EntityId
+        +create(productId: EntityId, userId: EntityId) ProductUserRelation
+        +reconstruct(id, productId, userId) ProductUserRelation
     }
 
-    class ProductOperations {
-        <<Interface>>
-        +addReview(Review)
-        +removeReview(Review)
-        +addUserRelation(ProductUserRelation)
-        +removeUserRelation(ProductUserRelation)
-    }
-
-    %% Value Objects
     class EntityId {
-        -UUID value
-        +newId()
-        +of(UUID)
-        +getValue()
+        <<sharedKernel>>
+        -value: UUID
+        +newId() EntityId
+        +of(uuid: UUID) EntityId
+        +getValue() UUID
     }
 
     class ReviewDetails {
-        -int rating
-        -String comment
-        -Timestamp createdAt
-        -Timestamp updatedAt
-        -Timestamp deletedAt
-        +create(int, String)
-        +withUpdates(int, String)
-        +markAsDeleted()
+        <<record>>
+        -rating: int
+        -comment: String
+        -createdAt: Timestamp
+        -updatedAt: Timestamp
+        -deletedAt: Timestamp
+        +create(rating: int, comment: String) ReviewDetails
+        +of(rating, comment, createdAt, updatedAt, deletedAt) ReviewDetails
+        +withUpdates(rating: int, comment: String) ReviewDetails
+        +markAsDeleted() ReviewDetails
+        +isDeleted() boolean
     }
 
     class Timestamp {
-        -Instant value
-        +now()
-        +of(Instant)
-        +asInstant()
+        <<record>>
+        -value: Instant
+        +now() Timestamp
+        +of(instant: Instant) Timestamp
+        +asInstant() Instant
+        +isBefore(other: Timestamp) boolean
+        +isAfter(other: Timestamp) boolean
     }
 
-    %% Services
     class ProductReview {
-        +validateReview(Review)
-        +processReview(Review)
+        <<domainService>>
+        +calculateOverallAverageRating(products: List~Product~) double
+        +findUserIdForReview(product: Product, reviewId: EntityId) EntityId
+        +getUserReviewsAcrossProducts(products, userId) List~Review~
+        +getUserActiveReviewsAcrossProducts(products, userId) List~Review~
+        +calculateUserAverageRating(products, userId) double
+        +getProductStats(product: Product) ProductReviewStats
+    }
+    class ProductReviewStats {
+        -totalReviews: int
+        -exactAverageRating: double
+        -roundedAverageRating: int
     }
 
-    %% Repositories (Port Secondary)
     class ProductRepository {
-        <<Interface>>
-        +save(Product) Product
-        +findById(EntityId) Optional~Product~
-        +findByName(String) Optional~Product~
+        <<secondaryPort>>
+        +save(product: Product) Product
+        +findById(productId: EntityId) Optional~Product~
+        +findByName(productName: String, entityId: EntityId) Optional~Product~
+        +deleteById(productId: EntityId) void
+        +findByUserId(userId: UUID) List~Product~
         +findAll() List~Product~
-        +deleteById(EntityId) void
+        +findAllProductDetailsByUserId(userId: UUID) List~Product~
+        +searchProductDetailsByNameOrBrand(term: String) List~Product~
     }
 
     class CategoryRepository {
-        <<Interface>>
-        +save(Category) Category
-        +findById(EntityId) Optional~Category~
+        <<secondaryPort>>
+        +findById(categoryId: EntityId) Optional~Category~
+        +findByName(name: String) Optional~Category~
         +findAll() List~Category~
+        +save(category: Category) Category
+        +deleteById(categoryId: EntityId) void
     }
 
     class ReviewRepository {
-        <<Interface>>
-        +save(Review) Review
-        +findById(EntityId) Optional~Review~
-        +findByProductId(EntityId) List~Review~
-        +findByUserId(EntityId) List~Review~
-        +deleteById(EntityId) void
+        <<secondaryPort>>
+        +save(review: Review) Review
+        +findById(reviewId: EntityId) Optional~Review~
+        +deleteById(reviewId: EntityId) void
+        +findByProductId(productId: EntityId) List~Review~
+        +findByUserId(userId: EntityId) List~Review~
+        +findByProductUserId(productUserId: EntityId) List~Review~
+        +existsByReviewIdAndUserId(reviewId: EntityId, userId: EntityId) boolean
     }
 
     class ProductUserRepository {
-        <<Interface>>
-        +saveProductUserRelationship(EntityId, EntityId) void
-        +findByProductId(EntityId) List~ProductUserRelation~
-        +findByUserId(EntityId) List~ProductUserRelation~
+        <<secondaryPort>>
+        +saveProductUserRelationship(productId: EntityId, userId: EntityId) void
+        +isUserAssociatedWithProduct(productId: EntityId, userId: EntityId) boolean
+        +deleteByProductId(productId: EntityId) void
+        +existsByProductIdAndUserId(productId: EntityId, userId: EntityId) boolean
+        +findProductIdsByUserId(userId: EntityId) List~EntityId~
+        +findByProductId(productId: UUID) List~ProductUserRelation~
+        +findByUserId(userId: UUID) List~ProductUserRelation~
+        +findByProductIdAndUserId(productId: UUID, userId: UUID) Optional~ProductUserRelation~
+        +deleteByProductIdAndUserId(productId: UUID, userId: UUID) void
     }
 
-    %% Relationships
-    Product ..|> ProductOperations
-    Product "1" *-- "0..*" Review
-    Product "1" *-- "1" Category
-    Product "1" *-- "0..*" ProductUserRelation
-    Review "1" *-- "1" ReviewDetails
-    ReviewDetails "1" *-- "3" Timestamp
-    Product "1" *-- "1" EntityId
-    Category "1" *-- "1" EntityId
-    Review "1" *-- "1" EntityId
-    ProductUserRelation "1" *-- "2" EntityId
-    ProductReview ..> Review
-    ProductReview ..> Product
+    Product "1" *-- "0..*" Review : reviews
+    Product "1" *-- "1" Category : category
+    Product "1" *-- "0..*" ProductUserRelation : userRelations
+    Review "1" *-- "1" ReviewDetails : details
+    ReviewDetails "1" *-- "0..3" Timestamp : timestamps
+    Product "1" *-- "1" EntityId : id
+    Category "1" *-- "1" EntityId : categoryId
+    Review "1" *-- "1" EntityId : id
+    ProductUserRelation "1" *-- "2" EntityId : ids
+
+    ProductReview ..> Product : operates on
+    ProductReview ..> Review : operates on
+    ProductReview ..> ProductReviewStats : produces
+
+    %% EntityId is the shared kernel at com.myvanitys.api.common.valueobject.EntityId (not product.domain).

@@ -2,7 +2,7 @@ package com.myvanitys.api.product.domain.model;
 
 import java.util.Objects;
 
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import lombok.Getter;
 
 @Getter

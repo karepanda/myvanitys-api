@@ -11,7 +11,7 @@ import java.util.UUID;
 import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.infrastructure.persistence.entity.UserEntity;
 import com.myvanitys.api.auth.infrastructure.persistence.repository.JpaUserRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

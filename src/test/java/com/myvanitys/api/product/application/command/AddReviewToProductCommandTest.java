@@ -1,6 +1,6 @@
 package com.myvanitys.api.product.application.command;
 
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import org.junit.jupiter.api.Test;
 

@@ -1,7 +1,7 @@
 package com.myvanitys.api.product.domain.exception;
 
 import com.myvanitys.api.common.DomainException;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 
 public class ProductNotFoundException extends DomainException {
 

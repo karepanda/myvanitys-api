@@ -8,7 +8,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import com.myvanitys.api.common.ValidationException;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

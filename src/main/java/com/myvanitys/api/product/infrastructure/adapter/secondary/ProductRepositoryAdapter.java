@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.myvanitys.api.common.InfrastructureException;
+import com.myvanitys.api.product.domain.exception.CategoryNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
@@ -17,7 +18,7 @@ import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
 import com.myvanitys.api.product.domain.port.secondary.ReviewRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
@@ -193,6 +194,41 @@ public class ProductRepositoryAdapter implements ProductRepository {
       log.error("Error finding all products: {}", e.getMessage(), e);
       throw DatabaseException.queryError("Find all products", e);
     }
+  }
+
+  @Override
+  public List<Product> findAllProductDetailsByUserId(UUID userId) {
+    List<ProductEntity> productEntities = jpaProductRepository.findByUserId(userId);
+    return mapProductEntitiesWithAllReviews(productEntities);
+  }
+
+  @Override
+  public List<Product> searchProductDetailsByNameOrBrand(String term) {
+    List<ProductEntity> productEntities = jpaProductRepository.searchByNameOrBrand(term);
+    return mapProductEntitiesWithAllReviews(productEntities);
+  }
+
+  /**
+   * Maps product entities to domain products using all reviews and no user relations, failing when the category is missing.
+   */
+  private List<Product> mapProductEntitiesWithAllReviews(List<ProductEntity> productEntities) {
+    return productEntities.stream()
+        .map(productEntity -> {
+          final Category category = getCategoryOrThrow(productEntity);
+          final List<Review> reviews = getAllReviews(new EntityId(productEntity.getProductId()));
+          return productMapper.toDomain(productEntity, category, reviews);
+        })
+        .filter(Objects::nonNull)
+        .toList();
+  }
+
+  private Category getCategoryOrThrow(ProductEntity entity) {
+    return categoryRepository.findById(new EntityId(entity.getCategoryId()))
+        .orElseThrow(() -> new CategoryNotFoundException("Category not found for product: " + entity.getProductId()));
+  }
+
+  private List<Review> getAllReviews(EntityId productId) {
+    return reviewRepository.findByProductId(productId).stream().toList();
   }
 
   /**
