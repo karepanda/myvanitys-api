@@ -3,11 +3,10 @@ package com.myvanitys.api.product.application.mapper;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.infrastructure.persistence.mapper.EntityIdMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = {EntityIdMapper.class})
+@Mapper(componentModel = "spring")
 public interface CommandToProductMapper {
 
   @Mapping(target = "id", ignore = true)

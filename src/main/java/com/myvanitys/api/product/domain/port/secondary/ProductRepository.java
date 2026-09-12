@@ -55,4 +55,20 @@ public interface ProductRepository {
    * @return list of all products
    */
   List<Product> findAll();
+
+  /**
+   * Find all products for a user, reconstructed with all reviews and no user relations.
+   *
+   * @param userId the user ID
+   * @return list of products belonging to the user
+   */
+  List<Product> findAllProductDetailsByUserId(UUID userId);
+
+  /**
+   * Find products whose name or brand contains the term, reconstructed with all reviews and no user relations.
+   *
+   * @param term the search term
+   * @return list of matching products
+   */
+  List<Product> searchProductDetailsByNameOrBrand(String term);
 }

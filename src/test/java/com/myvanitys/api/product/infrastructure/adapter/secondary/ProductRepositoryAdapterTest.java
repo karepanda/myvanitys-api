@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import com.myvanitys.api.product.domain.exception.CategoryNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
@@ -34,6 +35,7 @@ import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductUserRelationMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
+import org.mapstruct.factory.Mappers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -458,6 +460,119 @@ class ProductRepositoryAdapterTest {
       verify(jpaProductRepository, never()).findReviewsByProductId(any());
       verify(reviewMapper, never()).toDomain(any());
       verify(productUserRepository, never()).findByProductId(any());
+    }
+  }
+
+  @Nested
+  @DisplayName("legacy product detail reads")
+  class LegacyProductDetailReads {
+
+    private ProductRepositoryAdapter adapterWithRealMapper() {
+      return new ProductRepositoryAdapter(
+          categoryRepository,
+          productUserRepository,
+          reviewRepository,
+          jpaProductRepository,
+          Mappers.getMapper(ProductMapper.class),
+          null,
+          productUserRelationMapper,
+          reviewMapper);
+    }
+
+    private Review reviewByDifferentUser(String comment) {
+      return Review.createWithExistingId(
+          EntityId.newId(),
+          EntityId.newId(),
+          ReviewDetails.of(5, comment, Instant.now(), Instant.now(), null));
+    }
+
+    @Test
+    void findAllProductDetailsByUserId_then_returnsAllReviewsAndNoRelations() {
+      // Given
+      final UUID userId = UUID.randomUUID();
+      final UUID productId1 = UUID.randomUUID();
+      final UUID productId2 = UUID.randomUUID();
+      final ProductEntity productEntity1 = createValidProductEntity(productId1, "Product 1", "Brand 1");
+      final ProductEntity productEntity2 = createValidProductEntity(productId2, "Product 2", "Brand 2");
+
+      // Two reviews written by different users must both be returned (all reviews, not filtered by the querying user)
+      final Review reviewFromUserA = reviewByDifferentUser("review from user A");
+      final Review reviewFromUserB = reviewByDifferentUser("review from user B");
+
+      when(jpaProductRepository.findByUserId(userId)).thenReturn(List.of(productEntity1, productEntity2));
+      when(categoryRepository.findById(any(EntityId.class))).thenReturn(Optional.of(category));
+      when(reviewRepository.findByProductId(new EntityId(productId1)))
+          .thenReturn(List.of(reviewFromUserA, reviewFromUserB));
+      when(reviewRepository.findByProductId(new EntityId(productId2))).thenReturn(List.of());
+
+      // When
+      final List<Product> result = adapterWithRealMapper().findAllProductDetailsByUserId(userId);
+
+      // Then
+      assertThat(result).hasSize(2);
+
+      final Product first = result.get(0);
+      assertThat(first.getReviews()).containsExactly(reviewFromUserA, reviewFromUserB);
+      assertThat(first.getUserRelations()).isEmpty();
+
+      final Product second = result.get(1);
+      assertThat(second.getReviews()).isEmpty();
+      assertThat(second.getUserRelations()).isEmpty();
+
+      verify(jpaProductRepository).findByUserId(userId);
+      verify(reviewRepository).findByProductId(new EntityId(productId1));
+      verify(reviewRepository).findByProductId(new EntityId(productId2));
+      verify(jpaProductRepository, never()).findReviewsByProductIdAndUserId(any(), any());
+      verify(productUserRepository, never()).findByProductId(any(UUID.class));
+    }
+
+    @Test
+    void searchProductDetailsByNameOrBrand_then_returnsAllReviewsAndNoRelations() {
+      // Given
+      final String term = "serum";
+      final UUID productId = UUID.randomUUID();
+      final ProductEntity productEntity = createValidProductEntity(productId, "Serum", "BrandY");
+
+      final Review reviewFromUserA = reviewByDifferentUser("search review A");
+      final Review reviewFromUserB = reviewByDifferentUser("search review B");
+
+      when(jpaProductRepository.searchByNameOrBrand(term)).thenReturn(List.of(productEntity));
+      when(categoryRepository.findById(any(EntityId.class))).thenReturn(Optional.of(category));
+      when(reviewRepository.findByProductId(new EntityId(productId)))
+          .thenReturn(List.of(reviewFromUserA, reviewFromUserB));
+
+      // When
+      final List<Product> result = adapterWithRealMapper().searchProductDetailsByNameOrBrand(term);
+
+      // Then
+      assertThat(result).hasSize(1);
+
+      final Product product = result.get(0);
+      assertThat(product.getReviews()).containsExactly(reviewFromUserA, reviewFromUserB);
+      assertThat(product.getUserRelations()).isEmpty();
+
+      verify(jpaProductRepository).searchByNameOrBrand(term);
+      verify(reviewRepository).findByProductId(new EntityId(productId));
+      verify(jpaProductRepository, never()).findReviewsByProductIdAndUserId(any(), any());
+      verify(productUserRepository, never()).findByProductId(any(UUID.class));
+    }
+
+    @Test
+    void when_categoryNotFound_then_throwsCategoryNotFoundException() {
+      // Given
+      final UUID userId = UUID.randomUUID();
+      final UUID productId = UUID.randomUUID();
+      final ProductEntity productEntity = createValidProductEntity(productId, "Product", "Brand");
+
+      when(jpaProductRepository.findByUserId(userId)).thenReturn(List.of(productEntity));
+      when(categoryRepository.findById(any(EntityId.class))).thenReturn(Optional.empty());
+
+      // When / Then
+      assertThatThrownBy(() -> adapterWithRealMapper().findAllProductDetailsByUserId(userId))
+          .isInstanceOf(CategoryNotFoundException.class)
+          .hasMessageContaining("Category not found for product: " + productId);
+
+      verify(reviewRepository, never()).findByProductId(any(EntityId.class));
     }
   }
 }

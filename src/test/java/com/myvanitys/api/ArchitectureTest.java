@@ -5,19 +5,18 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.core.importer.Location;
 import com.tngtech.archunit.junit.AnalyzeClasses;
-import com.tngtech.archunit.junit.ArchIgnore;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
  * Hexagonal architecture rules for myvanitys-api.
  *
- * Baseline established via a read-only audit (see /doc, PR description, or project notes for the full report). Rules below are split into
- * two groups:
+ * Established via a read-only audit that found several real violations (see project history for the full report and the refactor phases
+ * that fixed each one: TokenService/EntityId/UnauthorizedException relocation to close cross-context leaks, ProductReview's Spring
+ * dependency removed from domain, and FindProductService's persistence coupling replaced with proper ProductRepository port methods).
  *
- * 1. SAFE RULES — confirmed zero violations at audit time, plus rules fixed and confirmed since. Active immediately. 2. KNOWN-VIOLATION
- * RULE — real architecture debt confirmed by the audit, still unresolved. Kept as @ArchIgnore with a TODO until the corresponding refactor
- * ticket is closed. Do NOT delete; re-enable once fixed, so the rule keeps protecting the boundary going forward.
+ * All 7 rules below are active with zero known violations. If a future change breaks one, that is a real architecture regression to fix —
+ * not a rule to loosen.
  */
 @AnalyzeClasses(
     packages = "com.myvanitys.api",
@@ -42,8 +41,13 @@ class ArchitectureTest {
   }
 
   // ------------------------------------------------------------------
-  // 1. SAFE RULES — zero violations confirmed, active now
-  //    (includes rules fixed and re-enabled since the original audit)
+  // All rules confirmed passing, zero violations, zero exceptions.
+  //
+  // Note: auth and product diverge in naming/location for otherwise
+  // equivalent concepts (auth uses application.service +
+  // application.port.primary.command; product uses application.usecase +
+  // application.command). This is tolerated inconsistency, not a
+  // violation of any rule above — no ArchUnit rule targets it.
   // ------------------------------------------------------------------
 
   @ArchTest
@@ -76,50 +80,16 @@ class ArchitectureTest {
           .that().haveSimpleNameEndingWith("RepositoryAdapter")
           .should().resideOutsideOfPackage("..infrastructure.adapter.secondary..");
 
-  /**
-   * RESOLVED: ProductReview no longer carries @Service — Spring wiring moved to product.infrastructure.config.ProductReviewConfig instead.
-   * Rule confirmed passing; now enforced permanently.
-   */
   @ArchTest
   static final ArchRule domain_does_not_depend_on_spring =
       noClasses()
           .that().resideInAPackage("..domain..")
           .should().dependOnClassesThat().resideInAnyPackage("org.springframework..");
 
-  // ------------------------------------------------------------------
-  // 2. KNOWN-VIOLATION RULE — real debt, disabled pending refactor
-  // ------------------------------------------------------------------
-
-  /**
-   * TODO(ARCH-XXX): re-enable once FindProductService, FindProductByUser,
-   * FindProductByTerm, and CommandToProductMapper stop importing JPA
-   * entities/mappers/Spring Data repositories directly. They must go
-   * through a domain.port.secondary interface instead.
-   *
-   * This is the core hexagonal violation found in the audit — application
-   * layer reaching into infrastructure.persistence directly.
-   */
   @ArchTest
-  @ArchIgnore
-  // TODO(ARCH-XXX): re-enable once fixed — see javadoc above
   static final ArchRule application_does_not_depend_on_persistence =
       noClasses()
           .that().resideInAPackage("..application..")
           .should().dependOnClassesThat().resideInAPackage("..infrastructure.persistence..");
 
-  // ------------------------------------------------------------------
-  // Deliberately NOT enforced yet (documented, not silently ignored):
-  //
-  // - RESOLVED: shared-kernel relocation cycle complete. TokenService →
-  //   auth.infrastructure.security, EntityId → common.valueobject,
-  //   UnauthorizedException → common. All three confirmed via the
-  //   verification gate (unit + ArchUnit + integration all green).
-  //   No longer tracked here.
-  //
-  // - Naming/location divergence between auth (application.service,
-  //   application.port.primary.command) and product (application.usecase,
-  //   application.command) is tolerated as-is; not a correctness risk,
-  //   just inconsistency. No rule needed unless it starts causing
-  //   confusion in practice.
-  // ------------------------------------------------------------------
 }
