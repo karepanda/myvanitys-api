@@ -1,135 +1,174 @@
 classDiagram
-    %% Infrastructure - Persistence Entities
-    class ProductEntity {
-        -UUID productId
-        -UUID categoryId
-        -String name
-        -String brand
-        -String colorHex
-        -Instant createdAt
-        -Instant updatedAt
+    %% Product infrastructure: primary adapter, secondary adapters, persistence, mappers, exceptions.
+
+    %% --- Primary adapter ---
+    class ProductController {
+        <<primaryAdapter>>
+        +createProduct(...) ResponseEntity~ProductResponse~
+        +findProductsByUserId(...) ResponseEntity~List~ProductResponse~~
+        +searchProducts(...) ResponseEntity~ProductSearchResponse~
+        +addReviewToProduct(...) ResponseEntity~ProductResponse~
+        +addProductToUserVanity(...) ResponseEntity~ProductResponse~
+        +getAllProductsWithCollectionStatus(...) ResponseEntity~List~ProductResponse~~
+        +deleteProductByUser(...) ResponseEntity~Void~
+    }
+    class ProductResponseMapper {
+        <<mapper>>
+        +toResponseList(products: List~Product~) List~ProductResponse~
+        +toReviewResponseList(reviews: List~Review~) List~ReviewResponse~
     }
 
-    class ReviewEntity {
-        -UUID reviewId
-        -UUID productUserId
-        -int rating
-        -String comment
-        -Instant createdAt
-        -Instant updatedAt
-        -Instant deletedAt
+    %% --- Persistence entities ---
+    class ProductEntity {
+        <<entity>>
+        -productId: UUID
+        -categoryId: UUID
+        -version: Long
+        -name: String
+        -brand: String
+        -colorHex: String
+        -createdAt: Instant
+        -updatedAt: Instant
     }
 
     class CategoryEntity {
-        -UUID categoryId
-        -String name
-        -Instant createdAt
-        -Instant updatedAt
+        <<entity>>
+        -categoryId: UUID
+        -version: Long
+        -name: String
+        -createdAt: Instant
+        -updatedAt: Instant
     }
 
     class ProductUserEntity {
-        -UUID productUserId
-        -UUID productId
-        -UUID userId
-        -boolean isFavorite
-        -Instant createdAt
-        -Instant updatedAt
+        <<entity>>
+        -productUserId: UUID
+        -version: Long
+        -userId: UUID
+        -productId: UUID
+        -reviews: List~ReviewEntity~
+        -deletedAt: Instant
+        -createdAt: Instant
+        -updatedAt: Instant
     }
 
-    %% Infrastructure - JPA Repositories
+    class ReviewEntity {
+        <<entity>>
+        -reviewId: UUID
+        -version: Long
+        -rating: int
+        -comment: String
+        -productUserId: UUID
+        -createdAt: Instant
+        -updatedAt: Instant
+        -deletedAt: Instant
+    }
+
+    %% --- Spring Data JPA repositories ---
     class JpaProductRepository {
-        <<Interface>>
-        +findById(UUID) Optional~ProductEntity~
-        +save(ProductEntity) ProductEntity
-        +findAll() List~ProductEntity~
+        <<repository>>
+        +findByUserId(userId: UUID) List~ProductEntity~
+        +findByName(name: String) Optional~ProductEntity~
+        +findByBrand(brand: String) Optional~ProductEntity~
+        +findByCategoryId(categoryId: UUID) List~ProductEntity~
+        +searchByNameOrBrand(term: String) List~ProductEntity~
+        +findReviewsByProductId(productId: UUID) List~ReviewEntity~
+        +findReviewsByProductIdAndUserId(productId: UUID, userId: UUID) List~ReviewEntity~
     }
-
-    class JpaReviewRepository {
-        <<Interface>>
-        +findById(UUID) Optional~ReviewEntity~
-        +findByProductUserId(UUID) List~ReviewEntity~
-    }
-
     class JpaCategoryRepository {
-        <<Interface>>
-        +findById(UUID) Optional~CategoryEntity~
+        <<repository>>
+        +findByName(name: String) Optional~CategoryEntity~
     }
-
     class JpaProductUserRepository {
-        <<Interface>>
-        +findById(UUID) Optional~ProductUserEntity~
-        +findByProductId(UUID) List~ProductUserEntity~
-        +findByUserId(UUID) List~ProductUserEntity~
+        <<repository>>
+        +findByProductId(productId: UUID) List~ProductUserEntity~
+        +findByUserId(userId: UUID) List~ProductUserEntity~
+        +findByProductIdAndUserId(productId: UUID, userId: UUID) Optional~ProductUserEntity~
+    }
+    class JpaReviewRepository {
+        <<repository>>
+        +findByProductUserId(productUserId: UUID) List~ReviewEntity~
     }
 
-    %% Infrastructure - Adapters
+    %% --- Secondary adapters (implement domain ports) ---
     class ProductRepositoryAdapter {
-        -JpaProductRepository jpaRepository
-        -ProductMapper mapper
-        +save(Product)
-        +findById(EntityId)
-        +findAll()
+        <<secondaryAdapter>>
+        -categoryRepository: CategoryRepository
+        -productUserRepository: ProductUserRepository
+        -reviewRepository: ReviewRepository
+        -jpaProductRepository: JpaProductRepository
+        -productMapper: ProductMapper
+        -categoryMapper: CategoryMapper
+        -productUserRelationMapper: ProductUserRelationMapper
+        -reviewMapper: ReviewMapper
     }
-
-    class ReviewRepositoryAdapter {
-        -JpaReviewRepository jpaRepository
-        -JpaProductUserRepository userRepository
-        -ReviewMapper mapper
-        +save(Review)
-        +findById(EntityId)
-        +findByProductId(EntityId)
-    }
-
     class CategoryRepositoryAdapter {
-        -JpaCategoryRepository jpaRepository
-        -CategoryMapper mapper
-        +save(Category)
-        +findById(EntityId)
+        <<secondaryAdapter>>
+    }
+    class ReviewRepositoryAdapter {
+        <<secondaryAdapter>>
+    }
+    class ProductUserRepositoryAdapter {
+        <<secondaryAdapter>>
     }
 
-    %% Infrastructure - Mappers
+    %% --- Mappers ---
     class ProductMapper {
-        +toEntity(Product) ProductEntity
-        +toDomain(ProductEntity) Product
+        <<mapper>>
+        +toDomain(...) Product
     }
-
-    class ReviewMapper {
-        +toEntity(Review) ReviewEntity
-        +toDomain(ReviewEntity, EntityId) Review
-    }
-
     class CategoryMapper {
-        +toEntity(Category) CategoryEntity
-        +toDomain(CategoryEntity) Category
+        <<mapper>>
+        +toDomain(entity: CategoryEntity) Category
+        +toEntity(category: Category) CategoryEntity
+    }
+    class ReviewMapper {
+        <<mapper>>
+    }
+    class ReviewEntityMapper {
+        <<mapper>>
+    }
+    class ProductUserRelationMapper {
+        <<mapper>>
+    }
+    class EntityIdMapper {
+        <<mapper>>
+        +toEntityId(value: UUID) EntityId
+        +toUuid(id: EntityId) UUID
     }
 
-    %% Infrastructure - Exceptions
+    %% --- Exceptions ---
     class DatabaseException {
-        +String message
-        +Throwable cause
+        <<exception>>
+    }
+    class RepositoryResourceNotFoundException {
+        <<exception>>
     }
 
-    %% Relationships - Infrastructure
-    ProductRepositoryAdapter ..|> ProductRepository
-    ReviewRepositoryAdapter ..|> ReviewRepository
-    CategoryRepositoryAdapter ..|> CategoryRepository
+    %% --- Relationships ---
+    ProductController ..> ProductResponseMapper : uses
 
-    ProductRepositoryAdapter --> JpaProductRepository
-    ReviewRepositoryAdapter --> JpaReviewRepository
-    CategoryRepositoryAdapter --> JpaCategoryRepository
+    ProductRepositoryAdapter ..|> ProductRepository : implements
+    CategoryRepositoryAdapter ..|> CategoryRepository : implements
+    ReviewRepositoryAdapter ..|> ReviewRepository : implements
+    ProductUserRepositoryAdapter ..|> ProductUserRepository : implements
 
-    ProductMapper --> ProductEntity
-    ProductMapper --> Product
-    ReviewMapper --> ReviewEntity
-    ReviewMapper --> Review
-    CategoryMapper --> CategoryEntity
-    CategoryMapper --> Category
+    ProductRepositoryAdapter --> JpaProductRepository : uses
+    ProductRepositoryAdapter --> ProductMapper : uses
+    ProductRepositoryAdapter --> CategoryMapper : uses
+    ProductRepositoryAdapter --> ReviewMapper : uses
+    ProductRepositoryAdapter --> ProductUserRelationMapper : uses
+    CategoryRepositoryAdapter --> JpaCategoryRepository : uses
+    CategoryRepositoryAdapter --> CategoryMapper : uses
+    ReviewRepositoryAdapter --> JpaReviewRepository : uses
+    ReviewRepositoryAdapter --> ReviewMapper : uses
+    ProductUserRepositoryAdapter --> JpaProductUserRepository : uses
 
-    ProductRepositoryAdapter --> ProductMapper
-    ReviewRepositoryAdapter --> ReviewMapper
-    CategoryRepositoryAdapter --> CategoryMapper
+    JpaProductRepository --> ProductEntity : manages
+    JpaCategoryRepository --> CategoryEntity : manages
+    JpaProductUserRepository --> ProductUserEntity : manages
+    JpaReviewRepository --> ReviewEntity : manages
 
-    JpaProductRepository --> ProductEntity
-    JpaReviewRepository --> ReviewEntity
-    JpaCategoryRepository --> CategoryEntity
-    JpaProductUserRepository --> ProductUserEntity
+    ProductUserEntity "1" --> "0..*" ReviewEntity : reviews
+    ProductEntity "1" --> "1" CategoryEntity : category
+    ProductUserEntity "1" --> "1" ProductEntity : product

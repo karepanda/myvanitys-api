@@ -1,0 +1,19 @@
+sequenceDiagram
+    autonumber
+    participant C as Mobile Client
+    participant G as Google OAuth
+    participant A as MyVanitys API
+
+    C->>G: Redirect user to Google consent screen
+    G-->>C: Redirect back with authorization code
+    C->>A: POST /auth/google  { code }
+    A->>G: Exchange authorization code for tokens + profile
+    G-->>A: Profile (Google id, email, name)
+
+    alt Google account NOT registered
+        A-->>C: 401 ProblemDetail (Authorization Error)
+        Note over C: Prompt the user to register first.
+    else Registered account
+        A-->>C: 200 AuthResponse  { token, userId, email, name }
+        Note over C: Send the token as "Authorization: Bearer <token>" on protected requests.
+    end

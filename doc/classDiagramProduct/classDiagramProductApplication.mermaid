@@ -1,0 +1,141 @@
+classDiagram
+    %% Primary ports, use case implementations, commands, query, and mapper for the product context.
+    %% NAMING NOTE: product keeps use case implementations in application.usecase and commands in
+    %% application.command. Auth instead uses application.service + application.port.primary.command.
+    %% Both are real and tolerated; no ArchUnit rule targets the difference.
+
+    %% --- Primary ports (application.port.primary) ---
+    class AddProductToMyVanityUseCase {
+        <<primaryPort>>
+        +execute(command: AddProductToMyVanityCommand) Product
+    }
+
+    class AddReviewToProductUseCase {
+        <<primaryPort>>
+        +execute(command: AddReviewToProductCommand) Product
+    }
+
+    class CreateProductUseCase {
+        <<primaryPort>>
+        +execute(command: CreateProductCommand) Product
+    }
+
+    class DeleteProductFromUserVanityUseCase {
+        <<primaryPort>>
+        +execute(command: DeleteProductFromUserVanityCommand) void
+    }
+
+    class FindProductAllUseCase {
+        <<primaryPort>>
+        +query() List~Product~
+    }
+
+    class FindProductByTermUseCase {
+        <<primaryPort>>
+        +query(term: String) List~Product~
+    }
+
+    class FindProductUserUseCase {
+        <<primaryPort>>
+        +query(query: FindProductUserQuery) List~Product~
+    }
+
+    %% --- Commands and query (application.command, application.query) ---
+    class AddProductToMyVanityCommand {
+        <<command>>
+        -productId: UUID
+        -userId: UUID
+    }
+
+    class AddReviewToProductCommand {
+        <<command>>
+        -userId: EntityId
+        -productId: EntityId
+        -reviewDetails: ReviewDetails
+    }
+
+    class CreateProductCommand {
+        <<command>>
+        -name: String
+        -brand: String
+        -categoryId: EntityId
+        -colorHex: String
+        -userId: EntityId
+    }
+
+    class DeleteProductFromUserVanityCommand {
+        <<command>>
+        -productId: UUID
+        -userId: UUID
+    }
+
+    class FindProductUserQuery {
+        <<query>>
+        -userId: EntityId
+    }
+
+    %% --- Use case implementations (application.usecase) ---
+    class AddProductToMyVanity {
+        <<service>>
+        -productRepository: ProductRepository
+        -productUserRepository: ProductUserRepository
+        +execute(command: AddProductToMyVanityCommand) Product
+    }
+
+    class AddReviewToProduct {
+        <<service>>
+        -productRepository: ProductRepository
+        +execute(command: AddReviewToProductCommand) Product
+    }
+
+    class CreateProduct {
+        <<service>>
+        -productRepository: ProductRepository
+        -categoryRepository: CategoryRepository
+        -productUserRepository: ProductUserRepository
+        +execute(command: CreateProductCommand) Product
+    }
+
+    class DeleteProductFromUserVanity {
+        <<service>>
+        -productUserRepository: ProductUserRepository
+        +execute(command: DeleteProductFromUserVanityCommand) void
+    }
+
+    class FindProductAll {
+        <<service>>
+        -productRepository: ProductRepository
+        +query() List~Product~
+    }
+
+    class FindProductByTerm {
+        <<service>>
+        -productRepository: ProductRepository
+        +query(term: String) List~Product~
+    }
+
+    class FindProductByUser {
+        <<service>>
+        -productRepository: ProductRepository
+        +query(query: FindProductUserQuery) List~Product~
+    }
+
+    %% --- Port implementation ---
+    AddProductToMyVanityUseCase <|.. AddProductToMyVanity : implements
+    AddReviewToProductUseCase <|.. AddReviewToProduct : implements
+    CreateProductUseCase <|.. CreateProduct : implements
+    DeleteProductFromUserVanityUseCase <|.. DeleteProductFromUserVanity : implements
+    FindProductAllUseCase <|.. FindProductAll : implements
+    FindProductByTermUseCase <|.. FindProductByTerm : implements
+    FindProductUserUseCase <|.. FindProductByUser : implements
+
+    %% --- Command / query usage ---
+    AddProductToMyVanity ..> AddProductToMyVanityCommand : uses
+    AddReviewToProduct ..> AddReviewToProductCommand : uses
+    CreateProduct ..> CreateProductCommand : uses
+    DeleteProductFromUserVanity ..> DeleteProductFromUserVanityCommand : uses
+    FindProductByUser ..> FindProductUserQuery : uses
+
+    %% --- Structural notes ---
+    %% - CreateProduct declares its dependencies as `protected` fields; every other use case uses
+    %%   `private final` (Lombok @RequiredArgsConstructor / @AllArgsConstructor).
