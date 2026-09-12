@@ -2,7 +2,7 @@ package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
 import java.util.UUID;
 
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

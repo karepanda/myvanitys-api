@@ -12,7 +12,7 @@ class UserSessionTest {
     void shouldCreateUserSessionWhenValid() {
         // Arrange
         String token = "valid-token";
-        User user = new User(new com.myvanitys.api.product.domain.valueobject.EntityId(java.util.UUID.randomUUID()),
+        User user = new User(new com.myvanitys.api.common.valueobject.EntityId(java.util.UUID.randomUUID()),
                 "google-123", "user@example.com", "Test User");
 
         // Act
@@ -28,7 +28,7 @@ class UserSessionTest {
     @DisplayName("Should throw exception when token is null")
     void shouldThrowWhenTokenIsNull() {
         // Arrange
-        User user = new User(new com.myvanitys.api.product.domain.valueobject.EntityId(java.util.UUID.randomUUID()),
+        User user = new User(new com.myvanitys.api.common.valueobject.EntityId(java.util.UUID.randomUUID()),
                 "google-123", "user@example.com", "Test User");
 
         // Act & Assert
@@ -42,7 +42,7 @@ class UserSessionTest {
     @DisplayName("Should throw exception when token is blank")
     void shouldThrowWhenTokenIsBlank() {
         // Arrange
-        User user = new User(new com.myvanitys.api.product.domain.valueobject.EntityId(java.util.UUID.randomUUID()),
+        User user = new User(new com.myvanitys.api.common.valueobject.EntityId(java.util.UUID.randomUUID()),
                 "google-123", "user@example.com", "Test User");
 
         // Act & Assert
@@ -70,7 +70,7 @@ class UserSessionTest {
     void shouldReturnTrueWhenSessionIsActive() {
         // Arrange
         String token = "active-token";
-        User user = new User(new com.myvanitys.api.product.domain.valueobject.EntityId(java.util.UUID.randomUUID()),
+        User user = new User(new com.myvanitys.api.common.valueobject.EntityId(java.util.UUID.randomUUID()),
                 "google-123", "user@example.com", "Test User");
 
         UserSession session = new UserSession(token, user);
@@ -87,7 +87,7 @@ class UserSessionTest {
     void shouldCreateUsingFactoryMethod() {
         // Arrange
         String token = "factory-token";
-        User user = new User(new com.myvanitys.api.product.domain.valueobject.EntityId(java.util.UUID.randomUUID()),
+        User user = new User(new com.myvanitys.api.common.valueobject.EntityId(java.util.UUID.randomUUID()),
                 "google-123", "user@example.com", "Test User");
 
         // Act

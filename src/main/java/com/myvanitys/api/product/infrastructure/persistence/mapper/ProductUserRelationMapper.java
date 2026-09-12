@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import org.mapstruct.Mapper;
 

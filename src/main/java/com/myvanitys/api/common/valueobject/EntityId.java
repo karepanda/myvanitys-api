@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.domain.valueobject;
+package com.myvanitys.api.common.valueobject;
 
 import java.util.Objects;
 import java.util.UUID;

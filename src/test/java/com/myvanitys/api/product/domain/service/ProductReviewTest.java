@@ -13,7 +13,7 @@ import java.util.UUID;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

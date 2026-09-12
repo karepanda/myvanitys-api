@@ -5,7 +5,7 @@ import com.myvanitys.api.product.application.port.primary.AddReviewToProductUseC
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

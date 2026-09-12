@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductUserEntity;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ReviewEntity;
 import org.junit.jupiter.api.BeforeEach;

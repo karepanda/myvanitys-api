@@ -1,10 +1,10 @@
-package com.myvanitys.api.product.infrastructure.adapter.primary.service;
+package com.myvanitys.api.auth.infrastructure.security;
 
 import java.util.UUID;
 
 import com.myvanitys.api.auth.domain.exception.TokenException;
 import com.myvanitys.api.auth.domain.port.secondary.TokenGenerator;
-import com.myvanitys.api.product.infrastructure.exception.UnauthorizedException;
+import com.myvanitys.api.common.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -6,10 +6,8 @@ import java.util.Optional;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
-import org.springframework.stereotype.Service;
+import com.myvanitys.api.common.valueobject.EntityId;
 
-@Service
 public class ProductReview {
 
   /**

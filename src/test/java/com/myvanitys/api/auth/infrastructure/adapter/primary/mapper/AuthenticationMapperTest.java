@@ -7,7 +7,7 @@ import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.model.v1.AuthResponse;
 import com.myvanitys.api.model.v1.GoogleAuthRequest;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 

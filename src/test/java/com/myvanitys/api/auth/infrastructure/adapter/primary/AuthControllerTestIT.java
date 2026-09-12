@@ -11,7 +11,7 @@ import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.Authenticati
 import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.CreateUserMapper;
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.model.v1.CreateUserRequest;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

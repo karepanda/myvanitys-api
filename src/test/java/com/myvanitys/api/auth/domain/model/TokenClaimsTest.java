@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import com.myvanitys.api.auth.domain.exception.TokenException;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

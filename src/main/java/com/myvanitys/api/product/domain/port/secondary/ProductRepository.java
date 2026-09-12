@@ -1,7 +1,7 @@
 package com.myvanitys.api.product.domain.port.secondary;
 
 import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 
 import java.util.List;
 import java.util.Optional;

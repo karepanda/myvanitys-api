@@ -2,7 +2,7 @@ package com.myvanitys.api.auth.infrastructure.security;
 
 import com.myvanitys.api.auth.domain.model.TokenClaims;
 import com.myvanitys.api.auth.domain.model.User;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 
 import java.time.Instant;
 import java.util.HashMap;

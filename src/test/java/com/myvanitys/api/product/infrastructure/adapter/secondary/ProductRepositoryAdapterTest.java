@@ -24,7 +24,7 @@ import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
 import com.myvanitys.api.product.domain.port.secondary.ReviewRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;

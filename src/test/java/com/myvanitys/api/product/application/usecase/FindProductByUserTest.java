@@ -2,7 +2,7 @@ package com.myvanitys.api.product.application.usecase;
 
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.ProductEntity;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import org.junit.jupiter.api.Nested;

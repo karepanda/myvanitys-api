@@ -8,7 +8,7 @@ import java.util.UUID;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

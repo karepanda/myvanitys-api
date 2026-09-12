@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.infrastructure.exception;
+package com.myvanitys.api.common;
 
 import com.myvanitys.api.common.InfrastructureException;
 

@@ -1,4 +1,4 @@
-package com.myvanitys.api.product.domain.valueobject;
+package com.myvanitys.api.common.valueobject;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

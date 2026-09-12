@@ -5,7 +5,7 @@ import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

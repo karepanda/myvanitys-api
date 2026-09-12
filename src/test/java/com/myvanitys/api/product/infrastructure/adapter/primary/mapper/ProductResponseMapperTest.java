@@ -14,7 +14,7 @@ import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
-import com.myvanitys.api.product.domain.valueobject.EntityId;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
