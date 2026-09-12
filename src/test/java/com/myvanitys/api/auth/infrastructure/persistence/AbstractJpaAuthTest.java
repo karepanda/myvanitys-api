@@ -4,15 +4,14 @@ import com.myvanitys.api.auth.infrastructure.persistence.repository.JpaUserRepos
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.flywaydb.test.annotation.FlywayTest;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestConstructor;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@RunWith(SpringRunner.class)
 @DataJpaTest
+@ActiveProfiles("test")
 @FlywayTest
 @AutoConfigureEmbeddedDatabase
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)

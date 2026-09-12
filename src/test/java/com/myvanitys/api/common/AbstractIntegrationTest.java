@@ -10,7 +10,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class AbstractIntegrationTest {
 
   @Container
-  static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:13")
+  static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
       .withDatabaseName("myvanitysdb")
       .withUsername("myvanitys")
       .withPassword("secret");

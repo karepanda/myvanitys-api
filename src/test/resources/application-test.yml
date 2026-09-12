@@ -6,6 +6,13 @@ spring:
     password: ${spring.datasource.password}  # Password dynamically provided by Testcontainers
     driver-class-name: org.postgresql.Driver  # PostgreSQL driver class
 
+# Zonky database provider: run tests against PostgreSQL 16 (matches production), not the provider default postgres:11-alpine
+zonky:
+  test:
+    database:
+      postgres:
+        docker:
+          image: postgres:16-alpine
 
 
 # Google Authentication configuration for testing
@@ -24,7 +31,6 @@ google:
     properties:
       hibernate:
         format_sql: true  # Format SQL queries for better readability
-    database-platform: org.hibernate.dialect.PostgreSQLDialect  # Dialect for PostgreSQL
 
   # Flyway migration configuration
   flyway:

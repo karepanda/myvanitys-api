@@ -2,7 +2,7 @@
 # Multi-stage build to optimize size and security
 
 # Stage 1: Build stage
-FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
+FROM maven:3.9.11-eclipse-temurin-25-alpine AS builder
 WORKDIR /app
 
 # Arguments for GitHub credentials
@@ -21,7 +21,7 @@ COPY src src
 RUN mvn package -DskipTests -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
 
 # Stage 2: Runtime stage
-FROM eclipse-temurin:21.0.2_13-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 # Create a non-privileged user to run the application

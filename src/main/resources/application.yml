@@ -5,6 +5,9 @@ spring:
     name: myvanitys-api
   profiles:
     active: local
+  threads:
+    virtual:
+      enabled: true
 openapi:
   myVanitysProduct:
     base-path: /api/v1
