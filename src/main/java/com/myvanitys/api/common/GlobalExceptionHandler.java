@@ -67,7 +67,7 @@ public class GlobalExceptionHandler {
         .detail("Product failed " + ex.getMessage())
         .instance(PRODUCT_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
   }
 
   @ExceptionHandler(ProductValidationException.class)
@@ -91,7 +91,7 @@ public class GlobalExceptionHandler {
         .detail("Product failed " + ex.getMessage())
         .instance(PRODUCT_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
   }
 
   @ExceptionHandler(RepositoryResourceNotFoundException.class)
@@ -103,7 +103,7 @@ public class GlobalExceptionHandler {
         .detail("Product failed " + ex.getMessage())
         .instance(PRODUCT_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
   }
 
   @ExceptionHandler(UnauthorizedException.class)
@@ -127,7 +127,7 @@ public class GlobalExceptionHandler {
         .detail("Token verification failed " + ex.getMessage())
         .instance(AUTH_GOOGLE_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
   }
 
   @ExceptionHandler(RuntimeException.class)
