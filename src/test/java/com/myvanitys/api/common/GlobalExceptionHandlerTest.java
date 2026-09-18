@@ -1,14 +1,14 @@
 package com.myvanitys.api.common;
-import com.myvanitys.api.model.v1.ProblemDetail;
+
 import com.myvanitys.api.auth.domain.exception.AuthenticationFailedException;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
 import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
+import com.myvanitys.api.model.v1.ProblemDetail;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
-import com.myvanitys.api.common.UnauthorizedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;

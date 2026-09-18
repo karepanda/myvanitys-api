@@ -1,7 +1,5 @@
 package com.myvanitys.api.common;
 
-import java.net.URI;
-
 import com.myvanitys.api.auth.domain.exception.AuthenticationFailedException;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
@@ -11,13 +9,14 @@ import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
-import com.myvanitys.api.common.UnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.net.URI;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
