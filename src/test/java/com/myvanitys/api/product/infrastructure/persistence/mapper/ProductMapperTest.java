@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
@@ -312,6 +313,96 @@ class ProductMapperTest {
     assertNull(productMapper.toReview(null, null));
     assertNull(productMapper.toReviewEntity(null));
     assertTrue(productMapper.toProductUserEntityList(null, reviewEntityMapper).isEmpty());
+  }
+
+  @Test
+  void shouldReturnEmptyReviewListWhenReviewEntitiesIsNull() {
+    assertTrue(productMapper.toReviewList(null).isEmpty());
+  }
+
+  @Test
+  void shouldReturnEmptyReviewListWhenReviewEntitiesIsEmpty() {
+    assertTrue(productMapper.toReviewList(List.of()).isEmpty());
+  }
+
+  @Test
+  void shouldMapToReviewListPreservingOrderAndFields() {
+    // Given
+    UUID firstReviewId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    UUID secondReviewId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    UUID firstProductUserId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
+    UUID secondProductUserId = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd");
+    Instant firstCreatedAt = Instant.parse("2024-01-01T10:00:00Z");
+    Instant firstUpdatedAt = Instant.parse("2024-02-01T10:00:00Z");
+    Instant firstDeletedAt = Instant.parse("2024-03-01T10:00:00Z");
+    Instant secondCreatedAt = Instant.parse("2024-04-01T10:00:00Z");
+
+    ReviewEntity first = ReviewEntity.builder()
+        .reviewId(firstReviewId)
+        .productUserId(firstProductUserId)
+        .rating(5)
+        .comment("First review")
+        .createdAt(firstCreatedAt)
+        .updatedAt(firstUpdatedAt)
+        .deletedAt(firstDeletedAt)
+        .build();
+
+    ReviewEntity second = ReviewEntity.builder()
+        .reviewId(secondReviewId)
+        .productUserId(secondProductUserId)
+        .rating(3)
+        .comment("Second review")
+        .createdAt(secondCreatedAt)
+        .updatedAt(null)
+        .build();
+
+    // When
+    List<Review> results = productMapper.toReviewList(List.of(first, second));
+
+    // Then
+    assertEquals(2, results.size());
+
+    Review firstResult = results.get(0);
+    assertEquals(firstReviewId, firstResult.getId().getValue());
+    assertEquals(firstProductUserId, firstResult.getProductUserId().getValue());
+    assertEquals(5, firstResult.getRating());
+    assertEquals("First review", firstResult.getComment());
+    assertEquals(firstCreatedAt, firstResult.getCreatedAt());
+    assertEquals(firstUpdatedAt, firstResult.getUpdatedAt());
+    assertEquals(firstDeletedAt, firstResult.getDeletedAt());
+
+    Review secondResult = results.get(1);
+    assertEquals(secondReviewId, secondResult.getId().getValue());
+    assertEquals(secondProductUserId, secondResult.getProductUserId().getValue());
+    assertEquals(3, secondResult.getRating());
+    assertEquals("Second review", secondResult.getComment());
+    assertEquals(secondCreatedAt, secondResult.getCreatedAt());
+    assertEquals(secondCreatedAt, secondResult.getUpdatedAt());
+    assertNull(secondResult.getDeletedAt());
+  }
+
+  @Test
+  void shouldThrowWhenToDomainReceivesNullCategory() {
+    NullPointerException exception = assertThrows(NullPointerException.class,
+        () -> productMapper.toDomain(productEntity, null, reviews));
+
+    assertEquals(ProductMapper.CATEGORY_CANNOT_BE_NULL, exception.getMessage());
+  }
+
+  @Test
+  void shouldThrowWhenToDomainListReceivesNullCategory() {
+    NullPointerException exception = assertThrows(NullPointerException.class,
+        () -> productMapper.toDomainList(List.of(productEntity), null, reviews));
+
+    assertEquals(ProductMapper.CATEGORY_CANNOT_BE_NULL, exception.getMessage());
+  }
+
+  @Test
+  void shouldThrowWhenToDomainWithRelationsReceivesNullCategory() {
+    NullPointerException exception = assertThrows(NullPointerException.class,
+        () -> productMapper.toDomainWithRelations(productEntity, List.of(), null, reviewEntityMapper));
+
+    assertEquals(ProductMapper.CATEGORY_CANNOT_BE_NULL, exception.getMessage());
   }
 
 }
