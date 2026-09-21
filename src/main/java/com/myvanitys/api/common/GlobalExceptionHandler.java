@@ -1,7 +1,5 @@
 package com.myvanitys.api.common;
 
-import java.net.URI;
-
 import com.myvanitys.api.auth.domain.exception.AuthenticationFailedException;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
@@ -11,13 +9,14 @@ import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
-import com.myvanitys.api.common.UnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.net.URI;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -67,7 +66,7 @@ public class GlobalExceptionHandler {
         .detail("Product failed " + ex.getMessage())
         .instance(PRODUCT_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
   }
 
   @ExceptionHandler(ProductValidationException.class)
@@ -91,7 +90,7 @@ public class GlobalExceptionHandler {
         .detail("Product failed " + ex.getMessage())
         .instance(PRODUCT_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
   }
 
   @ExceptionHandler(RepositoryResourceNotFoundException.class)
@@ -103,7 +102,7 @@ public class GlobalExceptionHandler {
         .detail("Product failed " + ex.getMessage())
         .instance(PRODUCT_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
   }
 
   @ExceptionHandler(UnauthorizedException.class)
@@ -127,7 +126,7 @@ public class GlobalExceptionHandler {
         .detail("Token verification failed " + ex.getMessage())
         .instance(AUTH_GOOGLE_INSTANCE);
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
   }
 
   @ExceptionHandler(RuntimeException.class)
