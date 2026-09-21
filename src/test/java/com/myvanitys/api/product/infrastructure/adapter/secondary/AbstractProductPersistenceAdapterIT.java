@@ -89,10 +89,6 @@ abstract class AbstractProductPersistenceAdapterIT extends AbstractIntegrationTe
         .orElseThrow(() -> new IllegalStateException("Flyway seed category not found: " + SEEDED_CATEGORY_NAME));
   }
 
-  protected Category persistCategory(String name) {
-    return categoryRepositoryAdapter.save(new Category(EntityId.newId(), name));
-  }
-
   protected CategoryEntity insertCategoryDirectly(String name) {
     CategoryEntity entity = new CategoryEntity();
     entity.setName(name);

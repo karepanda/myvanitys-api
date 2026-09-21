@@ -216,9 +216,9 @@ class ProductUserRelationMapperTest {
     List<ProductUserRelation> results = mapper.toDomainList(List.of(first, second));
 
     assertEquals(2, results.size());
-    assertEquals(RELATION_ID, results.get(0).getId().getValue());
-    assertEquals(PRODUCT_ID, results.get(0).getProductId().getValue());
-    assertEquals(USER_ID, results.get(0).getUserId().getValue());
+    assertEquals(RELATION_ID, results.getFirst().getId().getValue());
+    assertEquals(PRODUCT_ID, results.getFirst().getProductId().getValue());
+    assertEquals(USER_ID, results.getFirst().getUserId().getValue());
     assertEquals(OTHER_RELATION_ID, results.get(1).getId().getValue());
     assertEquals(OTHER_PRODUCT_ID, results.get(1).getProductId().getValue());
     assertEquals(OTHER_USER_ID, results.get(1).getUserId().getValue());
@@ -234,7 +234,7 @@ class ProductUserRelationMapperTest {
     List<ProductUserRelation> results = mapper.toDomainList(entities);
 
     assertEquals(3, results.size());
-    assertNotNull(results.get(0));
+    assertNotNull(results.getFirst());
     assertNull(results.get(1));
     assertNotNull(results.get(2));
     assertEquals(OTHER_RELATION_ID, results.get(2).getId().getValue());
@@ -260,9 +260,9 @@ class ProductUserRelationMapperTest {
     Instant after = Instant.now();
 
     assertEquals(2, results.size());
-    assertEquals(RELATION_ID, results.get(0).getProductUserId());
-    assertEquals(PRODUCT_ID, results.get(0).getProductId());
-    assertEquals(USER_ID, results.get(0).getUserId());
+    assertEquals(RELATION_ID, results.getFirst().getProductUserId());
+    assertEquals(PRODUCT_ID, results.getFirst().getProductId());
+    assertEquals(USER_ID, results.getFirst().getUserId());
     assertEquals(OTHER_RELATION_ID, results.get(1).getProductUserId());
     assertEquals(OTHER_PRODUCT_ID, results.get(1).getProductId());
     assertEquals(OTHER_USER_ID, results.get(1).getUserId());
@@ -286,7 +286,7 @@ class ProductUserRelationMapperTest {
     List<ProductUserEntity> results = mapper.toEntityList(relations);
 
     assertEquals(2, results.size());
-    assertNotNull(results.get(0));
+    assertNotNull(results.getFirst());
     assertNull(results.get(1));
   }
 

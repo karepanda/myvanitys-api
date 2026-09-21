@@ -36,8 +36,6 @@ class ProductMapperTest {
 
   private ReviewEntityMapper reviewEntityMapper;
 
-  private ReviewMapper reviewMapper;
-
   private ProductEntity productEntity;
 
   private Category category;
@@ -53,7 +51,6 @@ class ProductMapperTest {
     productMapper = Mappers.getMapper(ProductMapper.class);
     reviewEntityMapper = new ReviewEntityMapper() {
     }; // Abstract class instance
-    reviewMapper = Mappers.getMapper(ReviewMapper.class);
 
     productId = UUID.randomUUID();
     UUID categoryId = UUID.randomUUID();
@@ -362,7 +359,7 @@ class ProductMapperTest {
     // Then
     assertEquals(2, results.size());
 
-    Review firstResult = results.get(0);
+    Review firstResult = results.getFirst();
     assertEquals(firstReviewId, firstResult.getId().getValue());
     assertEquals(firstProductUserId, firstResult.getProductUserId().getValue());
     assertEquals(5, firstResult.getRating());

@@ -104,7 +104,6 @@ class GoogleAuthClientAdapterIT {
   @Test
   void testExchangeCodeForUserInfo() {
     // Arrange
-    String redirectUri = CONFIGURED_REDIRECT_URI;
 
     // Stubs for real endpoints that will be redirected
     wireMockServer.stubFor(post(urlEqualTo(TOKEN_PATH))
@@ -121,7 +120,7 @@ class GoogleAuthClientAdapterIT {
                 "{\"sub\":\"12345\",\"email\":\"testuser@example.com\",\"name\":\"Test User\",\"picture\":\"https://test.com/pic.jpg\"}")));
 
     // Act
-    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(AUTHORIZATION_CODE, redirectUri);
+    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(AUTHORIZATION_CODE, CONFIGURED_REDIRECT_URI);
 
     // Assert using StepVerifier
     StepVerifier.create(result)
@@ -246,7 +245,7 @@ class GoogleAuthClientAdapterIT {
   @ParameterizedTest(name = "maskString -> {1}")
   @MethodSource("maskStringScenarios")
   void maskString_masksSensitiveValues(String input, String expected) {
-    Object masked = ReflectionTestUtils.invokeMethod(googleAuthClientAdapter, "maskString", (String) input);
+    Object masked = ReflectionTestUtils.invokeMethod(googleAuthClientAdapter, "maskString", input);
 
     assertThat(masked).isEqualTo(expected);
   }
@@ -255,7 +254,6 @@ class GoogleAuthClientAdapterIT {
   void testExchangeCodeForUserInfo_UserInfoEndpointError() {
     // Arrange
     String authorizationCode = "valid-code-invalid-token";
-    String redirectUri = CONFIGURED_REDIRECT_URI;
 
     // Overwrite existing stub for userinfo endpoint
     wireMockServer.stubFor(post(urlEqualTo(TOKEN_PATH))
@@ -271,7 +269,7 @@ class GoogleAuthClientAdapterIT {
             .withBody("{\"error\":\"invalid_token\"}")));
 
     // Act & Assert
-    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, redirectUri);
+    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, CONFIGURED_REDIRECT_URI);
 
     StepVerifier.create(result)
         .expectErrorMatches(throwable ->
@@ -288,7 +286,6 @@ class GoogleAuthClientAdapterIT {
   void testExchangeCodeForUserInfo_InvalidUserInfo() {
     // Arrange
     String authorizationCode = "valid-code-invalid-user";
-    String redirectUri = CONFIGURED_REDIRECT_URI;
 
     // Overwrite stub for userinfo endpoint with incomplete data
     wireMockServer.stubFor(post(urlEqualTo(TOKEN_PATH))
@@ -304,7 +301,7 @@ class GoogleAuthClientAdapterIT {
             .withBody("{\"sub\":\"12345\",\"name\":\"Test User\"}")));  // Missing email
 
     // Act & Assert
-    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, redirectUri);
+    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, CONFIGURED_REDIRECT_URI);
 
     StepVerifier.create(result)
         .expectErrorMatches(throwable ->
@@ -321,7 +318,6 @@ class GoogleAuthClientAdapterIT {
   void testExchangeCodeForUserInfo_WithInvalidEmail() {
     // Arrange
     String authorizationCode = "valid-code-invalid-email";
-    String redirectUri = CONFIGURED_REDIRECT_URI;
 
     // Overwrite stub to return an invalid email
     wireMockServer.stubFor(post(urlEqualTo(TOKEN_PATH))
@@ -337,7 +333,7 @@ class GoogleAuthClientAdapterIT {
             .withBody("{\"sub\":\"12345\",\"email\":\"not-an-email\",\"name\":\"Test User\",\"picture\":\"https://test.com/pic.jpg\"}")));
 
     // Act & Assert
-    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, redirectUri);
+    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, CONFIGURED_REDIRECT_URI);
 
     StepVerifier.create(result)
         .expectErrorMatches(throwable ->
@@ -354,7 +350,6 @@ class GoogleAuthClientAdapterIT {
   void testExchangeCodeForUserInfo_WithMissingName() {
     // Arrange
     String authorizationCode = "valid-code-missing-name";
-    String redirectUri = CONFIGURED_REDIRECT_URI;
 
     // Overwrite stub to respond without a name but with required fields
     wireMockServer.stubFor(post(urlEqualTo(TOKEN_PATH))
@@ -370,7 +365,7 @@ class GoogleAuthClientAdapterIT {
             .withBody("{\"sub\":\"12345\",\"email\":\"testuser@example.com\",\"picture\":\"https://test.com/pic.jpg\"}")));
 
     // Act & Assert
-    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, redirectUri);
+    Mono<GoogleUserInfo> result = googleAuthClientAdapter.exchangeCodeForUserInfo(authorizationCode, CONFIGURED_REDIRECT_URI);
 
     StepVerifier.create(result)
         .assertNext(googleUserInfo -> {
