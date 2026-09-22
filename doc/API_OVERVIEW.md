@@ -28,6 +28,8 @@ This asymmetry is intentional. Branch your UI accordingly: on `409` from `/auth/
 
 > **Note — registration does not return a usable token.** `POST /auth/register` currently returns only `userId`; the `token`, `expiresIn`, and `refreshToken` fields exist in the schema but are not populated. To obtain a JWT, call `POST /auth/google` after a successful registration.
 
+> **Accepted decision (not yet implemented) — single-step registration.** The two-step behavior above is accepted technical debt. The accepted target is that a successful registration authenticates the user in the same operation and returns exactly `userId`, `token`, and `expiresIn` (with `refreshToken` removed from the schema until a full MyVanitys refresh-token lifecycle exists). This is **not deployed yet**: the current API still returns only `userId`, so clients must keep following the two-step behavior described above until the coordinated contract/backend/web rollout is complete. See [0012 — Registration session response contract](decisions/0012-registration-session-contract.md).
+
 ## Core concepts (as they appear in responses)
 
 | Concept | Response fields | Notes |
