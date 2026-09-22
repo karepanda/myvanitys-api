@@ -1,6 +1,8 @@
 package com.myvanitys.api.product.application.usecase;
 
 import com.myvanitys.api.product.application.command.AddProductToMyVanityCommand;
+import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
+import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
@@ -80,13 +82,13 @@ class AddProductToMyVanityTest {
         }
 
         @Test
-        void when_productAlreadyAssociatedWithUser_then_throwsIllegalArgumentException() {
+        void when_productAlreadyAssociatedWithUser_then_throwsProductAlreadyInVanityException() {
             // Given
             when(productUserRepository.existsByProductIdAndUserId(productId, userId)).thenReturn(true);
 
             // When & Then
             assertThatThrownBy(() -> target.execute(command))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(ProductAlreadyInVanityException.class)
                     .hasMessage("Product is already associated with the user");
 
             verify(productUserRepository).existsByProductIdAndUserId(productId, userId);
@@ -95,14 +97,14 @@ class AddProductToMyVanityTest {
         }
 
         @Test
-        void when_productDoesNotExist_then_throwsRuntimeException() {
+        void when_productDoesNotExist_then_throwsProductNotFoundException() {
             // Given
             when(productUserRepository.existsByProductIdAndUserId(productId, userId)).thenReturn(false);
             when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
             // When & Then
             assertThatThrownBy(() -> target.execute(command))
-                    .isInstanceOf(RuntimeException.class)
+                    .isInstanceOf(ProductNotFoundException.class)
                     .hasMessage("Product does not exist");
 
             verify(productUserRepository).existsByProductIdAndUserId(productId, userId);

@@ -5,8 +5,10 @@ import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
 import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
 import com.myvanitys.api.model.v1.ProblemDetail;
+import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
+import com.myvanitys.api.product.domain.exception.ReviewValidationException;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,11 +18,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 
+import java.net.URI;
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class GlobalExceptionHandlerTest {
+    private static final URI VALIDATION_ERROR_TYPE =
+        URI.create("https://api.myvanitys.com/problems/validation-error");
+    private static final URI PRODUCT_INSTANCE = URI.create("myvanitys/api/products/");
+
     private GlobalExceptionHandler exceptionHandler;
 
     @BeforeEach
@@ -230,6 +239,86 @@ class GlobalExceptionHandlerTest {
         assertEquals(401, response.getBody().getStatus());
         assertEquals("Authentication Error", response.getBody().getTitle());
         assertTrue(response.getBody().getDetail().contains("Credenciales inválidas"));
+    }
+
+    @Test
+    void handleApplicationValidationException_DebeRetornarBadRequestConErroresDeCampo() {
+        // Arrange
+        UUID categoryId = UUID.fromString("33333333-0000-0000-0000-000000000001");
+        ValidationException ex = ValidationException.withError(
+            "categoryId", "Category not found with ID: " + categoryId);
+
+        // Act
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleApplicationValidationException(ex);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertHttpStatusMatchesBodyStatus(response);
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("Validation Error", response.getBody().getTitle());
+        assertEquals(VALIDATION_ERROR_TYPE, response.getBody().getType());
+        assertTrue(response.getBody().getDetail().contains("categoryId"));
+        assertTrue(response.getBody().getDetail().contains("Category not found with ID: " + categoryId));
+        assertEquals(PRODUCT_INSTANCE, response.getBody().getInstance());
+    }
+
+    @Test
+    void handleApplicationValidationException_whenMultipleErrors_thenIncludesEveryFieldAndMessage() {
+        // Arrange
+        ValidationException ex = ValidationException.withErrors(java.util.List.of(
+            new ValidationException.ValidationError("name", "Product name is required and cannot be empty"),
+            new ValidationException.ValidationError("colorHex", "Color is required and cannot be empty")
+        ));
+
+        // Act
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleApplicationValidationException(ex);
+
+        // Assert
+        assertEquals(400, response.getBody().getStatus());
+        assertTrue(response.getBody().getDetail().contains("name"));
+        assertTrue(response.getBody().getDetail().contains("Product name is required and cannot be empty"));
+        assertTrue(response.getBody().getDetail().contains("colorHex"));
+        assertTrue(response.getBody().getDetail().contains("Color is required and cannot be empty"));
+    }
+
+    @Test
+    void handleReviewValidationException_DebeRetornarBadRequest() {
+        // Arrange
+        ReviewValidationException ex = new ReviewValidationException("Rating must be between 1 and 5");
+
+        // Act
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleReviewValidationException(ex);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertHttpStatusMatchesBodyStatus(response);
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("Review Validation Error", response.getBody().getTitle());
+        assertEquals(VALIDATION_ERROR_TYPE, response.getBody().getType());
+        assertTrue(response.getBody().getDetail().contains("Rating must be between 1 and 5"));
+        assertEquals(PRODUCT_INSTANCE, response.getBody().getInstance());
+    }
+
+    @Test
+    void handleProductAlreadyInVanityException_DebeRetornarConflict() {
+        // Arrange
+        ProductAlreadyInVanityException ex =
+            new ProductAlreadyInVanityException("Product is already associated with the user");
+
+        // Act
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleProductAlreadyInVanityException(ex);
+
+        // Assert
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertHttpStatusMatchesBodyStatus(response);
+        assertEquals(409, response.getBody().getStatus());
+        assertEquals("Product Already In Vanity", response.getBody().getTitle());
+        assertEquals(VALIDATION_ERROR_TYPE, response.getBody().getType());
+        assertTrue(response.getBody().getDetail().contains("Product is already associated with the user"));
+        assertEquals(PRODUCT_INSTANCE, response.getBody().getInstance());
     }
 
     private void assertHttpStatusMatchesBodyStatus(ResponseEntity<ProblemDetail> response) {
