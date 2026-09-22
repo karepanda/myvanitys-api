@@ -109,7 +109,9 @@ If registration succeeds internally but no session/result is produced, `POST /au
 
 ## Not currently available
 
-`POST /products/image-analysis` is present in the published API contract but **has no working implementation** — do not integrate against it. The `imageReference` field on `POST /products` is tied to that feature and is likewise not usable today.
+`POST /products/image-analysis` is still present in the currently published API contract, but it **has no working implementation** — do not integrate against it. Because no controller overrides the generated method, the route currently falls through to the generated fallback and returns **HTTP 501**, which is **not** part of the advertised response contract and carries no `ProblemDetail` body. The `imageReference` field on `POST /products` is tied to that feature, is silently ignored by the API today, and must likewise not be used.
+
+> **Accepted decision (removal not yet deployed) — image-analysis contract.** Removal of `POST /products/image-analysis`, `ProductImageAnalysisResult`, and `CreateProductRequest.imageReference` has been accepted for the next breaking API-spec release, but **nothing has been removed yet**: the currently published contract and the deployed API still expose them. Clients must not build against them. See [0013 — Image-analysis API contract](decisions/0013-image-analysis-contract.md).
 
 ## Where to go next — sequence diagrams
 
