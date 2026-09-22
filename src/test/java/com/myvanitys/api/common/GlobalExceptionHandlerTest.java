@@ -48,11 +48,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(400, response.getBody().getStatus());
-        assertEquals("Validation Error", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("error de validación"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(400, body.getStatus());
+        assertEquals("Validation Error", body.getTitle());
+        assertDetailContains(body, "error de validación");
     }
 
     @Test
@@ -66,11 +65,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(400, response.getBody().getStatus());
-        assertEquals("Missing Required Header", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("Authorization"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(400, body.getStatus());
+        assertEquals("Missing Required Header", body.getTitle());
+        assertDetailContains(body, "Authorization");
     }
 
     @Test
@@ -83,11 +81,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(404, response.getBody().getStatus());
-        assertEquals("Product Not Found", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("Producto no encontrado"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(404, body.getStatus());
+        assertEquals("Product Not Found", body.getTitle());
+        assertDetailContains(body, "Producto no encontrado");
     }
 
     @Test
@@ -100,10 +97,9 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(400, response.getBody().getStatus());
-        assertEquals("Domain validation error", response.getBody().getTitle());
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(400, body.getStatus());
+        assertEquals("Domain validation error", body.getTitle());
     }
 
     @Test
@@ -116,11 +112,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(500, response.getBody().getStatus());
-        assertEquals("Infrastructure validation error", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("Error de base de datos"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(500, body.getStatus());
+        assertEquals("Infrastructure validation error", body.getTitle());
+        assertDetailContains(body, "Error de base de datos");
     }
 
     @Test
@@ -133,11 +128,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(500, response.getBody().getStatus());
-        assertEquals("Infrastructure validation error", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("Recurso no encontrado"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(500, body.getStatus());
+        assertEquals("Infrastructure validation error", body.getTitle());
+        assertDetailContains(body, "Recurso no encontrado");
     }
 
     @Test
@@ -150,10 +144,9 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(401, response.getBody().getStatus());
-        assertEquals("Infrastructure validation error", response.getBody().getTitle());
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(401, body.getStatus());
+        assertEquals("Infrastructure validation error", body.getTitle());
     }
 
     @Test
@@ -166,11 +159,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(404, response.getBody().getStatus());
-        assertEquals("Google Authorization Error", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("Error de autorización con Google"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(404, body.getStatus());
+        assertEquals("Google Authorization Error", body.getTitle());
+        assertDetailContains(body, "Error de autorización con Google");
     }
 
     @Test
@@ -183,11 +175,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(500, response.getBody().getStatus());
-        assertEquals("Internal Server Error", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("Error interno"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(500, body.getStatus());
+        assertEquals("Internal Server Error", body.getTitle());
+        assertDetailContains(body, "Error interno");
     }
 
     @Test
@@ -200,11 +191,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(401, response.getBody().getStatus());
-        assertEquals("Authorization Error", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("Usuario no registrado"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(401, body.getStatus());
+        assertEquals("Authorization Error", body.getTitle());
+        assertDetailContains(body, "Usuario no registrado");
     }
 
     @Test
@@ -217,11 +207,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(409, response.getBody().getStatus());
-        assertEquals("User Already Exists", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("El usuario ya existe"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(409, body.getStatus());
+        assertEquals("User Already Exists", body.getTitle());
+        assertDetailContains(body, "El usuario ya existe");
     }
 
     @Test
@@ -234,11 +223,10 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(401, response.getBody().getStatus());
-        assertEquals("Authentication Error", response.getBody().getTitle());
-        assertTrue(response.getBody().getDetail().contains("Credenciales inválidas"));
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(401, body.getStatus());
+        assertEquals("Authentication Error", body.getTitle());
+        assertDetailContains(body, "Credenciales inválidas");
     }
 
     @Test
@@ -253,14 +241,12 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(400, response.getBody().getStatus());
-        assertEquals("Validation Error", response.getBody().getTitle());
-        assertEquals(VALIDATION_ERROR_TYPE, response.getBody().getType());
-        assertTrue(response.getBody().getDetail().contains("categoryId"));
-        assertTrue(response.getBody().getDetail().contains("Category not found with ID: " + categoryId));
-        assertEquals(PRODUCT_INSTANCE, response.getBody().getInstance());
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(400, body.getStatus());
+        assertEquals("Validation Error", body.getTitle());
+        assertEquals(VALIDATION_ERROR_TYPE, body.getType());
+        assertDetailContains(body, "categoryId", "Category not found with ID: " + categoryId);
+        assertEquals(PRODUCT_INSTANCE, body.getInstance());
     }
 
     @Test
@@ -275,11 +261,16 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ProblemDetail> response = exceptionHandler.handleApplicationValidationException(ex);
 
         // Assert
-        assertEquals(400, response.getBody().getStatus());
-        assertTrue(response.getBody().getDetail().contains("name"));
-        assertTrue(response.getBody().getDetail().contains("Product name is required and cannot be empty"));
-        assertTrue(response.getBody().getDetail().contains("colorHex"));
-        assertTrue(response.getBody().getDetail().contains("Color is required and cannot be empty"));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(400, body.getStatus());
+        assertDetailContains(
+            body,
+            "name",
+            "Product name is required and cannot be empty",
+            "colorHex",
+            "Color is required and cannot be empty"
+        );
     }
 
     @Test
@@ -292,13 +283,12 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(400, response.getBody().getStatus());
-        assertEquals("Review Validation Error", response.getBody().getTitle());
-        assertEquals(VALIDATION_ERROR_TYPE, response.getBody().getType());
-        assertTrue(response.getBody().getDetail().contains("Rating must be between 1 and 5"));
-        assertEquals(PRODUCT_INSTANCE, response.getBody().getInstance());
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(400, body.getStatus());
+        assertEquals("Review Validation Error", body.getTitle());
+        assertEquals(VALIDATION_ERROR_TYPE, body.getType());
+        assertDetailContains(body, "Rating must be between 1 and 5");
+        assertEquals(PRODUCT_INSTANCE, body.getInstance());
     }
 
     @Test
@@ -312,22 +302,35 @@ class GlobalExceptionHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertHttpStatusMatchesBodyStatus(response);
-        assertEquals(409, response.getBody().getStatus());
-        assertEquals("Product Already In Vanity", response.getBody().getTitle());
-        assertEquals(VALIDATION_ERROR_TYPE, response.getBody().getType());
-        assertTrue(response.getBody().getDetail().contains("Product is already associated with the user"));
-        assertEquals(PRODUCT_INSTANCE, response.getBody().getInstance());
+        ProblemDetail body = assertAndGetConsistentBody(response);
+        assertEquals(409, body.getStatus());
+        assertEquals("Product Already In Vanity", body.getTitle());
+        assertEquals(VALIDATION_ERROR_TYPE, body.getType());
+        assertDetailContains(body, "Product is already associated with the user");
+        assertEquals(PRODUCT_INSTANCE, body.getInstance());
     }
 
-    private void assertHttpStatusMatchesBodyStatus(ResponseEntity<ProblemDetail> response) {
-        assertNotNull(response.getBody(), "Response body must not be null");
+    private ProblemDetail assertAndGetConsistentBody(ResponseEntity<ProblemDetail> response) {
+        ProblemDetail body = response.getBody();
+        assertNotNull(body, "Response body must not be null");
         assertEquals(
             response.getStatusCode().value(),
-            response.getBody().getStatus(),
+            body.getStatus(),
             "HTTP status must match ProblemDetail.status"
         );
+        return body;
+    }
+
+    private void assertDetailContains(ProblemDetail body, String... expectedFragments) {
+        String detail = body.getDetail();
+        assertNotNull(detail, "Problem detail must not be null");
+
+        for (String expected : expectedFragments) {
+            assertTrue(
+                detail.contains(expected),
+                () -> "Expected detail to contain: " + expected + ", but was: " + detail
+            );
+        }
     }
 
 }
