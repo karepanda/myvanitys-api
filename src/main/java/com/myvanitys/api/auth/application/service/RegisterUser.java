@@ -11,7 +11,7 @@ import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
 import com.myvanitys.api.auth.domain.port.secondary.TokenGenerator;
-import com.myvanitys.api.auth.infrastructure.adapter.secondary.port.UserRepository;
+import com.myvanitys.api.auth.domain.port.secondary.UserRepository;
 import com.myvanitys.api.common.valueobject.EntityId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
