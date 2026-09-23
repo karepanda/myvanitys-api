@@ -32,7 +32,7 @@ classDiagram
         +findByAuthorizationId(authorizationId: String) Mono~User~
     }
 
-    %% --- Ports (note: UserRepository is an infra-layer port, unlike the domain ports) ---
+    %% --- Ports (UserRepository is a domain secondary port, depicted here via its adapter) ---
     class GoogleAuthClient {
         <<secondaryPort>>
     }
@@ -40,7 +40,7 @@ classDiagram
         <<secondaryPort>>
     }
     class UserRepository {
-        <<port>>
+        <<secondaryPort>>
         +save(user: User) Mono~User~
         +findByAuthorizationId(authorizationId: String) Mono~User~
     }

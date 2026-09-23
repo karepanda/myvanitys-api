@@ -28,6 +28,8 @@ This asymmetry is intentional. Branch your UI accordingly: on `409` from `/auth/
 
 > **Note — registration does not return a usable token.** `POST /auth/register` currently returns only `userId`; the `token`, `expiresIn`, and `refreshToken` fields exist in the schema but are not populated. To obtain a JWT, call `POST /auth/google` after a successful registration.
 
+> **Accepted decision (not yet implemented) — single-step registration.** The two-step behavior above is accepted technical debt. The accepted target is that a successful registration authenticates the user in the same operation and returns exactly `userId`, `token`, and `expiresIn` (with `refreshToken` removed from the schema until a full MyVanitys refresh-token lifecycle exists). This is **not deployed yet**: the current API still returns only `userId`, so clients must keep following the two-step behavior described above until the coordinated contract/backend/web rollout is complete. See [0012 — Registration session response contract](decisions/0012-registration-session-contract.md).
+
 ## Core concepts (as they appear in responses)
 
 | Concept | Response fields | Notes |
@@ -107,7 +109,9 @@ If registration succeeds internally but no session/result is produced, `POST /au
 
 ## Not currently available
 
-`POST /products/image-analysis` is present in the published API contract but **has no working implementation** — do not integrate against it. The `imageReference` field on `POST /products` is tied to that feature and is likewise not usable today.
+`POST /products/image-analysis` is still present in the currently published API contract, but it **has no working implementation** — do not integrate against it. Because no controller overrides the generated method, the route currently falls through to the generated fallback and returns **HTTP 501**, which is **not** part of the advertised response contract and carries no `ProblemDetail` body. The `imageReference` field on `POST /products` is tied to that feature, is silently ignored by the API today, and must likewise not be used.
+
+> **Accepted decision (removal not yet deployed) — image-analysis contract.** Removal of `POST /products/image-analysis`, `ProductImageAnalysisResult`, and `CreateProductRequest.imageReference` has been accepted for the next breaking API-spec release, but **nothing has been removed yet**: the currently published contract and the deployed API still expose them. Clients must not build against them. See [0013 — Image-analysis API contract](decisions/0013-image-analysis-contract.md).
 
 ## Where to go next — sequence diagrams
 

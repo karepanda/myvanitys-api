@@ -15,7 +15,7 @@ import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
 import com.myvanitys.api.auth.domain.port.secondary.TokenGenerator;
-import com.myvanitys.api.auth.infrastructure.adapter.secondary.port.UserRepository;
+import com.myvanitys.api.auth.domain.port.secondary.UserRepository;
 import com.myvanitys.api.common.valueobject.EntityId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -216,11 +216,6 @@
       <version>0.13.0</version>
       <scope>runtime</scope>
     </dependency>
-    <dependency>
-      <groupId>org.jacoco</groupId>
-      <artifactId>jacoco-maven-plugin</artifactId>
-      <version>0.8.15</version>
-    </dependency>
   </dependencies>
 
   <!-- MAVEN PROFILES - placed here, after dependencies and before build -->
@@ -429,7 +424,6 @@
           </excludedClasses>
           <excludedTestClasses>
             <param>*IT</param>
-            <param>com.myvanitys.api.MyVanitysApiApplicationTests</param>
           </excludedTestClasses>
           <mutationThreshold>65</mutationThreshold>
         </configuration>

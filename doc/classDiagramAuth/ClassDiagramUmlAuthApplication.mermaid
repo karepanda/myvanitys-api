@@ -53,4 +53,4 @@ classDiagram
     RegisterUser ..> UserRegistrationResult : produces
     GoogleAuthentication ..> GoogleAuthCommand : uses
 
-    %% UserRepository lives in auth.infrastructure.adapter.secondary.port (not domain.port.secondary).
+    %% UserRepository is a domain secondary port at auth.domain.port.secondary.

@@ -5,8 +5,10 @@ import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
 import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
 import com.myvanitys.api.model.v1.ProblemDetail;
+import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.exception.ProductValidationException;
+import com.myvanitys.api.product.domain.exception.ReviewValidationException;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.net.URI;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -79,6 +82,42 @@ public class GlobalExceptionHandler {
         .instance(PRODUCT_INSTANCE);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+  }
+
+  @ExceptionHandler(ValidationException.class)
+  public ResponseEntity<ProblemDetail> handleApplicationValidationException(ValidationException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(VALIDATION_ERROR_TYPE)
+        .title("Validation Error")
+        .status(400)
+        .detail("Validation failed: " + formatValidationErrors(ex))
+        .instance(PRODUCT_INSTANCE);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+  }
+
+  @ExceptionHandler(ReviewValidationException.class)
+  public ResponseEntity<ProblemDetail> handleReviewValidationException(ReviewValidationException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(VALIDATION_ERROR_TYPE)
+        .title("Review Validation Error")
+        .status(400)
+        .detail(ex.getMessage())
+        .instance(PRODUCT_INSTANCE);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+  }
+
+  @ExceptionHandler(ProductAlreadyInVanityException.class)
+  public ResponseEntity<ProblemDetail> handleProductAlreadyInVanityException(ProductAlreadyInVanityException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(VALIDATION_ERROR_TYPE)
+        .title("Product Already In Vanity")
+        .status(409)
+        .detail(ex.getMessage())
+        .instance(PRODUCT_INSTANCE);
+
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
   }
 
   @ExceptionHandler(DatabaseException.class)
@@ -177,5 +216,10 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
   }
 
+  private static String formatValidationErrors(ValidationException ex) {
+    return ex.getErrors().stream()
+        .map(error -> error.field() + ": " + error.message())
+        .collect(Collectors.joining("; "));
+  }
 
 }

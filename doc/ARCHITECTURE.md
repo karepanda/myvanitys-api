@@ -29,7 +29,6 @@ Known inconsistency (tolerated, not enforced by any rule):
 |---|---|---|
 | Use case implementations | `application.service` | `application.usecase` |
 | Commands | `application.port.primary.command` | `application.command` |
-| Secondary port `UserRepository` | `infrastructure.adapter.secondary.port` (infra, not domain) | n/a — product ports live in `domain.port.secondary` |
 
 `EntityId` is shared by both contexts and lives in `common.valueobject`, not in `product.domain`.
 
@@ -67,7 +66,7 @@ There is no Spring Security dependency; `SecurityConfig` only exposes the JWT si
 
 ### Registration and login
 
-- `RegisterUser` (`RegisterUserUseCase`) and `GoogleAuthentication` (`GoogleAuthenticationUseCase`) are the application services. Both use `GoogleAuthClient` (`GoogleAuthClientAdapter`), `UserRepository` (an infra-layer port implemented by `UserRepositoryAdapter`), and `TokenGenerator`.
+- `RegisterUser` (`RegisterUserUseCase`) and `GoogleAuthentication` (`GoogleAuthenticationUseCase`) are the application services. Both use `GoogleAuthClient` (`GoogleAuthClientAdapter`), `UserRepository` (a domain secondary port implemented by `UserRepositoryAdapter`), and `TokenGenerator`.
 - Google HTTP calls use `WebClient` (`WebClientConfig`, `GoogleClientProperties` with prefix `google.oauth2`).
 
 ### Diagram — auth application
@@ -191,7 +190,7 @@ classDiagram
     class UserRepositoryAdapter { <<secondaryAdapter>> +save(user: User) Mono~User~ +findByAuthorizationId(authorizationId: String) Mono~User~ }
     class GoogleAuthClient { <<secondaryPort>> }
     class TokenGenerator { <<secondaryPort>> }
-    class UserRepository { <<port>> +save(user: User) Mono~User~ +findByAuthorizationId(authorizationId: String) Mono~User~ }
+    class UserRepository { <<secondaryPort>> +save(user: User) Mono~User~ +findByAuthorizationId(authorizationId: String) Mono~User~ }
     class JwtAuthenticationFilter { <<filter>> +doFilterInternal(request, response, filterChain) void }
     class TokenService { <<service>> +extractUserId(tokenHeader: String) UUID +isValidToken(tokenHeader: String) boolean }
     class JwtClaimsAdapter { <<security>> +toJwtClaims(claims: TokenClaims) Map +fromJwtClaims(jwtClaims: Map, issuedAt: Instant, expiresAt: Instant) TokenClaims }
