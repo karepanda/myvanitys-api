@@ -18,11 +18,11 @@ import java.util.Optional;
 @AllArgsConstructor
 public class CreateProduct implements CreateProductUseCase {
 
-  protected ProductRepository productRepository;
+  private final ProductRepository productRepository;
 
-  protected CategoryRepository categoryRepository;
+  private final CategoryRepository categoryRepository;
 
-  protected ProductUserRepository productUserRepository;
+  private final ProductUserRepository productUserRepository;
 
   @Override
   @Transactional

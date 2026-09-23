@@ -137,5 +137,4 @@ classDiagram
     FindProductByUser ..> FindProductUserQuery : uses
 
     %% --- Structural notes ---
-    %% - CreateProduct declares its dependencies as `protected` fields; every other use case uses
-    %%   `private final` (Lombok @RequiredArgsConstructor / @AllArgsConstructor).
+    %% - CreateProduct declares its dependencies as `private final` fields (Lombok @AllArgsConstructor).
