@@ -125,7 +125,7 @@ class AuthControllerTestIT extends AbstractIntegrationTest {
   }
 
   @Test
-  @Disabled("Pending to implement exception handling")
+  @Disabled("Google auth missing-code validation path, unrelated to the register endpoint fix")
   void shouldReturnBadRequestWhenCodeIsMissing() throws Exception {
     // Given
     UUID requestId = UUID.randomUUID();

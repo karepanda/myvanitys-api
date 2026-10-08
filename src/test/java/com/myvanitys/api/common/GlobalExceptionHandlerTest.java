@@ -4,6 +4,7 @@ import com.myvanitys.api.auth.domain.exception.AuthenticationFailedException;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
 import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
+import com.myvanitys.api.auth.domain.exception.UserRegistrationFailedException;
 import com.myvanitys.api.model.v1.ProblemDetail;
 import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
@@ -206,12 +207,28 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ProblemDetail> response = exceptionHandler.handleUserAlreadyExistsException(ex);
 
         // Assert
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        ProblemDetail body = assertAndGetConsistentBody(response);
-        assertEquals(409, body.getStatus());
-        assertEquals("User Already Exists", body.getTitle());
-        assertDetailContains(body, "El usuario ya existe");
-    }
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    ProblemDetail body = assertAndGetConsistentBody(response);
+    assertEquals(409, body.getStatus());
+    assertEquals("User Already Exists", body.getTitle());
+    assertDetailContains(body, "El usuario ya existe");
+  }
+
+  @Test
+  void handleUserRegistrationFailedException_DebeRetornarInternalServerError() {
+    // Arrange
+    UserRegistrationFailedException ex = new UserRegistrationFailedException("User registration failed");
+
+    // Act
+    ResponseEntity<ProblemDetail> response = exceptionHandler.handleUserRegistrationFailedException(ex);
+
+    // Assert
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    ProblemDetail body = assertAndGetConsistentBody(response);
+    assertEquals(500, body.getStatus());
+    assertEquals("Internal Server Error", body.getTitle());
+    assertDetailContains(body, "User registration failed");
+  }
 
     @Test
     void handleAuthenticationFailedException_DebeRetornarUnauthorized() {
