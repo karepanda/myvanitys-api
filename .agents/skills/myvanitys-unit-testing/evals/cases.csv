@@ -1,0 +1,7 @@
+id,should_trigger,prompt,must_include,must_not_include
+explicit-unit,true,"Use $myvanitys-unit-testing to test AnalyzeProductImage without starting Spring.","JUnit 5;analysis performs no persistence","SpringBootTest"
+implicit-validation,true,"Add parameterized tests for every invalid image metadata command field.","ParameterizedTest;focused test command","duplicated test methods"
+contextual-controller,true,"Verify that ProductController builds the command with the JWT-authenticated user ID.","real AuthenticatedUserContext;ArgumentCaptor","user id from request body"
+database-integration,false,"Create a Testcontainers test for the new Flyway image columns.","integration test workflow","Test.java unit classification"
+pipeline-only,false,"Run every check required before this backend change is merged.","change verification workflow","new unit test design"
+frontend-test,false,"Add tests for the React camera preview component.","backend unit skill should not trigger","JUnit test"

@@ -3,7 +3,7 @@
 REST API for MyVanitys: product catalog, reviews, and Google OAuth + JWT authentication. Spring Boot 4.1.1, Java 25, hexagonal architecture.
 
 - Architecture, boundaries, and diagrams: [doc/ARCHITECTURE.md](doc/ARCHITECTURE.md)
-- Contributor/agent guide: [AGENTS.md](AGENTS.md)
+- Contributor/agent guide: [AGENTS.md](.agents/AGENTS.md)
 
 ## For API consumers
 
@@ -49,4 +49,4 @@ mvn package -DskipTests                 # build jar
 mvn test-compile org.pitest:pitest-maven:mutationCoverage   # mutation testing
 ```
 
-Full command reference: [AGENTS.md](AGENTS.md).
+Full command reference: [AGENTS.md](.agents/AGENTS.md).

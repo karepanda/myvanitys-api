@@ -1,0 +1,4 @@
+interface:
+  display_name: "MyVanitys AI Product Registration"
+  short_description: "Build secure AI product image workflows"
+  default_prompt: "Use $myvanitys-ai-product-registration to implement this product-image workflow safely."

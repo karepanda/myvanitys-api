@@ -1,0 +1,5 @@
+id,should_trigger,prompt,must_include,must_not_include
+explicit-migration,true,"Use $myvanitys-database-evolution to move user color into product_user.","new Flyway migration;backfill decision","edit an applied migration"
+implicit-column,true,"Add nullable image keys to products and product_user and persist them through JPA.","schema and entity mapping;PostgreSQL integration test","unit test as database proof"
+contextual-constraint,true,"Enforce unique category codes without breaking existing seeded rows.","inspect existing data;backfill before constraint","unsafe direct not-null constraint"
+domain-only,false,"Change Product color validation without changing persistence.","no database workflow","new migration"

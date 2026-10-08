@@ -1,0 +1,4 @@
+interface:
+  display_name: "MyVanitys Unit Testing"
+  short_description: "Write focused JUnit 5 unit tests"
+  default_prompt: "Use $myvanitys-unit-testing to add focused unit coverage for this backend behavior."

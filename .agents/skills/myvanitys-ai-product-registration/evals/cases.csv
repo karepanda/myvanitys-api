@@ -1,0 +1,5 @@
+id,should_trigger,prompt,must_include,must_not_include
+explicit-analysis,true,"Use $myvanitys-ai-product-registration to implement AnalyzeProductImage with a fake analyzer.","analysis does not persist;provider-neutral port","real provider chosen without evidence"
+implicit-storage,true,"Add support for replacing a user's private product photo in R2.","authenticated ownership;delete or retain old object safely","public user image"
+contextual-match,true,"The vision result should match an existing catalog product by name and brand before the user confirms.","normalized name plus brand;no persistence during analysis","automatic product creation"
+frontend-only,false,"Add the camera preview and resize behavior to the React application.","backend skill should not trigger","backend storage implementation"
