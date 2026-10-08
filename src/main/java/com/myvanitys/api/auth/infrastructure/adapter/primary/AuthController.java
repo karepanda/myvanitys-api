@@ -5,6 +5,7 @@ import com.myvanitys.api.auth.application.port.primary.RegisterUserUseCase;
 import com.myvanitys.api.auth.application.port.primary.command.GoogleAuthCommand;
 import com.myvanitys.api.auth.application.port.primary.command.RegisterUserCommand;
 import com.myvanitys.api.auth.application.port.primary.result.UserRegistrationResult;
+import com.myvanitys.api.auth.domain.exception.UserRegistrationFailedException;
 import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.AuthenticationMapper;
 import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.CreateUserMapper;
@@ -60,7 +61,7 @@ public class AuthController implements AuthenticationApiDelegate {
     UserRegistrationResult result = registerUserUseCase.execute(command, xRequestID, xFlowID).block();
     if (result == null) {
       log.error("User registration result was null for request ID: {}, flow ID: {}", xRequestID, xFlowID);
-      return ResponseEntity.internalServerError().build();
+      throw new UserRegistrationFailedException("User registration failed");
     }
 
     UserCreatedResponse response = createUserMapper.toResponse(result.session().user());

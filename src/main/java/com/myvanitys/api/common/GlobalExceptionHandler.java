@@ -4,6 +4,7 @@ import com.myvanitys.api.auth.domain.exception.AuthenticationFailedException;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
 import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
+import com.myvanitys.api.auth.domain.exception.UserRegistrationFailedException;
 import com.myvanitys.api.model.v1.ProblemDetail;
 import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
@@ -202,6 +203,18 @@ public class GlobalExceptionHandler {
         .instance(AUTH_GOOGLE_INSTANCE);
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+  }
+
+  @ExceptionHandler(UserRegistrationFailedException.class)
+  public ResponseEntity<ProblemDetail> handleUserRegistrationFailedException(UserRegistrationFailedException ex) {
+    ProblemDetail problem = new ProblemDetail()
+        .type(INTERNAL_ERROR_TYPE)
+        .title("Internal Server Error")
+        .status(500)
+        .detail(ex.getMessage())
+        .instance(MYVANITYS_INSTANCE);
+
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
   }
 
   @ExceptionHandler(AuthenticationFailedException.class)

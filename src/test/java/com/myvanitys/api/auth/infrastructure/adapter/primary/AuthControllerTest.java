@@ -3,22 +3,20 @@ package com.myvanitys.api.auth.infrastructure.adapter.primary;
 import com.myvanitys.api.auth.application.port.primary.GoogleAuthenticationUseCase;
 import com.myvanitys.api.auth.application.port.primary.RegisterUserUseCase;
 import com.myvanitys.api.auth.application.port.primary.command.RegisterUserCommand;
+import com.myvanitys.api.auth.domain.exception.UserRegistrationFailedException;
 import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.AuthenticationMapper;
 import com.myvanitys.api.auth.infrastructure.adapter.primary.mapper.CreateUserMapper;
 import com.myvanitys.api.model.v1.CreateUserRequest;
-import com.myvanitys.api.model.v1.UserCreatedResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -53,7 +51,7 @@ class AuthControllerTest {
   }
 
   @Test
-  void createUser_whenRegistrationResultIsNull_thenReturnsInternalServerError() {
+  void createUser_whenRegistrationResultIsNull_thenThrowsUserRegistrationFailedException() {
     // Given
     CreateUserRequest request = new CreateUserRequest()
         .authProvider(CreateUserRequest.AuthProviderEnum.GOOGLE)
@@ -64,13 +62,12 @@ class AuthControllerTest {
     // Mono.empty().block() returns null, which reaches the intended null-result branch
     when(registerUserUseCase.execute(command, REQUEST_ID, FLOW_ID)).thenReturn(Mono.empty());
 
-    // When
-    ResponseEntity<UserCreatedResponse> response =
-        controller.createUser(REQUEST_ID, FLOW_ID, request);
+    // When / Then
+    UserRegistrationFailedException exception = assertThrows(
+        UserRegistrationFailedException.class,
+        () -> controller.createUser(REQUEST_ID, FLOW_ID, request));
 
-    // Then
-    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-    assertNull(response.getBody());
+    assertEquals("User registration failed", exception.getMessage());
 
     // And - the exact request is mapped to the exact command
     ArgumentCaptor<CreateUserRequest> requestCaptor = ArgumentCaptor.forClass(CreateUserRequest.class);
