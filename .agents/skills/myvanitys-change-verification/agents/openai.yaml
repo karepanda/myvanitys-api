@@ -1,0 +1,4 @@
+interface:
+  display_name: "MyVanitys Change Verification"
+  short_description: "Run the right backend verification checks"
+  default_prompt: "Use $myvanitys-change-verification to verify this backend change and report evidence."

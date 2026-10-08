@@ -32,7 +32,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 - Keep changes focused; preserve architectural boundaries and fix violations rather than weakening `ArchitectureTest`.
 - Ask before adding dependencies or changing API contracts, persistence schemas, migrations, authentication, or coverage gates.
 - Never commit credentials, tokens, personal data, generated code, local configuration, or build output.
-- Use `README.md` for setup, `DEVELOPMENT.md` for IDE notes, and `doc/ARCHITECTURE.md` for design detail.
+- Use `../README.md` for setup, `DEVELOPMENT.md` for IDE notes, and `doc/ARCHITECTURE.md` for design detail.
 
 ## Verification
 - Run the smallest relevant unit or integration tests first; use `mvn clean verify` when the change crosses layers or persistence.

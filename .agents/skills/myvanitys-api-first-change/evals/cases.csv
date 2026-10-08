@@ -1,0 +1,5 @@
+id,should_trigger,prompt,must_include,must_not_include
+explicit-api-change,true,"Use $myvanitys-api-first-change to add GET /products/categories with a category code.","authoritative OpenAPI source;generated classes remain untouched","edit generated Java"
+implicit-schema-change,true,"Add imageUrl and imageSource to ProductResponse and implement the backend mapping.","specification before backend;compatibility impact","backend-only DTO edit"
+contextual-error-change,true,"The image-analysis endpoint needs documented 413 and 415 ProblemDetail responses and matching controller behavior.","response contract;runtime mapping","undocumented status"
+internal-refactor,false,"Rename a private helper in Product without changing any endpoint or schema.","no API contract workflow","modify openapi.yaml"

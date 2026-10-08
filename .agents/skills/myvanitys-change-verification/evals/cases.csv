@@ -1,0 +1,6 @@
+id,should_trigger,prompt,must_include,must_not_include
+explicit-verification,true,"Use $myvanitys-change-verification to verify this completed product use-case change.","focused test first;exact commands and results","claim unrun checks passed"
+implicit-cross-layer,true,"The API contract, controller, use case, and repository are updated; run the checks required before handoff.","architecture and clean verify;integration checks","unit tests only"
+contextual-environment,true,"Verify the Flyway and JPA changes, but Docker is currently unavailable.","report blocked integration check;run safe available checks","false passing integration result"
+test-design-only,false,"Write unit tests for CreateProduct.","unit-testing workflow","verification-only response"
+docs-only,false,"Fix a typo in ARCHITECTURE.md.","no Maven required","clean verify"

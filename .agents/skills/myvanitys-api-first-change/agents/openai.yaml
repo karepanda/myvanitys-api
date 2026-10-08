@@ -1,0 +1,4 @@
+interface:
+  display_name: "MyVanitys API-First Change"
+  short_description: "Coordinate OpenAPI-first backend changes"
+  default_prompt: "Use $myvanitys-api-first-change to add or revise this backend API contract safely."

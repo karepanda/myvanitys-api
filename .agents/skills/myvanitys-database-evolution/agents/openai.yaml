@@ -1,0 +1,4 @@
+interface:
+  display_name: "MyVanitys Database Evolution"
+  short_description: "Evolve PostgreSQL safely with Flyway"
+  default_prompt: "Use $myvanitys-database-evolution to implement and verify this schema change safely."
