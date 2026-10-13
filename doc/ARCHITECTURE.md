@@ -62,6 +62,8 @@ Purpose: authenticate users through Google OAuth and issue/validate JWTs.
    - Claim mapping is done by `JwtClaimsAdapter` (`toJwtClaims` / `fromJwtClaims`); JWT JSON is serialized by jjwt-jackson.
 3. `JwtAuthenticationFilter` (a `OncePerRequestFilter`, not Spring Security) validates the `Authorization` header via `TokenService`, stores the resolved user id in the request-scoped `AuthenticatedUserContext`, and short-circuits with a 401 `ProblemDetail` on failure.
 
+`TokenGenerator.validateToken` (and `TokenService.isValidToken`, a boolean wrapper over it) return the full claims rather than just the user ID. They provide the more comprehensive validation projection and are the only path that invokes `JwtClaimsAdapter.fromJwtClaims`, so they are retained as the port’s alternative API and as the round-trip safeguard for jjwt/Jackson serialisation; the request path uses `extractUserId` only.
+
 There is no Spring Security dependency; `SecurityConfig` only exposes the JWT signing `Key`.
 
 ### Registration and login
