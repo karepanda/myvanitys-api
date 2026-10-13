@@ -10,7 +10,7 @@
 The image-analysis operation is published but has no implementation:
 
 - The consumed artifact `com.myvanitys:myvanitys-api-spec:1.11.0-SNAPSHOT` bundles the authoritative contract at `rest/openapi.yaml`. It defines `POST /products/image-analysis` (`openapi.yaml:827-906`) with `operationId: analyzeProductImage`, bearer authentication, a required `multipart/form-data` body with a required binary `image` field, and advertised responses `200` (`ProductImageAnalysisResult`), `400`, `401`, `429`, `502`, and `504`.
-- The stale local `myvanitys-api-spec` checkout is on `main` at `1.7.0-SNAPSHOT` and does **not** contain the operation or `imageReference`. It is not the source that produced the consumed `1.11.0-SNAPSHOT` and must not be edited as a substitute for recovering and versioning the real source.
+- The authoritative `myvanitys-api-spec` source that produced the consumed `1.11.0-SNAPSHOT` has been recovered on the `feat/VANITYS-ARCH-001-1` branch — the exact version bound into the API's `pom.xml`. The stale `main` checkout at `1.7.0-SNAPSHOT` (which does **not** contain the operation or `imageReference`) must not be edited as a substitute for this recovered source.
 - `ProductController` implements several `ProductsApiDelegate` methods but does **not** override `analyzeProductImage`. The generated delegate default returns `new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED)`, so the live route answers **HTTP 501**.
 - **HTTP 501 is not part of the advertised response contract.** The contract lists only `200`, `400`, `401`, `429`, `502`, `504`.
 - The generated fallback returns a bare `ResponseEntity` with no body, so **no useful `ProblemDetail`** is produced for the caller.
@@ -35,11 +35,11 @@ A published endpoint is a contract to consumers: it asserts a supported capabili
 
 ## Compatibility and release plan
 
-### Phase 1 — recover the authoritative specification source
+### Phase 1 — recover the authoritative specification source (complete)
 
-- Locate the source branch/tag/commit that produced the consumed `1.11.0-SNAPSHOT` (the exact artifact bound into the API's `pom.xml`).
-- Do **not** treat the local `1.7.0-SNAPSHOT` checkout as authoritative, and do not edit it as if it were the `1.11` source.
-- Work on a dedicated non-`main` branch in `myvanitys-api-spec`.
+- Located the source branch that produced the consumed `1.11.0-SNAPSHOT` (the exact artifact bound into the API's `pom.xml`): `feat/VANITYS-ARCH-001-1`.
+- The stale `main` checkout at `1.7.0-SNAPSHOT` is not authoritative and must not be edited as if it were the `1.11` source.
+- Work proceeds on the dedicated non-`main` branch `feat/VANITYS-ARCH-001-1` in `myvanitys-api-spec`.
 
 ### Phase 2 — optional deprecation release
 
@@ -115,11 +115,12 @@ Image analysis may return only through a future feature ticket containing:
 - Adding a controller override that merely returns another undocumented error.
 - Continuing to accept and silently ignore `imageReference`.
 - Editing generated Java sources directly.
-- Editing the stale local `1.7.0-SNAPSHOT` contract as if it were the published source.
+- Editing a non-authoritative checkout (such as the stale `1.7.0-SNAPSHOT` checkout) as if it were the published source.
 
 ## Current-state warning
 
 - This decision is **not** the contract removal itself. TICKET 13 records the decision and the release plan only.
+- Phase 1 (recover the authoritative specification source) is complete: the source was located on the `feat/VANITYS-ARCH-001-1` branch at `1.11.0-SNAPSHOT`.
 - The currently consumed/published artifact (`1.11.0-SNAPSHOT`) still exposes `POST /products/image-analysis` and `CreateProductRequest.imageReference`.
 - The current route still falls through to the generated HTTP 501 fallback with no useful `ProblemDetail` body.
 - Clients must not integrate with the operation or send `imageReference`.
