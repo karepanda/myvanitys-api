@@ -39,6 +39,8 @@ import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.application.usecase.FindProductByTerm;
+import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
+import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
@@ -450,6 +452,52 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
             command.userId().equals(entityUserId.getValue())
     ));
     verify(productResponseMapper).toResponse(addedProduct);
+  }
+
+  @Test
+  void shouldReturnConflictWhenAddingProductAlreadyInVanity() throws Exception {
+    // Given
+    UUID productId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
+    when(addProductToMyVanityUseCase.execute(any(AddProductToMyVanityCommand.class)))
+        .thenThrow(new ProductAlreadyInVanityException("Product is already associated with the user"));
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products/{productId}/add-to-vanity", productId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-Request-ID", requestId.toString())
+            .header("X-Flow-ID", flowId.toString())
+            .header("Accept-Language", ACCEPT_LANGUAGE)
+            .header("User-Agent", USER_AGENT)
+            .header("Authorization", "Bearer 4/P7q7W91"))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
+  void shouldReturnNotFoundWhenAddingProductThatDoesNotExist() throws Exception {
+    // Given
+    UUID productId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+
+    when(tokenService.extractUserId(anyString())).thenReturn(userId);
+    when(addProductToMyVanityUseCase.execute(any(AddProductToMyVanityCommand.class)))
+        .thenThrow(new ProductNotFoundException("Product does not exist"));
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/products/{productId}/add-to-vanity", productId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-Request-ID", requestId.toString())
+            .header("X-Flow-ID", flowId.toString())
+            .header("Accept-Language", ACCEPT_LANGUAGE)
+            .header("User-Agent", USER_AGENT)
+            .header("Authorization", "Bearer 4/P7q7W91"))
+        .andExpect(status().isNotFound());
   }
 
   @Test
