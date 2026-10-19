@@ -11,13 +11,14 @@ on:
     paths:
       - '**/*.java'
       - '**/pom.xml'
+      - '.github/workflows/*.yml'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Extract Java version from pom.xml
         id: java-version
@@ -27,7 +28,7 @@ jobs:
           echo "version=$JAVA_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: ${{ steps.java-version.outputs.version }}
           distribution: 'temurin'
@@ -36,26 +37,45 @@ jobs:
           server-password: MAVEN_PASSWORD
 
       - name: Cache Maven dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      - name: Resolve Maven dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if mvn -B -U -ntp -DskipTests dependency:go-offline; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Maven dependency resolution failed after 3 attempts."
+              exit 1
+            fi
+            echo "Maven dependency resolution failed; retrying in $((attempt * 10)) seconds."
+            sleep $((attempt * 10))
+          done
+        env:
+          MAVEN_USERNAME: ${{ github.actor }}
+          MAVEN_PASSWORD: ${{ secrets.PACKAGES_TOKEN }}
+
       - name: Unit Tests
         id: unit-tests
-        run: mvn clean test jacoco:report jacoco:check
+        run: mvn -B -ntp clean test jacoco:report jacoco:check
         env:
           MAVEN_USERNAME: ${{ github.actor }}
           MAVEN_PASSWORD: ${{ secrets.PACKAGES_TOKEN }}
 
       - name: Upload JaCoCo coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: jacoco-report
           path: target/site/jacoco
+          if-no-files-found: ignore
 
       - name: Log JaCoCo Report URL
         if: steps.unit-tests.outcome == 'success'
@@ -67,24 +87,25 @@ jobs:
           echo "============================================================"
 
       - name: Integration Tests
-        run: mvn failsafe:integration-test failsafe:verify
+        run: mvn -B -ntp failsafe:integration-test failsafe:verify
         env:
           MAVEN_USERNAME: ${{ github.actor }}
           MAVEN_PASSWORD: ${{ secrets.PACKAGES_TOKEN }}
 
       - name: Mutation Testing
         id: mutation-tests
-        run: mvn test-compile org.pitest:pitest-maven:mutationCoverage
+        run: mvn -B -ntp test-compile org.pitest:pitest-maven:mutationCoverage
         env:
           MAVEN_USERNAME: ${{ github.actor }}
           MAVEN_PASSWORD: ${{ secrets.PACKAGES_TOKEN }}
 
       - name: Upload PIT mutation report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pit-report
           path: target/pit-reports
+          if-no-files-found: ignore
 
       - name: Log PIT Report URL
         if: steps.mutation-tests.outcome == 'success'
@@ -96,7 +117,7 @@ jobs:
           echo "============================================================"
 
       - name: Package
-        run: mvn package -DskipTests
+        run: mvn -B -ntp package -DskipTests
         env:
           MAVEN_USERNAME: ${{ github.actor }}
           MAVEN_PASSWORD: ${{ secrets.PACKAGES_TOKEN }}
