@@ -17,7 +17,7 @@
   </parent>
   <groupId>com.myvanitys</groupId>
   <artifactId>api</artifactId>
-  <version>0.1.6</version>
+  <version>0.1.7</version>
   <name>my-vanitys-api</name>
   <description>my-vanitys-api</description>
 
@@ -25,6 +25,23 @@
     <java.version>25</java.version>
     <byte-buddy.version>1.17.7</byte-buddy.version>
     <myvanitys-api-spec.version>1.11.0-SNAPSHOT</myvanitys-api-spec.version>
+    <!-- Security overrides: Spring Boot 4.1.1 is the latest 4.1.x release, so the remaining
+         flagged CVEs are cleared by pinning these BOM properties above the versions it manages. -->
+    <!-- Tomcat 11.0.24 (Spring Boot 4.1.1 default) has three critical CVEs
+         (CVE-2026-65905, CVE-2026-65182, CVE-2026-68525), all fixed in 11.0.25. -->
+    <tomcat.version>11.0.27</tomcat.version>
+    <!-- Jackson 3 databind 3.1.5 (Spring Boot 4.1.1 default) has five CVEs
+         (CVE-2026-91777, CVE-2026-91776, CVE-2026-83557, CVE-2026-68497, CVE-2026-19032),
+         all fixed in 3.1.7. -->
+    <jackson-bom.version>3.1.7</jackson-bom.version>
+    <!-- Logback 1.5.38 is affected by CVE-2026-19880. Logback 1.6.3 contains the
+         original fix; 1.6.5 also contains the related follow-up security fix. -->
+    <logback.version>1.6.5</logback.version>
+    <!-- Netty 4.2.17.Final is affected by the HTTP, HTTP/2, HTTP/3, and QUIC CVEs
+         reported against this project. They are fixed in 4.2.18.Final. -->
+    <netty.version>4.2.19.Final</netty.version>
+    <!-- pgJDBC 42.7.14 fixes CVE-2026-107314 and CVE-2026-107315. -->
+    <postgresql.version>42.7.14</postgresql.version>
   </properties>
 
   <dependencyManagement>
@@ -35,6 +52,26 @@
         <version>16.15.0</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <!-- Jackson 2 is only present transitively via io.jsonwebtoken:jjwt-jackson (JWT JSON
+           serialization). It cannot be removed (jjwt ships no Jackson 3 module), so it is pinned
+           to 2.21.7 to clear the same databind CVEs fixed for Jackson 3 above. -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.21.7</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>2.21.7</version>
+      </dependency>
+      <!-- ASM versions before 9.11 are affected by the resource-exhaustion CVEs
+           reported by Mend. Use 9.11.1, which fixes a regression in 9.11. -->
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>9.11.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
