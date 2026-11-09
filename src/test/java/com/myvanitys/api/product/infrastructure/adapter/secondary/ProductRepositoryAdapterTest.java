@@ -87,7 +87,7 @@ class ProductRepositoryAdapterTest {
   void setUp() {
     categoryId = UUID.randomUUID();
     categoryEntityId = new EntityId(categoryId);
-    category = new Category(categoryEntityId, "Test Category");
+    category = new Category(categoryEntityId, "Test Category", "FACE");
 
     review = Review.createWithExistingId(
         EntityId.newId(),

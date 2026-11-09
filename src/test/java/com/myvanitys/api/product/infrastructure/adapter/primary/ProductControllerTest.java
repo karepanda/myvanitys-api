@@ -20,7 +20,9 @@ import java.util.UUID;
 
 import com.myvanitys.api.auth.infrastructure.security.AuthenticatedUserContext;
 import com.myvanitys.api.common.UnauthorizedException;
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.model.v1.AddReviewRequest;
+import com.myvanitys.api.model.v1.CategoryResponse;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
 import com.myvanitys.api.model.v1.ProductSearchResponse;
@@ -31,10 +33,12 @@ import com.myvanitys.api.product.application.command.DeleteProductFromUserVanity
 import com.myvanitys.api.product.application.port.primary.AddProductToMyVanityUseCase;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
 import com.myvanitys.api.product.application.port.primary.DeleteProductFromUserVanityUseCase;
+import com.myvanitys.api.product.application.port.primary.FindCategoriesUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductAllUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.application.usecase.FindProductByTerm;
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
 
@@ -65,6 +69,7 @@ class ProductControllerTest {
   private FindProductByTerm findProductByTerm;
   private AddProductToMyVanityUseCase addProductToMyVanityUseCase;
   private DeleteProductFromUserVanityUseCase deleteProductFromUserVanityUseCase;
+  private FindCategoriesUseCase findCategoriesUseCase;
   private ProductController controller;
 
   @BeforeEach
@@ -78,6 +83,7 @@ class ProductControllerTest {
     findProductByTerm = mock(FindProductByTerm.class);
     addProductToMyVanityUseCase = mock(AddProductToMyVanityUseCase.class);
     deleteProductFromUserVanityUseCase = mock(DeleteProductFromUserVanityUseCase.class);
+    findCategoriesUseCase = mock(FindCategoriesUseCase.class);
     controller = new ProductController(
         findProductUserUseCase,
         findProductAllUseCase,
@@ -87,7 +93,8 @@ class ProductControllerTest {
         addReviewToProduct,
         findProductByTerm,
         addProductToMyVanityUseCase,
-        deleteProductFromUserVanityUseCase
+        deleteProductFromUserVanityUseCase,
+        findCategoriesUseCase
     );
   }
 
@@ -306,6 +313,36 @@ class ProductControllerTest {
     verify(deleteProductFromUserVanityUseCase, times(1)).execute(commandCaptor.capture());
     assertEquals(PRODUCT_ID, commandCaptor.getValue().productId());
     assertEquals(AUTHENTICATED_USER_ID, commandCaptor.getValue().userId());
+  }
+
+  @Test
+  void getProductCategories_shouldReturnMappedListWithoutAuthenticatedUser() {
+    // Given
+    Category face = new Category(new EntityId(UUID.randomUUID()), "Face", "FACE");
+    Category eyes = new Category(new EntityId(UUID.randomUUID()), "Eyes", "EYES");
+    List<Category> domainCategories = List.of(face, eyes);
+    CategoryResponse faceResponse = new CategoryResponse()
+        .id(face.categoryId().getValue())
+        .name("Face")
+        .code(CategoryResponse.CodeEnum.FACE);
+    CategoryResponse eyesResponse = new CategoryResponse()
+        .id(eyes.categoryId().getValue())
+        .name("Eyes")
+        .code(CategoryResponse.CodeEnum.EYES);
+    List<CategoryResponse> mappedResponses = List.of(faceResponse, eyesResponse);
+
+    when(findCategoriesUseCase.query()).thenReturn(domainCategories);
+    when(productResponseMapper.toCategoryResponseList(domainCategories)).thenReturn(mappedResponses);
+
+    // When
+    ResponseEntity<List<CategoryResponse>> response = controller.getProductCategories(
+        REQUEST_ID, FLOW_ID, ACCEPT_LANGUAGE, USER_AGENT);
+
+    // Then
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertSame(mappedResponses, response.getBody());
+    verify(findCategoriesUseCase).query();
+    verify(productResponseMapper).toCategoryResponseList(domainCategories);
   }
 
   @Test

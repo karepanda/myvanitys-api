@@ -64,7 +64,7 @@ class ProductRepositoryAdapterIT extends AbstractProductPersistenceAdapterIT {
   void givenMissingCategory_whenProductSaved_thenRejectedWithoutInsert() {
     // Given
     UUID missingCategoryId = UUID.randomUUID();
-    Category missingCategory = new Category(new EntityId(missingCategoryId), "Missing Category " + missingCategoryId);
+    Category missingCategory = new Category(new EntityId(missingCategoryId), "Missing Category " + missingCategoryId, "FACE");
     Product product = Product.reconstruct(
         EntityId.newId(), unique("Missing Category Product"), "AdapterBrand", missingCategory, "#000000",
         List.of(), Set.of());

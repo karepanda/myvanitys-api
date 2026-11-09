@@ -51,7 +51,7 @@ class CategoryRepositoryAdapterIT extends AbstractProductPersistenceAdapterIT {
     // Given
     UUID categoryId = UUID.randomUUID();
     String categoryName = "Adapter IT Category " + categoryId;
-    Category category = new Category(new EntityId(categoryId), categoryName);
+    Category category = new Category(new EntityId(categoryId), categoryName, "FACE");
 
     // When / Then
     assertThatThrownBy(() -> {

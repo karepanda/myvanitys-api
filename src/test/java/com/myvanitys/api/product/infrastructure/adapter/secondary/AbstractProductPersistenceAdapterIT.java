@@ -2,6 +2,7 @@ package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.common.valueobject.EntityId;
@@ -92,6 +93,7 @@ abstract class AbstractProductPersistenceAdapterIT extends AbstractIntegrationTe
   protected CategoryEntity insertCategoryDirectly(String name) {
     CategoryEntity entity = new CategoryEntity();
     entity.setName(name);
+    entity.setCode("TEST-" + UUID.randomUUID());
     return jpaCategoryRepository.saveAndFlush(entity);
   }
 

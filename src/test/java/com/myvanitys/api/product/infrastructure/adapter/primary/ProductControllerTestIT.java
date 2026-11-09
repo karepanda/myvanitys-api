@@ -25,6 +25,7 @@ import java.util.UUID;
 import tools.jackson.databind.ObjectMapper;
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.model.v1.AddReviewRequest;
+import com.myvanitys.api.model.v1.CategoryResponse;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
 import com.myvanitys.api.product.application.command.AddProductToMyVanityCommand;
@@ -34,6 +35,7 @@ import com.myvanitys.api.product.application.command.DeleteProductFromUserVanity
 import com.myvanitys.api.product.application.port.primary.AddProductToMyVanityUseCase;
 import com.myvanitys.api.product.application.port.primary.CreateProductUseCase;
 import com.myvanitys.api.product.application.port.primary.DeleteProductFromUserVanityUseCase;
+import com.myvanitys.api.product.application.port.primary.FindCategoriesUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductAllUseCase;
 import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase;
 import com.myvanitys.api.product.application.query.FindProductUserQuery;
@@ -125,6 +127,12 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     public DeleteProductFromUserVanityUseCase deleteProductFromUserVanityUseCaseTest() {
       return mock(DeleteProductFromUserVanityUseCase.class);
     }
+
+    @Bean
+    @Primary
+    public FindCategoriesUseCase findCategoriesUseCaseTest() {
+      return mock(FindCategoriesUseCase.class);
+    }
   }
 
   @Autowired
@@ -157,10 +165,13 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
   @Autowired
   private DeleteProductFromUserVanityUseCase deleteProductFromUserVanityUseCase;
 
+  @Autowired
+  private FindCategoriesUseCase findCategoriesUseCase;
+
   @BeforeEach
   void setUp() {
     reset(findProductUserUseCase, productResponseMapper, findProductByTerm, findProductAllUseCase, createProductUseCase, tokenService,
-        addReviewToProduct, addProductToMyVanityUseCase, deleteProductFromUserVanityUseCase);
+        addReviewToProduct, addProductToMyVanityUseCase, deleteProductFromUserVanityUseCase, findCategoriesUseCase);
   }
 
   private static final String ACCEPT_LANGUAGE = "en-US";
@@ -181,8 +192,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     EntityId entityId = new EntityId(userId);
     System.out.println("EntityId value: " + entityId.getValue());
 
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
-    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Test Category2");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
+    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Test Category2", "EYES");
 
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
@@ -332,7 +343,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     EntityId entityId = new EntityId(userId);
     System.out.println("EntityId value: " + entityId.getValue());
 
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
 
     EntityId productId = new EntityId(UUID.randomUUID());
     EntityId reviewId = new EntityId(UUID.randomUUID());
@@ -404,7 +415,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     EntityId entityUserId = new EntityId(userId);
     EntityId entityProductId = new EntityId(productId);
 
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
 
     Set<ProductUserRelation> relations = new HashSet<>();
     relations.add(ProductUserRelation.create(entityProductId, entityUserId));
@@ -509,7 +520,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
 
     List<Product> domainProducts = List.of(
         Product.reconstruct(
@@ -579,7 +590,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
 
     List<Product> domainProducts = List.of(
         Product.reconstruct(
@@ -645,8 +656,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
-    Category category1 = new Category(new EntityId(UUID.randomUUID()), "Category 1");
-    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Category 2");
+    Category category1 = new Category(new EntityId(UUID.randomUUID()), "Category 1", "FACE");
+    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Category 2", "EYES");
 
     List<Product> domainProducts = List.of(
         Product.reconstruct(
@@ -764,6 +775,61 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
   }
 
   @Test
+  void shouldGetProductCategories() throws Exception {
+    // Given
+    UUID requestId = UUID.randomUUID();
+    UUID flowId = UUID.randomUUID();
+
+    EntityId faceId = new EntityId(UUID.randomUUID());
+    EntityId eyesId = new EntityId(UUID.randomUUID());
+    Category face = new Category(faceId, "Face", "FACE");
+    Category eyes = new Category(eyesId, "Eyes", "EYES");
+    List<Category> domainCategories = List.of(face, eyes);
+
+    List<CategoryResponse> responseCategories = List.of(
+        new CategoryResponse()
+            .id(faceId.getValue())
+            .name("Face")
+            .code(CategoryResponse.CodeEnum.FACE),
+        new CategoryResponse()
+            .id(eyesId.getValue())
+            .name("Eyes")
+            .code(CategoryResponse.CodeEnum.EYES)
+    );
+
+    when(findCategoriesUseCase.query()).thenReturn(domainCategories);
+    when(productResponseMapper.toCategoryResponseList(domainCategories)).thenReturn(responseCategories);
+
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products/categories")
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-Request-ID", requestId.toString())
+            .header("X-Flow-ID", flowId.toString())
+            .header("Accept-Language", ACCEPT_LANGUAGE)
+            .header("User-Agent", USER_AGENT))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(2)))
+        .andExpect(jsonPath("$[0].id").value(faceId.getValue().toString()))
+        .andExpect(jsonPath("$[0].name").value("Face"))
+        .andExpect(jsonPath("$[0].code").value("FACE"))
+        .andExpect(jsonPath("$[1].id").value(eyesId.getValue().toString()))
+        .andExpect(jsonPath("$[1].name").value("Eyes"))
+        .andExpect(jsonPath("$[1].code").value("EYES"));
+
+    verify(findCategoriesUseCase).query();
+    verify(productResponseMapper).toCategoryResponseList(domainCategories);
+    verifyNoMoreInteractions(findCategoriesUseCase, productResponseMapper);
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenRequiredHeadersAreMissingForCategories() throws Exception {
+    // When/Then
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/products/categories")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void shouldCreateProduct() throws Exception {
     // Given
     UUID requestId = UUID.randomUUID();
@@ -779,7 +845,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId productId = new EntityId(UUID.randomUUID());
     EntityId categoryEntityId = new EntityId(categoryId);
-    Category category = new Category(categoryEntityId, "Test Category");
+    Category category = new Category(categoryEntityId, "Test Category", "FACE");
 
     Product createdProduct = Product.reconstruct(
         productId,

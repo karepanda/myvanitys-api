@@ -325,6 +325,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
   private CategoryEntity createSampleCategory(String name) {
     CategoryEntity category = new CategoryEntity();
     category.setName(name);
+    category.setCode("TEST-" + UUID.randomUUID());
     return category;
   }
 

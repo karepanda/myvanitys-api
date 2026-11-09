@@ -48,7 +48,7 @@ class AddProductToMyVanityTest {
         command = new AddProductToMyVanityCommand(productId.getValue(), userId.getValue());
 
         final EntityId categoryId = new EntityId(UUID.randomUUID());
-        final Category category = new Category(categoryId, "Test Category");
+        final Category category = new Category(categoryId, "Test Category", "FACE");
 
         product = Product.reconstruct(
                 productId,

@@ -46,12 +46,13 @@ class CategoryRepositoryAdapterTest {
     categoryId = new EntityId(UUID.randomUUID());
 
     // Initialize domain objects
-    category = new Category(categoryId, "Test Category");
+    category = new Category(categoryId, "Test Category", "FACE");
 
     // Initialize entity objects
     categoryEntity = new CategoryEntity();
     categoryEntity.setCategoryId(categoryId.getValue());
     categoryEntity.setName("Test Category");
+    categoryEntity.setCode("FACE");
   }
 
   @Nested
@@ -202,10 +203,12 @@ class CategoryRepositoryAdapterTest {
       CategoryEntity newEntity = new CategoryEntity();
       newEntity.setCategoryId(UUID.randomUUID());
       newEntity.setName("New Category");
+      newEntity.setCode("FACE");
       
       Category expectedCategory = new Category(
           new EntityId(newEntity.getCategoryId()),
-          newEntity.getName()
+          newEntity.getName(),
+          newEntity.getCode()
       );
       
       when(categoryMapper.toDomain(newEntity)).thenReturn(expectedCategory);

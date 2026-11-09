@@ -33,6 +33,9 @@ public class CategoryEntity {
   @Column(length = 500)
   private String name;
 
+  @Column(length = 50, unique = true, nullable = false)
+  private String code;
+
   @Column(name = "created_at")
   private Instant createdAt;
 

@@ -33,9 +33,11 @@ class CategoryMapperTest {
       // Given
       final UUID categoryId = UUID.randomUUID();
       final String name = "Skincare";
+      final String code = "SERUM";
       final CategoryEntity entity = new CategoryEntity();
       entity.setCategoryId(categoryId);
       entity.setName(name);
+      entity.setCode(code);
       final EntityId entityId = new EntityId(categoryId);
 
       when(entityIdMapper.toEntityId(categoryId)).thenReturn(entityId);
@@ -47,6 +49,7 @@ class CategoryMapperTest {
       assertThat(result).isNotNull();
       assertThat(result.categoryId()).isEqualTo(entityId);
       assertThat(result.name()).isEqualTo(name);
+      assertThat(result.code()).isEqualTo(code);
     }
   }
 
@@ -58,11 +61,13 @@ class CategoryMapperTest {
       // Given
       final UUID categoryId = UUID.randomUUID();
       final String name = "Makeup";
+      final String code = "LIPS";
       final EntityId entityId = new EntityId(categoryId);
-      final Category domain = new Category(entityId, name);
+      final Category domain = new Category(entityId, name, code);
       final CategoryEntity expectedEntity = new CategoryEntity();
       expectedEntity.setCategoryId(categoryId);
       expectedEntity.setName(name);
+      expectedEntity.setCode(code);
 
       when(entityIdMapper.toUUID(entityId)).thenReturn(categoryId);
 
@@ -73,6 +78,7 @@ class CategoryMapperTest {
       assertThat(result).isNotNull();
       assertThat(result.getCategoryId()).isEqualTo(expectedEntity.getCategoryId());
       assertThat(result.getName()).isEqualTo(expectedEntity.getName());
+      assertThat(result.getCode()).isEqualTo(expectedEntity.getCode());
     }
   }
 

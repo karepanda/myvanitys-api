@@ -64,7 +64,7 @@ class CreateProductTest {
         userId
     );
 
-    category = new Category(categoryId, "Test Category");
+    category = new Category(categoryId, "Test Category", "FACE");
   }
 
   @Test

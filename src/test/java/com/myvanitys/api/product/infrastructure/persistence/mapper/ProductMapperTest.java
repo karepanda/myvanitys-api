@@ -62,7 +62,7 @@ class ProductMapperTest {
     productEntity.setColorHex("#000000");
     productEntity.setCategoryId(categoryId);
 
-    category = new Category(new EntityId(categoryId), "TestCategory");
+    category = new Category(new EntityId(categoryId), "TestCategory", "FACE");
 
     reviews = new ArrayList<>(
         List.of(

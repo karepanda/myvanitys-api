@@ -14,19 +14,22 @@ class CategoryTest {
   void testCategoryInitialization() {
     EntityId id = new EntityId(UUID.randomUUID());
     String name = "Skincare";
-    Category category = new Category(id, name);
+    String code = "SERUM";
+    Category category = new Category(id, name, code);
 
     assertNotNull(category.categoryId());
     assertEquals(name, category.name());
+    assertEquals(code, category.code());
   }
 
   @Test
   void testToString() {
     EntityId id = new EntityId(UUID.randomUUID());
     String name = "Makeup";
-    Category category = new Category(id, name);
+    String code = "LIPS";
+    Category category = new Category(id, name, code);
 
-    String expected = "Category{" + "id=" + id + ", name='" + name + "'}";
+    String expected = "Category{" + "id=" + id + ", name='" + name + "', code='" + code + "'}";
     assertEquals(expected, category.toString());
   }
 }

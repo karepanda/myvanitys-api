@@ -24,7 +24,7 @@
   <properties>
     <java.version>25</java.version>
     <byte-buddy.version>1.17.7</byte-buddy.version>
-    <myvanitys-api-spec.version>1.11.0-SNAPSHOT</myvanitys-api-spec.version>
+    <myvanitys-api-spec.version>1.12.0-SNAPSHOT</myvanitys-api-spec.version>
     <!-- Security overrides: Spring Boot 4.1.1 is the latest 4.1.x release, so the remaining
          flagged CVEs are cleared by pinning these BOM properties above the versions it manages. -->
     <!-- Tomcat 11.0.24 (Spring Boot 4.1.1 default) has three critical CVEs
