@@ -9,9 +9,7 @@ import java.util.UUID;
 
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.model.Category;
-import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
-import org.hibernate.PropertyValueException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,32 +44,6 @@ class CategoryRepositoryAdapterIT extends AbstractProductPersistenceAdapterIT {
         .filteredOn(candidate -> candidate.categoryId().getValue().equals(SEEDED_FACE_CATEGORY_ID))
         .singleElement()
         .satisfies(found -> assertThat(found.name()).isEqualTo(SEEDED_CATEGORY_NAME));
-  }
-
-  @Test
-  @DisplayName("Known defect: saving a new category through the adapter fails for its assigned generated id")
-  void givenNewCategory_whenSavedThroughAdapter_thenFailsBecauseGeneratedIdIsAlreadyAssigned() {
-    // Given
-    UUID categoryId = UUID.randomUUID();
-    String categoryName = "Adapter IT Category " + categoryId;
-    Category category = new Category(new EntityId(categoryId), categoryName, CategoryCode.FACE);
-
-    // When / Then
-    assertThatThrownBy(() -> {
-      categoryRepositoryAdapter.save(category);
-      flushAndClear();
-    })
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasCauseInstanceOf(PropertyValueException.class)
-        .satisfies(throwable -> {
-          PropertyValueException propertyValueException =
-              (PropertyValueException) throwable.getCause();
-          assertThat(propertyValueException.getMessage())
-              .contains("Detached entity with generated id")
-              .contains("uninitialized version value");
-        });
-
-    assertThat(jpaCategoryRepository.findById(categoryId)).isEmpty();
   }
 
   @Test

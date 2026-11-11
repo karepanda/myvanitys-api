@@ -57,25 +57,6 @@ class CategoryRepositoryAdapterTest {
   }
 
   @Nested
-  class save {
-
-    @Test
-    void shouldSaveCategory() {
-      // Given
-      when(categoryMapper.toEntity(category)).thenReturn(categoryEntity);
-      when(jpaCategoryRepository.save(categoryEntity)).thenReturn(categoryEntity);
-      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-
-      // When
-      Category savedCategory = target.save(category);
-
-      // Then
-      assertThat(savedCategory).isEqualTo(category);
-      verify(jpaCategoryRepository).save(categoryEntity);
-    }
-  }
-
-  @Nested
   class findById {
 
     @Test

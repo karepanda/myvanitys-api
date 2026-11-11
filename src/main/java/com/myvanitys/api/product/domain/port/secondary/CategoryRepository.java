@@ -33,14 +33,6 @@ public interface CategoryRepository {
   List<Category> findAll();
 
   /**
-   * Save a category
-   *
-   * @param category the category to save
-   * @return the saved category
-   */
-  Category save(Category category);
-
-  /**
    * Delete a category by its ID
    *
    * @param categoryId the category ID to delete
