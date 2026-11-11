@@ -2,6 +2,7 @@ package com.myvanitys.api.product.application.usecase;
 
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,8 +32,8 @@ class FindCategoriesTest {
         @Test
         void when_repositoryReturnsCategories_then_returnsListOfCategories() {
             // Arrange
-            final Category face = new Category(new EntityId(UUID.randomUUID()), "Face", "FACE");
-            final Category eyes = new Category(new EntityId(UUID.randomUUID()), "Eyes", "EYES");
+            final Category face = new Category(new EntityId(UUID.randomUUID()), "Face", CategoryCode.FACE);
+            final Category eyes = new Category(new EntityId(UUID.randomUUID()), "Eyes", CategoryCode.EYES);
             final List<Category> expectedCategories = List.of(face, eyes);
 
             when(categoryRepository.findAll()).thenReturn(expectedCategories);

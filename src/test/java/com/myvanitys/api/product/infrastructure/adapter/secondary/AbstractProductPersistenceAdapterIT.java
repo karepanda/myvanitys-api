@@ -11,7 +11,6 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
-import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
@@ -88,13 +87,6 @@ abstract class AbstractProductPersistenceAdapterIT extends AbstractIntegrationTe
   protected Category seededCategory() {
     return categoryRepositoryAdapter.findByName(SEEDED_CATEGORY_NAME)
         .orElseThrow(() -> new IllegalStateException("Flyway seed category not found: " + SEEDED_CATEGORY_NAME));
-  }
-
-  protected CategoryEntity insertCategoryDirectly(String name) {
-    CategoryEntity entity = new CategoryEntity();
-    entity.setName(name);
-    entity.setCode("TEST-" + UUID.randomUUID());
-    return jpaCategoryRepository.saveAndFlush(entity);
   }
 
   protected Product persistProduct(Category category, String name, String brand, String colorHex) {

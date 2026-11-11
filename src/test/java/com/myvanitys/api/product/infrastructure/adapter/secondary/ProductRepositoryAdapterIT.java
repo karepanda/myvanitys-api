@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
@@ -64,7 +65,7 @@ class ProductRepositoryAdapterIT extends AbstractProductPersistenceAdapterIT {
   void givenMissingCategory_whenProductSaved_thenRejectedWithoutInsert() {
     // Given
     UUID missingCategoryId = UUID.randomUUID();
-    Category missingCategory = new Category(new EntityId(missingCategoryId), "Missing Category " + missingCategoryId, "FACE");
+    Category missingCategory = new Category(new EntityId(missingCategoryId), "Missing Category " + missingCategoryId, CategoryCode.FACE);
     Product product = Product.reconstruct(
         EntityId.newId(), unique("Missing Category Product"), "AdapterBrand", missingCategory, "#000000",
         List.of(), Set.of());

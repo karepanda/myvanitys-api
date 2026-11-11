@@ -27,7 +27,7 @@ class ProductTest {
   void setUp() {
     productId = new EntityId(UUID.randomUUID());
     userId = new EntityId(UUID.randomUUID());
-    category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
+    category = new Category(new EntityId(UUID.randomUUID()), "Test Category", CategoryCode.FACE);
 
     product = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
   }
@@ -47,7 +47,7 @@ class ProductTest {
   @Test
   void shouldUpdateProductDetails() {
     // Given
-    Category newCategory = new Category(new EntityId(UUID.randomUUID()), "New Category", "LIPS");
+    Category newCategory = new Category(new EntityId(UUID.randomUUID()), "New Category", CategoryCode.LIPS);
 
     // When
     product.updateDetails("Updated Product", "Updated Brand", newCategory, "#000000");

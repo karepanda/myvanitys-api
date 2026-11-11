@@ -44,6 +44,7 @@ import com.myvanitys.api.product.application.usecase.FindProductByTerm;
 import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
@@ -192,8 +193,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     EntityId entityId = new EntityId(userId);
     System.out.println("EntityId value: " + entityId.getValue());
 
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
-    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Test Category2", "EYES");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", CategoryCode.FACE);
+    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Test Category2", CategoryCode.EYES);
 
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
@@ -343,7 +344,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     EntityId entityId = new EntityId(userId);
     System.out.println("EntityId value: " + entityId.getValue());
 
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", CategoryCode.FACE);
 
     EntityId productId = new EntityId(UUID.randomUUID());
     EntityId reviewId = new EntityId(UUID.randomUUID());
@@ -415,7 +416,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
     EntityId entityUserId = new EntityId(userId);
     EntityId entityProductId = new EntityId(productId);
 
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", CategoryCode.FACE);
 
     Set<ProductUserRelation> relations = new HashSet<>();
     relations.add(ProductUserRelation.create(entityProductId, entityUserId));
@@ -520,7 +521,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", CategoryCode.FACE);
 
     List<Product> domainProducts = List.of(
         Product.reconstruct(
@@ -590,7 +591,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
-    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", "FACE");
+    Category category = new Category(new EntityId(UUID.randomUUID()), "Test Category", CategoryCode.FACE);
 
     List<Product> domainProducts = List.of(
         Product.reconstruct(
@@ -656,8 +657,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId productId1 = new EntityId(UUID.randomUUID());
     EntityId productId2 = new EntityId(UUID.randomUUID());
-    Category category1 = new Category(new EntityId(UUID.randomUUID()), "Category 1", "FACE");
-    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Category 2", "EYES");
+    Category category1 = new Category(new EntityId(UUID.randomUUID()), "Category 1", CategoryCode.FACE);
+    Category category2 = new Category(new EntityId(UUID.randomUUID()), "Category 2", CategoryCode.EYES);
 
     List<Product> domainProducts = List.of(
         Product.reconstruct(
@@ -782,8 +783,8 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId faceId = new EntityId(UUID.randomUUID());
     EntityId eyesId = new EntityId(UUID.randomUUID());
-    Category face = new Category(faceId, "Face", "FACE");
-    Category eyes = new Category(eyesId, "Eyes", "EYES");
+    Category face = new Category(faceId, "Face", CategoryCode.FACE);
+    Category eyes = new Category(eyesId, "Eyes", CategoryCode.EYES);
     List<Category> domainCategories = List.of(face, eyes);
 
     List<CategoryResponse> responseCategories = List.of(
@@ -845,7 +846,7 @@ class ProductControllerTestIT extends AbstractIntegrationTest {
 
     EntityId productId = new EntityId(UUID.randomUUID());
     EntityId categoryEntityId = new EntityId(categoryId);
-    Category category = new Category(categoryEntityId, "Test Category", "FACE");
+    Category category = new Category(categoryEntityId, "Test Category", CategoryCode.FACE);
 
     Product createdProduct = Product.reconstruct(
         productId,

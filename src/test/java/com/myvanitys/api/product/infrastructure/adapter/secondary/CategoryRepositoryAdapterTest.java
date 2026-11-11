@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.secondary.CategoryRepositoryAdapter;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
@@ -46,7 +47,7 @@ class CategoryRepositoryAdapterTest {
     categoryId = new EntityId(UUID.randomUUID());
 
     // Initialize domain objects
-    category = new Category(categoryId, "Test Category", "FACE");
+    category = new Category(categoryId, "Test Category", CategoryCode.FACE);
 
     // Initialize entity objects
     categoryEntity = new CategoryEntity();
@@ -208,7 +209,7 @@ class CategoryRepositoryAdapterTest {
       Category expectedCategory = new Category(
           new EntityId(newEntity.getCategoryId()),
           newEntity.getName(),
-          newEntity.getCode()
+          CategoryCode.FACE
       );
       
       when(categoryMapper.toDomain(newEntity)).thenReturn(expectedCategory);

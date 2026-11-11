@@ -39,6 +39,7 @@ import com.myvanitys.api.product.application.port.primary.FindProductUserUseCase
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.application.usecase.FindProductByTerm;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
 
@@ -318,8 +319,8 @@ class ProductControllerTest {
   @Test
   void getProductCategories_shouldReturnMappedListWithoutAuthenticatedUser() {
     // Given
-    Category face = new Category(new EntityId(UUID.randomUUID()), "Face", "FACE");
-    Category eyes = new Category(new EntityId(UUID.randomUUID()), "Eyes", "EYES");
+    Category face = new Category(new EntityId(UUID.randomUUID()), "Face", CategoryCode.FACE);
+    Category eyes = new Category(new EntityId(UUID.randomUUID()), "Eyes", CategoryCode.EYES);
     List<Category> domainCategories = List.of(face, eyes);
     CategoryResponse faceResponse = new CategoryResponse()
         .id(face.categoryId().getValue())

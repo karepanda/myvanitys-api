@@ -9,7 +9,10 @@ import java.util.UUID;
 
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
+import org.hibernate.PropertyValueException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -51,32 +54,50 @@ class CategoryRepositoryAdapterIT extends AbstractProductPersistenceAdapterIT {
     // Given
     UUID categoryId = UUID.randomUUID();
     String categoryName = "Adapter IT Category " + categoryId;
-    Category category = new Category(new EntityId(categoryId), categoryName, "FACE");
+    Category category = new Category(new EntityId(categoryId), categoryName, CategoryCode.FACE);
 
     // When / Then
     assertThatThrownBy(() -> {
       categoryRepositoryAdapter.save(category);
       flushAndClear();
-    }).isInstanceOf(DataIntegrityViolationException.class);
+    })
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasCauseInstanceOf(PropertyValueException.class)
+        .satisfies(throwable -> {
+          PropertyValueException propertyValueException =
+              (PropertyValueException) throwable.getCause();
+          assertThat(propertyValueException.getMessage())
+              .contains("Detached entity with generated id")
+              .contains("uninitialized version value");
+        });
 
     assertThat(jpaCategoryRepository.findById(categoryId)).isEmpty();
   }
 
   @Test
-  @DisplayName("Given a persisted category without products when deleted through the adapter then the row is gone")
-  void givenPersistedCategoryWithoutProducts_whenDeleteById_thenRowIsRemoved() {
+  @DisplayName("Given the fixed category catalog when deleting a referenced category then the delete is rejected")
+  void givenReferencedCategory_whenDeleteById_thenRejectedByForeignKey() {
     // Given
-    CategoryEntity saved = insertCategoryDirectly("Adapter IT Deletable " + UUID.randomUUID());
-    UUID categoryId = saved.getCategoryId();
-    flushAndClear();
-    assertThat(jpaCategoryRepository.findById(categoryId)).isPresent();
+    Category seeded = seededCategory();
+    UUID categoryId = seeded.categoryId().getValue();
 
-    // When
-    categoryRepositoryAdapter.deleteById(new EntityId(categoryId));
-    flushAndClear();
+    // When / Then
+    assertThatThrownBy(() -> {
+      categoryRepositoryAdapter.deleteById(new EntityId(categoryId));
+      flushAndClear();
+    }).isInstanceOf(ConstraintViolationException.class);
+  }
 
-    // Then
-    assertThat(categoryRepositoryAdapter.findById(new EntityId(categoryId))).isEmpty();
-    assertThat(jpaCategoryRepository.findById(categoryId)).isEmpty();
+  @Test
+  @DisplayName("Given an invalid category code when persisted directly then the CHECK constraint rejects it")
+  void givenInvalidCode_whenPersistedDirectly_thenCheckConstraintRejectsIt() {
+    // Given
+    CategoryEntity entity = new CategoryEntity();
+    entity.setName("Invalid Code Category " + UUID.randomUUID());
+    entity.setCode("INVALID");
+
+    // When / Then
+    assertThatThrownBy(() -> jpaCategoryRepository.saveAndFlush(entity))
+        .isInstanceOf(DataIntegrityViolationException.class);
   }
 }

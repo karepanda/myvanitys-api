@@ -47,7 +47,7 @@ public interface ProductResponseMapper {
    */
   @Mapping(source = "categoryId.value", target = "id")
   @Mapping(source = "name", target = "name")
-  @Mapping(source = "code", target = "code", qualifiedByName = "stringToCodeEnum")
+  @Mapping(source = "code", target = "code")
   CategoryResponse toCategoryResponse(Category category);
 
   /**
@@ -93,13 +93,5 @@ public interface ProductResponseMapper {
   @Named("intToValidatedFloat")
   default Float intToValidatedFloat(int value) {
     return value > 0 ? (float) value : null;
-  }
-
-  /**
-   * Method to handle conversions from a stable category code String to the generated enum
-   */
-  @Named("stringToCodeEnum")
-  default CategoryResponse.CodeEnum stringToCodeEnum(String code) {
-    return code == null ? null : CategoryResponse.CodeEnum.fromValue(code);
   }
 }

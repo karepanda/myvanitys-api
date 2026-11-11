@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import com.myvanitys.api.product.domain.exception.CategoryNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
@@ -87,7 +88,7 @@ class ProductRepositoryAdapterTest {
   void setUp() {
     categoryId = UUID.randomUUID();
     categoryEntityId = new EntityId(categoryId);
-    category = new Category(categoryEntityId, "Test Category", "FACE");
+    category = new Category(categoryEntityId, "Test Category", CategoryCode.FACE);
 
     review = Review.createWithExistingId(
         EntityId.newId(),
