@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
@@ -62,7 +63,7 @@ class ProductMapperTest {
     productEntity.setColorHex("#000000");
     productEntity.setCategoryId(categoryId);
 
-    category = new Category(new EntityId(categoryId), "TestCategory");
+    category = new Category(new EntityId(categoryId), "TestCategory", CategoryCode.FACE);
 
     reviews = new ArrayList<>(
         List.of(

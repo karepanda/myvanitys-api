@@ -11,6 +11,7 @@ import com.myvanitys.api.model.v1.CategoryResponse;
 import com.myvanitys.api.model.v1.ProductResponse;
 import com.myvanitys.api.model.v1.ReviewResponse;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
@@ -36,7 +37,7 @@ class ProductResponseMapperTest {
     @Test
     void when_validProduct_then_convertToResponseCorrectly() {
       // Arrange
-      Category category = new Category(EntityId.newId(), "Category Name");
+      Category category = new Category(EntityId.newId(), "Category Name", CategoryCode.FACE);
 
       Product product = Product.newProduct("Product Name", "Brand Name", "#FFFFFF");
       product.assignCategory(category);
@@ -59,7 +60,7 @@ class ProductResponseMapperTest {
       EntityId userId = EntityId.newId();
       EntityId productUserId = EntityId.newId(); // ID de la relación producto-usuario
 
-      Category category = new Category(EntityId.newId(), "Category Name");
+      Category category = new Category(EntityId.newId(), "Category Name", CategoryCode.FACE);
 
       // Crear review manualmente
       ReviewDetails reviewDetails = ReviewDetails.of(5, "Excellent product!",
@@ -121,7 +122,7 @@ class ProductResponseMapperTest {
     void when_validCategory_then_convertToCategoryResponseCorrectly() {
       // Arrange
       EntityId categoryId = EntityId.newId();
-      Category category = new Category(categoryId, "Test Category");
+      Category category = new Category(categoryId, "Test Category", CategoryCode.LIPS);
 
       // Act
       CategoryResponse response = mapper.toCategoryResponse(category);
@@ -130,6 +131,31 @@ class ProductResponseMapperTest {
       assertThat(response).isNotNull();
       assertThat(response.getId()).isEqualTo(categoryId.getValue());
       assertThat(response.getName()).isEqualTo("Test Category");
+      assertThat(response.getCode()).isEqualTo(CategoryResponse.CodeEnum.LIPS);
+    }
+
+    @Test
+    void when_validCategoryList_then_convertToCategoryResponseListCorrectly() {
+      // Arrange
+      Category face = new Category(EntityId.newId(), "Face", CategoryCode.FACE);
+      Category eyes = new Category(EntityId.newId(), "Eyes", CategoryCode.EYES);
+
+      // Act
+      List<CategoryResponse> responses = mapper.toCategoryResponseList(List.of(face, eyes));
+
+      // Assert
+      assertThat(responses).hasSize(2);
+      assertThat(responses.get(0).getCode()).isEqualTo(CategoryResponse.CodeEnum.FACE);
+      assertThat(responses.get(1).getCode()).isEqualTo(CategoryResponse.CodeEnum.EYES);
+    }
+
+    @Test
+    void when_nullCategoryList_then_returnNullList() {
+      // Act
+      List<CategoryResponse> responses = mapper.toCategoryResponseList(null);
+
+      // Assert
+      assertThat(responses).isNull();
     }
   }
 

@@ -165,62 +165,56 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
   @Test
   void shouldFindProductsByCategoryId() {
     // Given
-    CategoryEntity category1 = createSampleCategory("Electronics");
-    CategoryEntity savedCategory1 = jpaCategoryRepository.save(category1);
+    CategoryEntity face = jpaCategoryRepository.findByName("Face").orElseThrow();
+    CategoryEntity eyes = jpaCategoryRepository.findByName("Eyes").orElseThrow();
 
-    CategoryEntity category2 = createSampleCategory("Clothing");
-    CategoryEntity savedCategory2 = jpaCategoryRepository.save(category2);
-
-    ProductEntity product1 = createSampleProduct("Product 1", "Brand A", savedCategory1);
-    ProductEntity product2 = createSampleProduct("Product 2", "Brand B", savedCategory1);
-    ProductEntity product3 = createSampleProduct("Product 3", "Brand C", savedCategory2);
+    ProductEntity product1 = createSampleProduct("Product 1", "Brand A", face);
+    ProductEntity product2 = createSampleProduct("Product 2", "Brand B", face);
+    ProductEntity product3 = createSampleProduct("Product 3", "Brand C", eyes);
 
     jpaProductRepository.save(product1);
     jpaProductRepository.save(product2);
     jpaProductRepository.save(product3);
 
     // When
-    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryId(savedCategory1.getCategoryId());
+    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryId(face.getCategoryId());
 
     // Then
-    assertThat(foundProducts).hasSize(2);
     assertThat(foundProducts)
         .extracting(ProductEntity::getName)
-        .containsExactlyInAnyOrder("Product 1", "Product 2");
+        .contains("Product 1", "Product 2")
+        .doesNotContain("Product 3");
   }
 
   @Test
   void shouldFindProductsByCategoryName() {
     // Given
-    CategoryEntity category1 = createSampleCategory("Electronics");
-    CategoryEntity savedCategory1 = jpaCategoryRepository.save(category1);
+    CategoryEntity face = jpaCategoryRepository.findByName("Face").orElseThrow();
+    CategoryEntity eyes = jpaCategoryRepository.findByName("Eyes").orElseThrow();
 
-    CategoryEntity category2 = createSampleCategory("Clothing");
-    CategoryEntity savedCategory2 = jpaCategoryRepository.save(category2);
-
-    ProductEntity product1 = createSampleProduct("Product 1", "Brand A", savedCategory1);
-    ProductEntity product2 = createSampleProduct("Product 2", "Brand B", savedCategory1);
-    ProductEntity product3 = createSampleProduct("Product 3", "Brand C", savedCategory2);
+    ProductEntity product1 = createSampleProduct("Product 1", "Brand A", face);
+    ProductEntity product2 = createSampleProduct("Product 2", "Brand B", face);
+    ProductEntity product3 = createSampleProduct("Product 3", "Brand C", eyes);
 
     jpaProductRepository.save(product1);
     jpaProductRepository.save(product2);
     jpaProductRepository.save(product3);
 
     // When: Find products by category name using a join query
-    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryName("Electronics");
+    List<ProductEntity> foundProducts = jpaProductRepository.findByCategoryName("Face");
 
     // Then: Assert that the correct products are found
-    assertThat(foundProducts).hasSize(2);
     assertThat(foundProducts)
         .extracting(ProductEntity::getName)
-        .containsExactlyInAnyOrder("Product 1", "Product 2");
+        .contains("Product 1", "Product 2")
+        .doesNotContain("Product 3");
 
     // Additional verification for the second category
-    List<ProductEntity> clothingProducts = jpaProductRepository.findByCategoryName("Clothing");
-    assertThat(clothingProducts).hasSize(1);
-    assertThat(clothingProducts)
+    List<ProductEntity> eyesProducts = jpaProductRepository.findByCategoryName("Eyes");
+    assertThat(eyesProducts)
         .extracting(ProductEntity::getName)
-        .containsExactly("Product 3");
+        .contains("Product 3")
+        .doesNotContain("Product 1", "Product 2");
   }
 
   @Test
@@ -235,15 +229,10 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
   @Test
   void shouldUpdateExistingProduct() {
     // Given
-    CategoryEntity category1 = createSampleCategory("Initial Category");
-    CategoryEntity savedCategory1 = jpaCategoryRepository.save(category1);
-    jpaCategoryRepository.flush();
+    CategoryEntity face = jpaCategoryRepository.findByName("Face").orElseThrow();
+    CategoryEntity eyes = jpaCategoryRepository.findByName("Eyes").orElseThrow();
 
-    CategoryEntity category2 = createSampleCategory("Updated Category");
-    CategoryEntity savedCategory2 = jpaCategoryRepository.save(category2);
-    jpaCategoryRepository.flush();
-
-    ProductEntity product = createSampleProduct("Initial Name", "Initial Brand", savedCategory1);
+    ProductEntity product = createSampleProduct("Initial Name", "Initial Brand", face);
     ProductEntity savedProduct = jpaProductRepository.save(product);
     jpaProductRepository.flush();
 
@@ -253,7 +242,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
     // When
     savedProduct.setName("Updated Name");
     savedProduct.setBrand("Updated Brand");
-    savedProduct.setCategoryId(savedCategory2.getCategoryId());
+    savedProduct.setCategoryId(eyes.getCategoryId());
     jpaProductRepository.save(savedProduct);
     jpaProductRepository.flush();
 
@@ -264,7 +253,7 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
         .hasValueSatisfying(productEntity -> {
           assertThat(productEntity.getName()).isEqualTo("Updated Name");
           assertThat(productEntity.getBrand()).isEqualTo("Updated Brand");
-          assertThat(productEntity.getCategoryId()).isEqualTo(category2.getCategoryId());
+          assertThat(productEntity.getCategoryId()).isEqualTo(eyes.getCategoryId());
           assertThat(productEntity.getVersion()).isNotEqualTo(initialVersion);
         });
   }
@@ -323,9 +312,10 @@ class JpaProductRepositoryIT extends AbstractJpaProductTest {
   }
 
   private CategoryEntity createSampleCategory(String name) {
-    CategoryEntity category = new CategoryEntity();
-    category.setName(name);
-    return category;
+    // The category catalog is fixed to the eight Flyway-seeded rows (code is CHECK-constrained and
+    // unique), so reuse an existing seeded category instead of inserting an arbitrary one.
+    return jpaCategoryRepository.findByName("Face")
+        .orElseThrow(() -> new IllegalStateException("Seeded 'Face' category not found"));
   }
 
   private ProductEntity createSampleProduct(String name, String brand, CategoryEntity category) {

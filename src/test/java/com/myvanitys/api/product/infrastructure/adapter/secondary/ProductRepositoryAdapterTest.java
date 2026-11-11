@@ -1,31 +1,11 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.exception.CategoryNotFoundException;
-import com.myvanitys.api.product.domain.model.Category;
-import com.myvanitys.api.product.domain.model.Product;
-import com.myvanitys.api.product.domain.model.ProductUserRelation;
-import com.myvanitys.api.product.domain.model.Review;
+import com.myvanitys.api.product.domain.model.*;
 import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
 import com.myvanitys.api.product.domain.port.secondary.ReviewRepository;
-import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
 import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
@@ -35,16 +15,25 @@ import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductMapper
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ProductUserRelationMapper;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.ReviewMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
-import org.mapstruct.factory.Mappers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
+
+import java.time.Instant;
+import java.util.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductRepositoryAdapterTest {
@@ -87,7 +76,7 @@ class ProductRepositoryAdapterTest {
   void setUp() {
     categoryId = UUID.randomUUID();
     categoryEntityId = new EntityId(categoryId);
-    category = new Category(categoryEntityId, "Test Category");
+    category = new Category(categoryEntityId, "Test Category", CategoryCode.FACE);
 
     review = Review.createWithExistingId(
         EntityId.newId(),
@@ -511,7 +500,7 @@ class ProductRepositoryAdapterTest {
       // Then
       assertThat(result).hasSize(2);
 
-      final Product first = result.get(0);
+      final Product first = result.getFirst();
       assertThat(first.getReviews()).containsExactly(reviewFromUserA, reviewFromUserB);
       assertThat(first.getUserRelations()).isEmpty();
 
@@ -547,7 +536,7 @@ class ProductRepositoryAdapterTest {
       // Then
       assertThat(result).hasSize(1);
 
-      final Product product = result.get(0);
+      final Product product = result.getFirst();
       assertThat(product.getReviews()).containsExactly(reviewFromUserA, reviewFromUserB);
       assertThat(product.getUserRelations()).isEmpty();
 

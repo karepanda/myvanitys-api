@@ -47,7 +47,16 @@ public interface ProductResponseMapper {
    */
   @Mapping(source = "categoryId.value", target = "id")
   @Mapping(source = "name", target = "name")
+  @Mapping(source = "code", target = "code")
   CategoryResponse toCategoryResponse(Category category);
+
+  /**
+   * Converts a list of domain Categories to a list of CategoryResponse for the API
+   *
+   * @param categories list of domain objects
+   * @return list of API response objects
+   */
+  List<CategoryResponse> toCategoryResponseList(List<Category> categories);
 
   /**
    * Converts a domain Review object to ReviewResponse for the API

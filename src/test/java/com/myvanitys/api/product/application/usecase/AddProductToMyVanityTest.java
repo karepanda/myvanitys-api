@@ -4,6 +4,7 @@ import com.myvanitys.api.product.application.command.AddProductToMyVanityCommand
 import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductUserRepository;
@@ -48,7 +49,7 @@ class AddProductToMyVanityTest {
         command = new AddProductToMyVanityCommand(productId.getValue(), userId.getValue());
 
         final EntityId categoryId = new EntityId(UUID.randomUUID());
-        final Category category = new Category(categoryId, "Test Category");
+        final Category category = new Category(categoryId, "Test Category", CategoryCode.FACE);
 
         product = Product.reconstruct(
                 productId,

@@ -1,8 +1,5 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import java.util.List;
-import java.util.Set;
-
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.model.Category;
@@ -10,7 +7,6 @@ import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.model.ProductUserRelation;
 import com.myvanitys.api.product.domain.model.Review;
 import com.myvanitys.api.product.domain.valueobject.ReviewDetails;
-import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductRepository;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaProductUserRepository;
@@ -22,6 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * Adapter-level integration-test base that wires the real production adapter graph against a real PostgreSQL 16
@@ -87,12 +86,6 @@ abstract class AbstractProductPersistenceAdapterIT extends AbstractIntegrationTe
   protected Category seededCategory() {
     return categoryRepositoryAdapter.findByName(SEEDED_CATEGORY_NAME)
         .orElseThrow(() -> new IllegalStateException("Flyway seed category not found: " + SEEDED_CATEGORY_NAME));
-  }
-
-  protected CategoryEntity insertCategoryDirectly(String name) {
-    CategoryEntity entity = new CategoryEntity();
-    entity.setName(name);
-    return jpaCategoryRepository.saveAndFlush(entity);
   }
 
   protected Product persistProduct(Category category, String name, String brand, String colorHex) {

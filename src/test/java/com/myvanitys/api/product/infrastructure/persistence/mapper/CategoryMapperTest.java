@@ -1,6 +1,8 @@
 package com.myvanitys.api.product.infrastructure.persistence.mapper;
 
+import com.myvanitys.api.product.domain.exception.CategoryValidationException;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import org.junit.jupiter.api.Nested;
@@ -14,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,9 +36,11 @@ class CategoryMapperTest {
       // Given
       final UUID categoryId = UUID.randomUUID();
       final String name = "Skincare";
+      final String code = "SERUM";
       final CategoryEntity entity = new CategoryEntity();
       entity.setCategoryId(categoryId);
       entity.setName(name);
+      entity.setCode(code);
       final EntityId entityId = new EntityId(categoryId);
 
       when(entityIdMapper.toEntityId(categoryId)).thenReturn(entityId);
@@ -47,6 +52,20 @@ class CategoryMapperTest {
       assertThat(result).isNotNull();
       assertThat(result.categoryId()).isEqualTo(entityId);
       assertThat(result.name()).isEqualTo(name);
+      assertThat(result.code()).isEqualTo(CategoryCode.SERUM);
+    }
+
+    @Test
+    void when_givenEntityWithUnsupportedCode_then_rejectAtPersistenceBoundary() {
+      // Given
+      final CategoryEntity entity = new CategoryEntity();
+      entity.setCategoryId(UUID.randomUUID());
+      entity.setName("Invalid");
+      entity.setCode("UNKNOWN");
+
+      // When / Then
+      assertThatThrownBy(() -> target.toDomain(entity))
+          .isInstanceOf(CategoryValidationException.class);
     }
   }
 
@@ -58,11 +77,13 @@ class CategoryMapperTest {
       // Given
       final UUID categoryId = UUID.randomUUID();
       final String name = "Makeup";
+      final CategoryCode code = CategoryCode.LIPS;
       final EntityId entityId = new EntityId(categoryId);
-      final Category domain = new Category(entityId, name);
+      final Category domain = new Category(entityId, name, code);
       final CategoryEntity expectedEntity = new CategoryEntity();
       expectedEntity.setCategoryId(categoryId);
       expectedEntity.setName(name);
+      expectedEntity.setCode("LIPS");
 
       when(entityIdMapper.toUUID(entityId)).thenReturn(categoryId);
 
@@ -73,6 +94,14 @@ class CategoryMapperTest {
       assertThat(result).isNotNull();
       assertThat(result.getCategoryId()).isEqualTo(expectedEntity.getCategoryId());
       assertThat(result.getName()).isEqualTo(expectedEntity.getName());
+      assertThat(result.getCode()).isEqualTo(expectedEntity.getCode());
+    }
+
+    @Test
+    void when_givenNullCode_then_rejectAtPersistenceBoundary() {
+      assertThatThrownBy(() -> target.categoryCodeToString(null))
+          .isInstanceOf(CategoryValidationException.class)
+          .hasMessage("Category code cannot be null");
     }
   }
 

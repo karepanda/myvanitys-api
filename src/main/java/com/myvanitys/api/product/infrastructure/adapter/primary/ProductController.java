@@ -2,6 +2,7 @@ package com.myvanitys.api.product.infrastructure.adapter.primary;
 
 import com.myvanitys.api.auth.infrastructure.security.AuthenticatedUserContext;
 import com.myvanitys.api.model.v1.AddReviewRequest;
+import com.myvanitys.api.model.v1.CategoryResponse;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
 import com.myvanitys.api.model.v1.ProductSearchResponse;
@@ -14,6 +15,7 @@ import com.myvanitys.api.product.application.query.FindProductUserQuery;
 import com.myvanitys.api.product.application.usecase.AddReviewToProduct;
 import com.myvanitys.api.product.application.usecase.FindProductByTerm;
 import com.myvanitys.api.product.domain.model.Product;
+import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.infrastructure.adapter.primary.mapper.ProductResponseMapper;
 import com.myvanitys.api.common.UnauthorizedException;
@@ -48,6 +50,8 @@ public class ProductController implements ProductsApiDelegate {
   private final AddProductToMyVanityUseCase addProductToMyVanityUseCase;
 
   private final DeleteProductFromUserVanityUseCase deleteProductFromUserVanityUseCase;
+
+  private final FindCategoriesUseCase findCategoriesUseCase;
 
   @Override
   public ResponseEntity<ProductResponse> createProduct(UUID xRequestID,
@@ -168,6 +172,19 @@ public class ProductController implements ProductsApiDelegate {
     List<ProductResponse> responseProducts = productResponseMapper.toResponseList(domainProducts);
 
     return ResponseEntity.ok(responseProducts);
+  }
+
+  @Override
+  public ResponseEntity<List<CategoryResponse>> getProductCategories(
+      UUID xRequestID,
+      UUID xFlowID,
+      String acceptLanguage,
+      String userAgent) {
+
+    List<Category> categories = findCategoriesUseCase.query();
+    List<CategoryResponse> responseCategories = productResponseMapper.toCategoryResponseList(categories);
+
+    return ResponseEntity.ok(responseCategories);
   }
 
   @Override

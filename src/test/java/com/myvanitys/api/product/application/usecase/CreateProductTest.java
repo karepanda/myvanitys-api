@@ -15,6 +15,7 @@ import java.util.UUID;
 import com.myvanitys.api.common.ValidationException;
 import com.myvanitys.api.product.application.command.CreateProductCommand;
 import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.domain.model.Product;
 import com.myvanitys.api.product.domain.port.secondary.CategoryRepository;
 import com.myvanitys.api.product.domain.port.secondary.ProductRepository;
@@ -64,7 +65,7 @@ class CreateProductTest {
         userId
     );
 
-    category = new Category(categoryId, "Test Category");
+    category = new Category(categoryId, "Test Category", CategoryCode.FACE);
   }
 
   @Test

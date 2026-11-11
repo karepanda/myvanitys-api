@@ -1,17 +1,17 @@
 package com.myvanitys.api.product.domain.model;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.myvanitys.api.common.valueobject.EntityId;
+import com.myvanitys.api.product.domain.exception.ProductValidationException;
+import com.myvanitys.api.product.domain.exception.ReviewValidationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import com.myvanitys.api.product.domain.exception.ProductValidationException;
-import com.myvanitys.api.product.domain.exception.ReviewValidationException;
-import com.myvanitys.api.common.valueobject.EntityId;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ProductTest {
 
@@ -27,7 +27,7 @@ class ProductTest {
   void setUp() {
     productId = new EntityId(UUID.randomUUID());
     userId = new EntityId(UUID.randomUUID());
-    category = new Category(new EntityId(UUID.randomUUID()), "Test Category");
+    category = new Category(new EntityId(UUID.randomUUID()), "Test Category", CategoryCode.FACE);
 
     product = new Product(productId, "Test Product", "Test Brand", category, "#FFFFFF");
   }
@@ -47,7 +47,7 @@ class ProductTest {
   @Test
   void shouldUpdateProductDetails() {
     // Given
-    Category newCategory = new Category(new EntityId(UUID.randomUUID()), "New Category");
+    Category newCategory = new Category(new EntityId(UUID.randomUUID()), "New Category", CategoryCode.LIPS);
 
     // When
     product.updateDetails("Updated Product", "Updated Brand", newCategory, "#000000");
@@ -99,7 +99,7 @@ class ProductTest {
 
     // Then
     assertThat(productWithRelation.getReviews()).hasSize(1);
-    assertThat(productWithRelation.getReviews().get(0)).isEqualTo(review);
+    assertThat(productWithRelation.getReviews().getFirst()).isEqualTo(review);
     assertThat(productWithRelation.getAverageRating()).isEqualTo(4);
     assertThat(productWithRelation.getUserRelations()).hasSize(1);
   }

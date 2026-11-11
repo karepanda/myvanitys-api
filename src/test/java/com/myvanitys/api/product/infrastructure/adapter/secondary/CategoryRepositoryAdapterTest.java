@@ -1,16 +1,8 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.common.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.adapter.secondary.CategoryRepositoryAdapter;
+import com.myvanitys.api.product.domain.model.Category;
+import com.myvanitys.api.product.domain.model.CategoryCode;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.CategoryMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
@@ -21,6 +13,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CategoryRepositoryAdapterTest {
@@ -46,31 +46,13 @@ class CategoryRepositoryAdapterTest {
     categoryId = new EntityId(UUID.randomUUID());
 
     // Initialize domain objects
-    category = new Category(categoryId, "Test Category");
+    category = new Category(categoryId, "Test Category", CategoryCode.FACE);
 
     // Initialize entity objects
     categoryEntity = new CategoryEntity();
     categoryEntity.setCategoryId(categoryId.getValue());
     categoryEntity.setName("Test Category");
-  }
-
-  @Nested
-  class save {
-
-    @Test
-    void shouldSaveCategory() {
-      // Given
-      when(categoryMapper.toEntity(category)).thenReturn(categoryEntity);
-      when(jpaCategoryRepository.save(categoryEntity)).thenReturn(categoryEntity);
-      when(categoryMapper.toDomain(categoryEntity)).thenReturn(category);
-
-      // When
-      Category savedCategory = target.save(category);
-
-      // Then
-      assertThat(savedCategory).isEqualTo(category);
-      verify(jpaCategoryRepository).save(categoryEntity);
-    }
+    categoryEntity.setCode("FACE");
   }
 
   @Nested
@@ -87,8 +69,7 @@ class CategoryRepositoryAdapterTest {
 
       // Then
       assertThat(foundCategory).isPresent();
-      assertThat(foundCategory.get()).isEqualTo(category);
-    }
+      assertThat(foundCategory).contains(category);    }
   }
 
   @Nested
@@ -106,7 +87,7 @@ class CategoryRepositoryAdapterTest {
 
       // Then
       assertThat(foundCategory).isPresent();
-      assertThat(foundCategory.get()).isEqualTo(category);
+      assertThat(foundCategory).contains(category);
     }
   }
 
@@ -202,10 +183,12 @@ class CategoryRepositoryAdapterTest {
       CategoryEntity newEntity = new CategoryEntity();
       newEntity.setCategoryId(UUID.randomUUID());
       newEntity.setName("New Category");
+      newEntity.setCode("FACE");
       
       Category expectedCategory = new Category(
           new EntityId(newEntity.getCategoryId()),
-          newEntity.getName()
+          newEntity.getName(),
+          CategoryCode.FACE
       );
       
       when(categoryMapper.toDomain(newEntity)).thenReturn(expectedCategory);
