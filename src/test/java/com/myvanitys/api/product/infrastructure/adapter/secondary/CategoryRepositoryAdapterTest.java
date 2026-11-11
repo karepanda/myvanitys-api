@@ -1,17 +1,8 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
+import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.model.Category;
 import com.myvanitys.api.product.domain.model.CategoryCode;
-import com.myvanitys.api.common.valueobject.EntityId;
-import com.myvanitys.api.product.infrastructure.adapter.secondary.CategoryRepositoryAdapter;
 import com.myvanitys.api.product.infrastructure.persistence.entity.CategoryEntity;
 import com.myvanitys.api.product.infrastructure.persistence.mapper.CategoryMapper;
 import com.myvanitys.api.product.infrastructure.persistence.repository.JpaCategoryRepository;
@@ -22,6 +13,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CategoryRepositoryAdapterTest {

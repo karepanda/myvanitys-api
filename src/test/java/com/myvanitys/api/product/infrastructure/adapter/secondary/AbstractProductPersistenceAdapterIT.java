@@ -1,9 +1,5 @@
 package com.myvanitys.api.product.infrastructure.adapter.secondary;
 
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
 import com.myvanitys.api.common.AbstractIntegrationTest;
 import com.myvanitys.api.common.valueobject.EntityId;
 import com.myvanitys.api.product.domain.model.Category;
@@ -22,6 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * Adapter-level integration-test base that wires the real production adapter graph against a real PostgreSQL 16
