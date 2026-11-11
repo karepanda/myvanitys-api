@@ -69,8 +69,7 @@ class CategoryRepositoryAdapterTest {
 
       // Then
       assertThat(foundCategory).isPresent();
-      assertThat(foundCategory.get()).isEqualTo(category);
-    }
+      assertThat(foundCategory).contains(category);    }
   }
 
   @Nested
@@ -88,7 +87,7 @@ class CategoryRepositoryAdapterTest {
 
       // Then
       assertThat(foundCategory).isPresent();
-      assertThat(foundCategory.get()).isEqualTo(category);
+      assertThat(foundCategory).contains(category);
     }
   }
 

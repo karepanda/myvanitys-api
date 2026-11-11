@@ -11,6 +11,7 @@ public record Category(EntityId categoryId, String name, CategoryCode code) {
     }
   }
 
+  @SuppressWarnings("NullableProblems")
   @Override
   public String toString() {
     return "Category{" +

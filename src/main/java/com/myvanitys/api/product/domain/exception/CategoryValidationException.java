@@ -8,7 +8,4 @@ public class CategoryValidationException extends DomainException {
     super(message);
   }
 
-  public CategoryValidationException(String message, Throwable cause) {
-    super(message, cause);
-  }
 }
