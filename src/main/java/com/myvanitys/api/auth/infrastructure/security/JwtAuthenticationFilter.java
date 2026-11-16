@@ -1,25 +1,25 @@
 package com.myvanitys.api.auth.infrastructure.security;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Set;
-import java.util.UUID;
-
-import tools.jackson.databind.ObjectMapper;
-import com.myvanitys.api.model.v1.ProblemDetail;
-import com.myvanitys.api.auth.infrastructure.security.TokenService;
 import com.myvanitys.api.common.UnauthorizedException;
-
+import com.myvanitys.api.common.config.CorrelationIdFilter;
+import com.myvanitys.api.model.v1.ProblemDetail;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Centralized JWT authentication filter.
@@ -71,7 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   @Override
-  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+  protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
     try {
@@ -80,7 +80,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       authenticatedUserContext.setUserId(userId);
       filterChain.doFilter(request, response);
     } catch (UnauthorizedException ex) {
-      log.debug("Authentication rejected for {}: {}", request.getRequestURI(), ex.getMessage());
+      log.debug("Authentication rejected for {}. requestId={}, type={}",
+          request.getRequestURI(),
+          request.getAttribute(CorrelationIdFilter.CORRELATION_ID_ATTRIBUTE),
+          ex.getClass().getName());
       writeUnauthorized(request, response);
     }
   }

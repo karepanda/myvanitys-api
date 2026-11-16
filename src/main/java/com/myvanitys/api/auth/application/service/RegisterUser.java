@@ -12,6 +12,7 @@ import com.myvanitys.api.auth.domain.model.UserSession;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
 import com.myvanitys.api.auth.domain.port.secondary.TokenGenerator;
 import com.myvanitys.api.auth.domain.port.secondary.UserRepository;
+import com.myvanitys.api.common.LogSanitizer;
 import com.myvanitys.api.common.valueobject.EntityId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +39,8 @@ public class RegisterUser implements RegisterUserUseCase {
 
   @Override
   public Mono<UserRegistrationResult> execute(RegisterUserCommand command, UUID requestId, UUID flowId) {
-    log.info("Processing user registration. Provider: {}, RequestID: {}, FlowID: {}",
-        command.provider(), requestId, flowId);
+    log.info("Processing user registration. supportedProvider={}, RequestID: {}, FlowID: {}",
+        "google".equalsIgnoreCase(command.provider()), requestId, flowId);
 
     if (!"google".equalsIgnoreCase(command.provider())) {
       return Mono.error(new AuthenticationFailedException(
@@ -51,13 +52,12 @@ public class RegisterUser implements RegisterUserUseCase {
     return googleAuthClient.exchangeCodeForUserInfo(command.code(), redirectUri)
         .flatMap(googleUserInfo -> {
           log.info("Retrieved user info from Google. User ID: {}, Email: {}",
-              googleUserInfo.id(), googleUserInfo.email());
+              LogSanitizer.maskId(), LogSanitizer.maskEmail(googleUserInfo.email()));
 
           return userRepository.findByAuthorizationId(googleUserInfo.id())
-              .flatMap(existingUser -> {
-                log.warn("User with Google ID {} already exists", googleUserInfo.id());
-                return Mono.<UserRegistrationResult>error(new UserAlreadyExistsException(
-                    "User with Google ID " + googleUserInfo.id() + " already exists"));
+              .flatMap(_ -> {
+                log.warn("User with Google ID {} already exists", LogSanitizer.maskId());
+                return Mono.<UserRegistrationResult>error(new UserAlreadyExistsException("User already exists"));
               })
               .switchIfEmpty(Mono.defer(() -> createAndSaveUser(googleUserInfo, command.registrationDate())
                   .map(newUser -> {
@@ -67,7 +67,8 @@ public class RegisterUser implements RegisterUserUseCase {
                     UserSession session = new UserSession(token, newUser);
 
                     log.info("User registered successfully. User ID: {}, Email: {}",
-                        newUser.getId(), newUser.getEmail());
+                        LogSanitizer.maskId(),
+                        LogSanitizer.maskEmail(newUser.getEmail()));
 
                     return new UserRegistrationResult(session);
                   }))
@@ -77,9 +78,9 @@ public class RegisterUser implements RegisterUserUseCase {
           if (e instanceof AuthenticationFailedException || e instanceof UserAlreadyExistsException) {
             return Mono.error(e);
           } else {
-            log.error("Error during user registration: {}", e.getMessage(), e);
-            return Mono.error(
-                new AuthenticationFailedException("Failed to register user: " + e.getMessage(), e));
+            log.error("Error during user registration. RequestID: {}, FlowID: {}, type={}",
+                requestId, flowId, e.getClass().getName());
+            return Mono.error(new AuthenticationFailedException("Failed to register user", e));
           }
         });
   }
@@ -104,7 +105,7 @@ public class RegisterUser implements RegisterUserUseCase {
       );
     }
 
-    log.info("Creating new user: {}", newUser);
+    log.info("Creating new user: email={}", LogSanitizer.maskEmail(googleUserInfo.email()));
     return userRepository.save(newUser);
   }
 

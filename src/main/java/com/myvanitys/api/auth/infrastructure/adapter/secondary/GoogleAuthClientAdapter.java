@@ -1,13 +1,12 @@
 package com.myvanitys.api.auth.infrastructure.adapter.secondary;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
 import com.myvanitys.api.auth.domain.model.GoogleUserInfo;
 import com.myvanitys.api.auth.domain.port.secondary.GoogleAuthClient;
 import com.myvanitys.api.auth.infrastructure.adapter.secondary.dto.GoogleTokenResponse;
 import com.myvanitys.api.auth.infrastructure.adapter.secondary.dto.GoogleUserInfoResponse;
 import com.myvanitys.api.auth.infrastructure.config.GoogleClientProperties;
+import com.myvanitys.api.common.LogSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -17,6 +16,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
@@ -38,16 +39,16 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
     log.debug("Starting Google authentication process with authorization code");
     String effectiveRedirectUri = googleClientProperties.getRedirectUri();
 
-    // Log the redirect URI being used for debugging
-    log.debug("Using redirect URI: {}", redirectUri);
-    log.debug("Configured redirect URI: {}", effectiveRedirectUri);
+    log.debug("Google redirect configuration: requestProvided={}, configured={}",
+        redirectUri != null && !redirectUri.isBlank(),
+        effectiveRedirectUri != null && !effectiveRedirectUri.isBlank());
 
     return exchangeCodeForToken(authorizationCode, effectiveRedirectUri)
         .flatMap(tokenResponse -> fetchUserInfo(tokenResponse.getAccessToken()))
         .map(this::mapToDomainModel)
         .onErrorMap(WebClientResponseException.class, ex -> {
           log.error("Error during Google authentication: Status {}", ex.getStatusCode());
-          return new GoogleAuthException("Failed to authenticate with Google: " + ex.getMessage(), ex);
+          return new GoogleAuthException("Failed to authenticate with Google", ex);
         })
         .doOnTerminate(() -> log.debug("Google authentication process completed"));
   }
@@ -57,9 +58,9 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
 
     MultiValueMap<String, String> requestBody = getTokenRequestBody(code, redirectUri);
 
-    log.debug("Token request parameters: client_id={}, redirect_uri={}, code_length={}",
-        maskString(googleClientProperties.getClientId()),
-        redirectUri,
+    log.debug("Token request parameters: client_id={}, redirect_uri_configured={}, code_length={}",
+        LogSanitizer.maskId(),
+        redirectUri != null && !redirectUri.isBlank(),
         code != null ? code.length() : 0);
 
     return webClient.post()
@@ -70,14 +71,13 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
         .bodyToMono(GoogleTokenResponse.class)
         .onErrorResume(WebClientResponseException.class, ex -> {
           log.error("Error retrieving token from Google. Status: {}", ex.getStatusCode());
-          log.error("Response body: {}", ex.getResponseBodyAsString());
 
           try {
             JsonNode errorNode = objectMapper.readTree(ex.getResponseBodyAsString());
-            String errorCode = errorNode.path("error").asText("unknown");
-            String errorDescription = errorNode.path("error_description").asText("No description");
+            String errorCode = textOrDefault(errorNode, "error", "unknown");
+            String errorDescription = textOrDefault(errorNode, "error_description", "No description");
 
-            log.error("Google OAuth error: {} - {}", errorCode, errorDescription);
+            log.error("Google OAuth error: {}", errorCode);
 
             String detailedMessage = switch (errorCode) {
               case "invalid_grant" -> "The authorization code is invalid or has expired. Try to start the authorization process again.";
@@ -92,9 +92,8 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
             return Mono.error(new GoogleAuthException(detailedMessage, ex));
 
           } catch (Exception e) {
-            log.error("Error parsing Google's error response", e);
-            return Mono.error(
-                new GoogleAuthException("Error processing Google error response: " + ex.getResponseBodyAsString(), ex));
+            log.error("Error parsing Google's error response. type={}", e.getClass().getName());
+            return Mono.error(new GoogleAuthException("Error processing Google error response", ex));
           }
         });
   }
@@ -118,8 +117,7 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
         .retrieve()
         .bodyToMono(GoogleUserInfoResponse.class)
         .onErrorMap(WebClientResponseException.class, ex -> {
-          log.error("Error fetching user info from Google. Status: {}, Body: {}",
-              ex.getStatusCode(), ex.getResponseBodyAsString());
+          log.error("Error fetching user info from Google. Status: {}", ex.getStatusCode());
           return new GoogleAuthException("Failed to fetch user info from Google", ex);
         });
   }
@@ -127,7 +125,7 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
   private GoogleUserInfo mapToDomainModel(GoogleUserInfoResponse response) {
     if (response.getSub() == null || response.getEmail() == null || !isValidEmail(response.getEmail())) {
       log.warn("Google user info is missing required fields: id={}, email={}",
-          response.getSub(), response.getEmail());
+          LogSanitizer.maskId(), LogSanitizer.maskEmail(response.getEmail()));
       throw new GoogleAuthException("Google user information is incomplete or invalid");
     }
 
@@ -143,15 +141,8 @@ public class GoogleAuthClientAdapter implements GoogleAuthClient {
     return email != null && email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
   }
 
-  // Helper method to mask sensitive strings
-  private String maskString(String input) {
-    if (input == null) {
-      return "null";
-    }
-    if (input.length() <= 8) {
-      return "***";
-    }
-    return input.substring(0, 4) + "..." + input.substring(input.length() - 4);
+  private String textOrDefault(JsonNode parent, String fieldName, String defaultValue) {
+    return parent.path(fieldName).asString(defaultValue);
   }
 }
 

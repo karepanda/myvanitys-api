@@ -19,16 +19,19 @@ import com.myvanitys.api.auth.infrastructure.config.GoogleClientProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+@ExtendWith(OutputCaptureExtension.class)
 class GoogleAuthClientAdapterIT {
 
   private static final String TOKEN_PATH = "/token";
@@ -204,13 +207,14 @@ class GoogleAuthClientAdapterIT {
   }
 
   @Test
-  void testExchangeCodeForUserInfo_MalformedErrorResponse() {
+  void testExchangeCodeForUserInfo_MalformedErrorResponse(CapturedOutput output) {
     // Arrange: a 400 whose body cannot be parsed as JSON exercises the catch(Exception) branch.
+    String providerSecret = "synthetic-provider-secret-not-json";
     wireMockServer.stubFor(post(urlEqualTo(TOKEN_PATH))
         .willReturn(aResponse()
             .withStatus(400)
             .withHeader("Content-Type", "application/json")
-            .withBody("not-json")));
+            .withBody(providerSecret)));
 
     // Act
     Mono<GoogleUserInfo> result =
@@ -220,34 +224,14 @@ class GoogleAuthClientAdapterIT {
     StepVerifier.create(result)
         .expectErrorSatisfies(throwable -> {
           assertThat(throwable).isInstanceOf(GoogleAuthException.class);
-          assertThat(throwable.getMessage())
-              .contains("Error processing Google error response")
-              .contains("not-json");
+          assertThat(throwable.getMessage()).contains("Error processing Google error response");
           assertThat(throwable).hasCauseInstanceOf(WebClientResponseException.class);
         })
         .verify();
 
     wireMockServer.verify(postRequestedFor(urlEqualTo(TOKEN_PATH)));
     wireMockServer.verify(0, getRequestedFor(urlEqualTo(USER_INFO_PATH)));
-  }
-
-  static Stream<Arguments> maskStringScenarios() {
-    return Stream.of(
-        Arguments.of(null, "null"),
-        Arguments.of("", "***"),
-        Arguments.of("12345678", "***"),
-        Arguments.of("123456789", "1234...6789"),
-        Arguments.of("mock-client-id", "mock...t-id"));
-  }
-
-  // maskString is private and only feeds logging, so its output is not observable through the
-  // public contract. ReflectionTestUtils invokes this pure helper without starting a Spring context.
-  @ParameterizedTest(name = "maskString -> {1}")
-  @MethodSource("maskStringScenarios")
-  void maskString_masksSensitiveValues(String input, String expected) {
-    Object masked = ReflectionTestUtils.invokeMethod(googleAuthClientAdapter, "maskString", input);
-
-    assertThat(masked).isEqualTo(expected);
+    assertThat(output.getAll()).doesNotContain(providerSecret);
   }
 
   @Test

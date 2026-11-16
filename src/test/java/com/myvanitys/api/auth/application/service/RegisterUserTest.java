@@ -24,10 +24,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class RegisterUserTest {
 
   @Mock
@@ -139,14 +141,18 @@ class RegisterUserTest {
 
   @Test
   @DisplayName("Should throw AuthenticationFailedException when Google authentication fails")
-  void shouldThrowExceptionWhenGoogleAuthFails() {
+  void shouldThrowExceptionWhenGoogleAuthFails(CapturedOutput output) {
     // Arrange
+    String secret = "synthetic-provider-secret";
     when(googleAuthClient.exchangeCodeForUserInfo(authCode, defaultRedirectUri))
-        .thenReturn(Mono.error(new RuntimeException("Google API Error")));
+        .thenReturn(Mono.error(new RuntimeException(secret)));
 
     // Act & Assert
     StepVerifier.create(registerUser.execute(command, requestId, flowId))
         .expectError(AuthenticationFailedException.class)
         .verify();
+
+    org.assertj.core.api.Assertions.assertThat(output.getAll()).doesNotContain(secret);
+    org.assertj.core.api.Assertions.assertThat(output.getAll()).contains(RuntimeException.class.getName());
   }
 }

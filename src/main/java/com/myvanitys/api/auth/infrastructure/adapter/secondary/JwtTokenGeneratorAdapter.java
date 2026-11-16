@@ -65,7 +65,7 @@ public class JwtTokenGeneratorAdapter implements TokenGenerator {
       Claims claims = parseToken(token);
       return UUID.fromString(claims.getSubject());
     } catch (JwtException e) {
-      log.error("Error extracting user ID from token: {}", e.getMessage());
+      log.error("Error extracting user ID from token. type={}", e.getClass().getName());
       throw new TokenException("Invalid token");
     }
   }
@@ -79,8 +79,8 @@ public class JwtTokenGeneratorAdapter implements TokenGenerator {
 
       return JwtClaimsAdapter.fromJwtClaims(jwtClaims, issuedAt, expiresAt);
     } catch (JwtException e) {
-      log.error("Error validating token: {}", e.getMessage());
-      throw new TokenException("Invalid token: " + e.getMessage());
+      log.error("Error validating token. type={}", e.getClass().getName());
+      throw new TokenException("Invalid token");
     }
   }
 

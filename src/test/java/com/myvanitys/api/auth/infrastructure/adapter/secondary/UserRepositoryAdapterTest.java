@@ -280,7 +280,8 @@ class UserRepositoryAdapterTest {
 
       // Stable log fragments only: no timestamps, no logger formatting, no full line
       assertThat(output.getOut()).contains("Attempting to update non-existent entity");
-      assertThat(output.getOut()).contains(USER_ID.toString());
+      assertThat(output.getOut()).contains("***");
+      assertThat(output.getOut()).doesNotContain(USER_ID.toString());
     }
   }
 
@@ -290,7 +291,7 @@ class UserRepositoryAdapterTest {
     private static final UUID USER_ID = UUID.fromString("9d7e4c10-5a6b-4f7c-8e2d-3b1a0c9f8e40");
 
     @Test
-    void when_repositoryThrowsOptimisticLockingFailure_then_sameExceptionPropagates() {
+    void when_repositoryThrowsOptimisticLockingFailure_then_sameExceptionPropagates(CapturedOutput output) {
       // Arrange
       final UserEntity existingEntity = new UserEntity();
       existingEntity.setUserId(USER_ID);
@@ -319,6 +320,8 @@ class UserRepositoryAdapterTest {
 
       verify(jpaUserRepository).findById(USER_ID);
       verify(jpaUserRepository).save(any(UserEntity.class));
+      assertThat(output.getOut()).contains(failure.getClass().getName());
+      assertThat(output.getOut()).doesNotContain(failure.getMessage());
     }
   }
 }

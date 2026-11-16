@@ -1,24 +1,23 @@
 package com.myvanitys.api.common.config;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import com.myvanitys.api.auth.infrastructure.config.GoogleClientProperties;
+import com.myvanitys.api.common.LogSanitizer;
 import lombok.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+@Slf4j
 @Component
 public class ApplicationStartupLogger implements ApplicationListener<ApplicationStartedEvent> {
 
-  private static final Logger log = LoggerFactory.getLogger(ApplicationStartupLogger.class);
-
-  private final Environment env;
+    private final Environment env;
 
   private final GoogleClientProperties googleClientProperties;
 
@@ -95,20 +94,10 @@ public class ApplicationStartupLogger implements ApplicationListener<Application
             ----------------------------------------------------------
             \tGOOGLE OAUTH CONFIGURATION:
             \tClient ID: \t{}
-            \tRedirect URI: \t{}
+            \tRedirect URI configured: \t{}
             ----------------------------------------------------------""",
-        maskIfNotNull(googleClientProperties.getClientId()),
-        googleClientProperties.getRedirectUri()
+        LogSanitizer.maskId(),
+        googleClientProperties.getRedirectUri() != null && !googleClientProperties.getRedirectUri().isBlank()
     );
-  }
-
-  private String maskIfNotNull(String value) {
-    if (value == null) {
-      return "Not configured";
-    }
-    if (value.length() <= 8) {
-      return "***";
-    }
-    return value.substring(0, 4) + "..." + value.substring(value.length() - 4);
   }
 }
