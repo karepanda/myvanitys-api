@@ -13,7 +13,6 @@ import java.util.UUID;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-import com.myvanitys.api.auth.infrastructure.security.TokenService;
 import com.myvanitys.api.common.UnauthorizedException;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -84,6 +83,44 @@ class JwtAuthenticationFilterTest {
   }
 
   @Test
+  void shouldSkipActuatorLivenessProbe() throws Exception {
+    MockHttpServletRequest request = request("GET", "/actuator/health/liveness");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockFilterChain chain = new MockFilterChain();
+
+    filter.doFilter(request, response, chain);
+
+    assertEquals(200, response.getStatus());
+    verify(tokenService, never()).extractUserId(anyString());
+  }
+
+  @Test
+  void shouldSkipActuatorReadinessProbe() throws Exception {
+    MockHttpServletRequest request = request("GET", "/actuator/health/readiness");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockFilterChain chain = new MockFilterChain();
+
+    filter.doFilter(request, response, chain);
+
+    assertEquals(200, response.getStatus());
+    verify(tokenService, never()).extractUserId(anyString());
+  }
+
+  @Test
+  void shouldRequireAuthenticationForNonHealthActuatorEndpoint() throws Exception {
+    MockHttpServletRequest request = request("GET", "/actuator/env");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockFilterChain chain = new MockFilterChain();
+
+    when(tokenService.extractUserId(null)).thenThrow(new UnauthorizedException("No bearer token found"));
+
+    filter.doFilter(request, response, chain);
+
+    assertEquals(401, response.getStatus());
+    assertNull(chain.getRequest());
+  }
+
+  @Test
   void shouldSkipCorsPreflightOptionsRequest() throws Exception {
     MockHttpServletRequest request = request("OPTIONS", "/api/v1/products");
     MockHttpServletResponse response = new MockHttpServletResponse();
@@ -110,7 +147,7 @@ class JwtAuthenticationFilterTest {
 
     JsonNode body = objectMapper.readTree(response.getContentAsByteArray());
     assertEquals(401, body.get("status").asInt());
-    assertEquals("Authentication Required", body.get("title").asText());
+    assertEquals("Authentication Required", body.get("title").asString());
   }
 
   @Test
