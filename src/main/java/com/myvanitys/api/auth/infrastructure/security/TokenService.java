@@ -28,10 +28,10 @@ public class TokenService {
     try {
       return tokenGenerator.extractUserId(token);
     } catch (TokenException e) {
-      log.warn("Token validation failed: {}", e.getMessage());
-      throw new UnauthorizedException("Unauthorized: " + e.getMessage());
+      log.warn("Token validation failed. type={}", e.getClass().getName());
+      throw new UnauthorizedException("Unauthorized: Invalid token");
     } catch (Exception e) {
-      log.error("Unexpected error validating token: {}", e.getMessage(), e);
+      log.error("Unexpected error validating token. type={}", e.getClass().getName());
       throw new UnauthorizedException("Authentication error");
     }
   }
@@ -48,7 +48,7 @@ public class TokenService {
       tokenGenerator.validateToken(token);
       return true;
     } catch (Exception e) {
-      log.debug("Token validation failed: {}", e.getMessage());
+      log.debug("Token validation failed. type={}", e.getClass().getName());
       return false;
     }
   }

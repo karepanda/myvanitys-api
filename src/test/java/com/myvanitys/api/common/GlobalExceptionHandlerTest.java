@@ -1,10 +1,6 @@
 package com.myvanitys.api.common;
 
-import com.myvanitys.api.auth.domain.exception.AuthenticationFailedException;
-import com.myvanitys.api.auth.domain.exception.GoogleAuthException;
-import com.myvanitys.api.auth.domain.exception.UserAlreadyExistsException;
-import com.myvanitys.api.auth.domain.exception.UserNotFoundException;
-import com.myvanitys.api.auth.domain.exception.UserRegistrationFailedException;
+import com.myvanitys.api.common.config.CorrelationIdFilter;
 import com.myvanitys.api.model.v1.ProblemDetail;
 import com.myvanitys.api.product.domain.exception.ProductAlreadyInVanityException;
 import com.myvanitys.api.product.domain.exception.ProductNotFoundException;
@@ -14,9 +10,12 @@ import com.myvanitys.api.product.infrastructure.exception.DatabaseException;
 import com.myvanitys.api.product.infrastructure.exception.RepositoryResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.MDC;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 
 import java.net.URI;
@@ -26,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(OutputCaptureExtension.class)
 class GlobalExceptionHandlerTest {
     private static final URI VALIDATION_ERROR_TYPE =
         URI.create("https://api.myvanitys.com/problems/validation-error");
@@ -40,19 +40,15 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleMethodArgumentNotValidException_DebeRetornarBadRequest() {
-        // Arrange
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        when(ex.getMessage()).thenReturn("error de validación");
-
         // Act
-        ResponseEntity<ProblemDetail> response = exceptionHandler.handleValidationExceptions(ex);
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleValidationExceptions();
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ProblemDetail body = assertAndGetConsistentBody(response);
         assertEquals(400, body.getStatus());
         assertEquals("Validation Error", body.getTitle());
-        assertDetailContains(body, "error de validación");
+        assertEquals("Invalid input data", body.getDetail());
     }
 
     @Test
@@ -137,11 +133,8 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleUnauthorizedException_DebeRetornarUnauthorized() {
-        // Arrange
-        UnauthorizedException ex = new UnauthorizedException("No autorizado");
-
         // Act
-        ResponseEntity<ProblemDetail> response = exceptionHandler.handleMissingHeaderExceptions(ex);
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleUnauthorizedException();
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -152,98 +145,103 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleGoogleAuthException_DebeRetornarNotFound() {
-        // Arrange
-        GoogleAuthException ex = new GoogleAuthException("Error de autorización con Google");
-
         // Act
-        ResponseEntity<ProblemDetail> response = exceptionHandler.handleMissingHeaderExceptions(ex);
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleGoogleAuthException();
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         ProblemDetail body = assertAndGetConsistentBody(response);
         assertEquals(404, body.getStatus());
         assertEquals("Google Authorization Error", body.getTitle());
-        assertDetailContains(body, "Error de autorización con Google");
+        assertEquals("Google authentication failed", body.getDetail());
+        assertDetailDoesNotContain(body, "Error de autorización con Google");
     }
 
     @Test
-    void handleRuntimeException_DebeRetornarInternalServerError() {
+    void handleRuntimeException_DebeRetornarInternalServerError(CapturedOutput output) {
         // Arrange
-        RuntimeException ex = new RuntimeException("Error interno");
+        String secret = "synthetic-secret-runtime-message";
+        String requestId = UUID.randomUUID().toString();
+        RuntimeException ex = new RuntimeException(secret);
 
         // Act
-        ResponseEntity<ProblemDetail> response = exceptionHandler.handleRuntimeExceptions(ex);
+        MDC.put(CorrelationIdFilter.CORRELATION_ID_MDC_KEY, requestId);
+        ResponseEntity<ProblemDetail> response;
+        try {
+            response = exceptionHandler.handleRuntimeExceptions(ex);
+        } finally {
+            MDC.remove(CorrelationIdFilter.CORRELATION_ID_MDC_KEY);
+        }
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         ProblemDetail body = assertAndGetConsistentBody(response);
         assertEquals(500, body.getStatus());
         assertEquals("Internal Server Error", body.getTitle());
-        assertDetailContains(body, "Error interno");
+        assertEquals("An unexpected error occurred", body.getDetail());
+        assertDetailDoesNotContain(body, secret);
+        assertTrue(output.getAll().contains(RuntimeException.class.getName()));
+        assertTrue(output.getAll().contains(requestId));
+        assertFalse(output.getAll().contains(secret));
     }
 
     @Test
     void handleUserNotFoundException_DebeRetornarUnauthorized() {
-        // Arrange
-        UserNotFoundException ex = new UserNotFoundException("Usuario no registrado");
-
         // Act
-        ResponseEntity<ProblemDetail> response = exceptionHandler.handleMissingHeaderExceptions(ex);
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleUserNotFoundException();
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         ProblemDetail body = assertAndGetConsistentBody(response);
         assertEquals(401, body.getStatus());
         assertEquals("Authorization Error", body.getTitle());
-        assertDetailContains(body, "Usuario no registrado");
+        assertEquals("User not registered in the system", body.getDetail());
+        assertDetailDoesNotContain(body, "Usuario no registrado");
     }
 
     @Test
     void handleUserAlreadyExistsException_DebeRetornarConflict() {
-        // Arrange
-        UserAlreadyExistsException ex = new UserAlreadyExistsException("El usuario ya existe");
-
         // Act
-        ResponseEntity<ProblemDetail> response = exceptionHandler.handleUserAlreadyExistsException(ex);
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleUserAlreadyExistsException();
 
         // Assert
     assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
     ProblemDetail body = assertAndGetConsistentBody(response);
     assertEquals(409, body.getStatus());
     assertEquals("User Already Exists", body.getTitle());
-    assertDetailContains(body, "El usuario ya existe");
+    assertEquals("User already exists", body.getDetail());
+    assertDetailDoesNotContain(body, "El usuario ya existe");
   }
 
   @Test
   void handleUserRegistrationFailedException_DebeRetornarInternalServerError() {
     // Arrange
-    UserRegistrationFailedException ex = new UserRegistrationFailedException("User registration failed");
+    String secret = "synthetic-registration-secret";
 
     // Act
-    ResponseEntity<ProblemDetail> response = exceptionHandler.handleUserRegistrationFailedException(ex);
+    ResponseEntity<ProblemDetail> response = exceptionHandler.handleUserRegistrationFailedException();
 
     // Assert
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     ProblemDetail body = assertAndGetConsistentBody(response);
     assertEquals(500, body.getStatus());
     assertEquals("Internal Server Error", body.getTitle());
-    assertDetailContains(body, "User registration failed");
+    assertEquals("User registration failed", body.getDetail());
+    assertDetailDoesNotContain(body, secret);
   }
 
     @Test
     void handleAuthenticationFailedException_DebeRetornarUnauthorized() {
-        // Arrange
-        AuthenticationFailedException ex = new AuthenticationFailedException("Credenciales inválidas");
-
         // Act
-        ResponseEntity<ProblemDetail> response = exceptionHandler.handleAuthenticationFailedException(ex);
+        ResponseEntity<ProblemDetail> response = exceptionHandler.handleAuthenticationFailedException();
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         ProblemDetail body = assertAndGetConsistentBody(response);
         assertEquals(401, body.getStatus());
         assertEquals("Authentication Error", body.getTitle());
-        assertDetailContains(body, "Credenciales inválidas");
+        assertEquals("Authentication failed", body.getDetail());
+        assertDetailDoesNotContain(body, "Credenciales inválidas");
     }
 
     @Test
@@ -348,6 +346,15 @@ class GlobalExceptionHandlerTest {
                 () -> "Expected detail to contain: " + expected + ", but was: " + detail
             );
         }
+    }
+
+    private void assertDetailDoesNotContain(ProblemDetail body, String unexpectedFragment) {
+        String detail = body.getDetail();
+        assertNotNull(detail, "Problem detail must not be null");
+        assertFalse(
+            detail.contains(unexpectedFragment),
+            () -> "Expected detail not to contain: " + unexpectedFragment + ", but was: " + detail
+        );
     }
 
 }

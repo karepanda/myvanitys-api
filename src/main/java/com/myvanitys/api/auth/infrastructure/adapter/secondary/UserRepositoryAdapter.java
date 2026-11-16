@@ -4,6 +4,7 @@ import com.myvanitys.api.auth.domain.model.User;
 import com.myvanitys.api.auth.domain.port.secondary.UserRepository;
 import com.myvanitys.api.auth.infrastructure.persistence.entity.UserEntity;
 import com.myvanitys.api.auth.infrastructure.persistence.repository.JpaUserRepository;
+import com.myvanitys.api.common.LogSanitizer;
 import com.myvanitys.api.common.valueobject.EntityId;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,8 @@ public class UserRepositoryAdapter implements UserRepository {
 
   @Override
   public Mono<User> save(User user) {
-    log.debug("Saving user: {}", user);
+    log.debug("Saving user. userId={}, authorizationId={}, email={}",
+        LogSanitizer.maskId(), LogSanitizer.maskId(), LogSanitizer.maskEmail(user.getEmail()));
 
     boolean isNew = user.getId() == null;
 
@@ -34,20 +36,26 @@ public class UserRepositoryAdapter implements UserRepository {
           user.getName(),
           user.getCreateAt() != null ? user.getCreateAt() : Instant.now()
       );
-      log.debug("Generated new ID for user: {}", user.getId());
+      log.debug("Generated new ID for user: {}", LogSanitizer.maskId());
     }
 
     UserEntity userEntity = mapToEntity(user, isNew);
-    log.debug("Mapped to entity: {}", userEntity);
+    log.debug("Mapped user entity. userId={}, authorizationId={}, email={}",
+        LogSanitizer.maskId(),
+        LogSanitizer.maskId(),
+        LogSanitizer.maskEmail(userEntity.getEmail()));
 
     return Mono.fromCallable(() -> {
           UserEntity savedEntity = jpaUserRepository.save(userEntity);
-          log.debug("Entity saved successfully: {}", savedEntity);
+          log.debug("User entity saved successfully. userId={}, authorizationId={}, email={}",
+              LogSanitizer.maskId(),
+              LogSanitizer.maskId(),
+              LogSanitizer.maskEmail(savedEntity.getEmail()));
           return savedEntity;
         })
         .map(this::mapToDomain)
         .onErrorResume(e -> {
-          log.error("Error saving user: {}", e.getMessage(), e);
+          log.error("Error saving user. type={}", e.getClass().getName());
           return Mono.error(e);
         })
         .subscribeOn(Schedulers.boundedElastic());
@@ -55,17 +63,19 @@ public class UserRepositoryAdapter implements UserRepository {
 
   @Override
   public Mono<User> findByAuthorizationId(String authorizationId) {
-    log.debug("Finding user by authorization ID: {}", authorizationId);
+    log.debug("Finding user by authorization ID: {}", LogSanitizer.maskId());
 
     return Mono.fromCallable(() -> jpaUserRepository.findByToken(authorizationId))
-        .flatMap(entity -> {
-          if (entity == null) {
-            log.debug("No user found with authorization ID: {}", authorizationId);
-            return Mono.empty();
-          }
-          log.debug("Found user entity: {}", entity);
-          return Mono.just(mapToDomain(entity));  // Convertir a Mono.just aquí
-        })
+        .doOnNext(entity ->
+          log.debug("Found user entity. userId={}, authorizationId={}, email={}",
+              LogSanitizer.maskId(),
+              LogSanitizer.maskId(),
+              LogSanitizer.maskEmail(entity.getEmail())))
+        .map(this::mapToDomain)
+        .switchIfEmpty(Mono.defer(() -> {
+          log.debug("No user found with authorization ID: {}", LogSanitizer.maskId());
+          return Mono.empty();
+        }))
         .subscribeOn(Schedulers.boundedElastic());
   }
 
@@ -83,7 +93,7 @@ public class UserRepositoryAdapter implements UserRepository {
         entity.setCreatedAt(existingEntity.getCreatedAt());
         entity.setUpdatedAt(Instant.now());
       } else {
-        log.warn("Attempting to update non-existent entity with ID: {}", user.getId().getValue());
+        log.warn("Attempting to update non-existent entity with ID: {}", LogSanitizer.maskId());
         entity.setCreatedAt(user.getCreateAt() != null ? user.getCreateAt() : Instant.now());
       }
     }

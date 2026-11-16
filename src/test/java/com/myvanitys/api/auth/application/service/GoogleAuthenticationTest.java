@@ -112,7 +112,7 @@ class GoogleAuthenticationTest {
       StepVerifier.create(target.authenticateWithGoogle(command, requestId, flowId))
           .expectErrorSatisfies(error -> {
             assertThat(error).isInstanceOf(UserNotFoundException.class);
-            assertThat(error).hasMessageContaining("user@example.com");
+            assertThat(error).hasMessageContaining("not registered");
           })
           .verify();
 

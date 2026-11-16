@@ -43,6 +43,8 @@ public class CorsConfig implements WebMvcConfigurer {
 
     config.addExposedHeader("Authorization");
 
+    config.addExposedHeader(CorrelationIdFilter.CORRELATION_ID_HEADER);
+
     config.setMaxAge(3600L);
 
     source.registerCorsConfiguration("/**", config);

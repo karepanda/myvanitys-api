@@ -142,7 +142,7 @@ class JwtTokenGeneratorAdapterTest {
     // Then - the real signature verification rejects it in both public operations
     assertThatThrownBy(() -> adapter.validateToken(rogueToken))
         .isInstanceOf(TokenException.class)
-        .hasMessageStartingWith("Invalid token:");
+        .hasMessage("Invalid token");
     assertThatThrownBy(() -> adapter.extractUserId(rogueToken))
         .isInstanceOf(TokenException.class)
         .hasMessage("Invalid token");
@@ -156,7 +156,7 @@ class JwtTokenGeneratorAdapterTest {
     // Then - parsing fails in both public operations
     assertThatThrownBy(() -> adapter.validateToken(malformedToken))
         .isInstanceOf(TokenException.class)
-        .hasMessageStartingWith("Invalid token:");
+        .hasMessage("Invalid token");
     assertThatThrownBy(() -> adapter.extractUserId(malformedToken))
         .isInstanceOf(TokenException.class)
         .hasMessage("Invalid token");
@@ -172,7 +172,7 @@ class JwtTokenGeneratorAdapterTest {
     // Then - only the expiration is rejected, proving expiry is enforced on a valid signature
     assertThatThrownBy(() -> adapter.validateToken(expiredToken))
         .isInstanceOf(TokenException.class)
-        .hasMessageStartingWith("Invalid token:");
+        .hasMessage("Invalid token");
     assertThatThrownBy(() -> adapter.extractUserId(expiredToken))
         .isInstanceOf(TokenException.class)
         .hasMessage("Invalid token");
