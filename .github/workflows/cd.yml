@@ -7,12 +7,10 @@ on:
     branches:
       - main
 
-# Add permissions to allow creating and uploading tags, and signing/pushing image attestations
+# Add permissions to allow creating and uploading tags
 permissions:
   contents: write
   packages: write
-  id-token: write
-  attestations: write
 
 jobs:
   tag-and-release:
@@ -100,6 +98,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image (immutable tag)
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -107,16 +106,31 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
-          provenance: true
+          provenance: mode=max
           sbom: true
           secrets: |
             "github_username=${{ github.actor }}"
             "github_token=${{ secrets.PACKAGES_TOKEN }}"
 
+      - name: Verify image provenance and SBOM attestations
+        shell: bash
+        run: |
+          IMAGE="ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}"
+
+          docker buildx imagetools inspect "$IMAGE" \
+            --format '{{json .Provenance}}' \
+            | jq -e '.SLSA != null' > /dev/null \
+            || { echo "::error::SLSA provenance attestation missing or invalid"; exit 1; }
+
+          docker buildx imagetools inspect "$IMAGE" \
+            --format '{{json .SBOM}}' \
+            | jq -e '.SPDX != null' > /dev/null \
+            || { echo "::error::SPDX SBOM attestation missing or invalid"; exit 1; }
+
       - name: Scan Docker image for vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
+          image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -127,7 +141,7 @@ jobs:
         run: |
           docker buildx imagetools create \
             --tag ghcr.io/${{ github.repository }}:latest \
-            ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
+            ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
 
       - name: Print deployment instructions
         run: |
