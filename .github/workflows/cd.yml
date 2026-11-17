@@ -44,7 +44,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build with Maven
-        run: mvn -B -U -ntp -s .mvn/settings.xml clean package -Dgithub.username=${{ github.actor }} -Dgithub.token=${{ secrets.PACKAGES_TOKEN }}
+        run: mvn -B -U -ntp -s .mvn/settings.xml clean package
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
@@ -97,18 +97,51 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (immutable tag)
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./DockerfileProduction
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}
-          build-args: |
-            GITHUB_USERNAME=${{ github.actor }}
-            GITHUB_TOKEN=${{ secrets.PACKAGES_TOKEN }}
+          provenance: mode=max
+          sbom: true
+          secrets: |
+            "github_username=${{ github.actor }}"
+            "github_token=${{ secrets.PACKAGES_TOKEN }}"
+
+      - name: Verify image provenance and SBOM attestations
+        shell: bash
+        run: |
+          IMAGE="ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}"
+
+          docker buildx imagetools inspect "$IMAGE" \
+            --format '{{json .Provenance}}' \
+            | jq -e '.SLSA != null' > /dev/null \
+            || { echo "::error::SLSA provenance attestation missing or invalid"; exit 1; }
+
+          docker buildx imagetools inspect "$IMAGE" \
+            --format '{{json .SBOM}}' \
+            | jq -e '.SPDX != null' > /dev/null \
+            || { echo "::error::SPDX SBOM attestation missing or invalid"; exit 1; }
+
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Promote scanned image to latest
+        run: |
+          docker buildx imagetools create \
+            --tag ghcr.io/${{ github.repository }}:latest \
+            ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
 
       - name: Print deployment instructions
         run: |

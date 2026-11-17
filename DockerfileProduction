@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Dockerfile for Production
 # Multi-stage build to optimize size and security
 
@@ -5,20 +6,24 @@
 FROM maven:3.9.11-eclipse-temurin-25-alpine AS builder
 WORKDIR /app
 
-# Arguments for GitHub credentials
-ARG GITHUB_USERNAME
-ARG GITHUB_TOKEN
-
 # Copy pom.xml first to leverage Maven's cache
 COPY pom.xml .
 COPY .mvn .mvn
 
-# Download dependencies with credentials passed as arguments
-RUN mvn dependency:go-offline -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
+# Download dependencies using GitHub Packages credentials supplied as BuildKit secrets
+RUN --mount=type=secret,id=github_username,required=true \
+    --mount=type=secret,id=github_token,required=true \
+    GITHUB_USERNAME="$(cat /run/secrets/github_username)" \
+    GITHUB_TOKEN="$(cat /run/secrets/github_token)" \
+    mvn -B -ntp dependency:go-offline -s .mvn/settings.xml
 
 # Copy source code and compile
 COPY src src
-RUN mvn package -DskipTests -s .mvn/settings.xml -Dgithub.username="${GITHUB_USERNAME}" -Dgithub.token="${GITHUB_TOKEN}"
+RUN --mount=type=secret,id=github_username,required=true \
+    --mount=type=secret,id=github_token,required=true \
+    GITHUB_USERNAME="$(cat /run/secrets/github_username)" \
+    GITHUB_TOKEN="$(cat /run/secrets/github_token)" \
+    mvn -B -ntp package -DskipTests -s .mvn/settings.xml
 
 # Stage 2: Runtime stage
 FROM eclipse-temurin:25-jre-alpine
