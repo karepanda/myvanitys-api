@@ -2,6 +2,7 @@ package com.myvanitys.api.product.infrastructure.adapter.primary;
 
 import com.myvanitys.api.auth.infrastructure.security.AuthenticatedUserContext;
 import com.myvanitys.api.model.v1.AddReviewRequest;
+import com.myvanitys.api.model.v1.AddToVanityRequest;
 import com.myvanitys.api.model.v1.CategoryResponse;
 import com.myvanitys.api.model.v1.CreateProductRequest;
 import com.myvanitys.api.model.v1.ProductResponse;
@@ -149,7 +150,8 @@ public class ProductController implements ProductsApiDelegate {
       UUID xRequestID,
       UUID xFlowID,
       String acceptLanguage,
-      String userAgent) {
+      String userAgent,
+      AddToVanityRequest addToVanityRequest) {
 
     AddProductToMyVanityCommand command = new AddProductToMyVanityCommand(productId, getUserId().getValue());
 
