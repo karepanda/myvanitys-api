@@ -37,3 +37,17 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ## Verification
 - Run the smallest relevant unit or integration tests first; use `mvn clean verify` when the change crosses layers or persistence.
 - Summarize changed behavior, checks run, and any durable decision; never store secrets or routine activity in memory.
+
+## Credential safety
+
+- Treat all terminal output as conversation-visible.
+- Never read, print, serialize, or summarize credential-bearing files.
+- Never inspect ~/.m2/settings.xml, settings-security.xml, .env files,
+  GitHub CLI authentication files, credential stores, or complete environments.
+- Never run Maven effective-settings diagnostics or evaluate the Maven
+  settings object.
+- When authentication fails, report only whether the required variable is
+  present; never print its value.
+- Authenticated publishing and package-download commands must be performed
+  by the user or CI unless credentials are supplied through an approved
+  secret-injection mechanism.
