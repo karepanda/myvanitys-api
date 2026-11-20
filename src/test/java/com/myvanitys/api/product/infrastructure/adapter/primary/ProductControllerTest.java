@@ -254,7 +254,7 @@ class ProductControllerTest {
 
     // When
     ResponseEntity<ProductResponse> response = controller.addProductToUserVanity(
-        PRODUCT_ID, REQUEST_ID, FLOW_ID, ACCEPT_LANGUAGE, USER_AGENT);
+        PRODUCT_ID, REQUEST_ID, FLOW_ID, ACCEPT_LANGUAGE, USER_AGENT, null);
 
     // Then
     assertEquals(HttpStatus.OK, response.getStatusCode());
