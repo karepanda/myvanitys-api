@@ -11,6 +11,8 @@ on:
     paths:
       - '**/*.java'
       - '**/pom.xml'
+      - 'docker-compose*.yml'
+      - 'Dockerfile*'
       - '.github/workflows/*.yml'
 
 jobs:
@@ -121,3 +123,6 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ github.actor }}
           MAVEN_PASSWORD: ${{ secrets.PACKAGES_TOKEN }}
+
+      - name: Validate Docker Compose
+        run: docker compose -f docker-compose-production.yml config --quiet

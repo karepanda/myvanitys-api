@@ -8,10 +8,10 @@ services:
     restart: unless-stopped
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=${DATABASE_URL}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${PGUSER}
       - SPRING_DATASOURCE_PASSWORD=${PGPASSWORD}
-      - FLYWAY_URL=${DATABASE_URL}
+      - FLYWAY_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
       - FLYWAY_USER=${PGUSER}
       - FLYWAY_PASSWORD=${PGPASSWORD}
       - FLYWAY_LOCATIONS=filesystem:/app/migrations
@@ -19,7 +19,6 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI}
       - JWT_SECRET=${JWT_SECRET}
-      - DATABASE_PUBLIC_URL=${DATABASE_PUBLIC_URL}
     depends_on:
       db:
         condition: service_healthy
@@ -50,8 +49,6 @@ services:
       - PGDATA=${PGDATA}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "${PGPORT}:5432"
     networks:
       - app-network
     healthcheck:
