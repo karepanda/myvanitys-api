@@ -16,6 +16,7 @@ import org.testcontainers.utility.MountableFile;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
@@ -28,7 +29,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * ({@code db/roles/01-separate-roles.sql}) through {@code psql}, with passwords supplied through
  * the container environment as they are in deployment, and then proving that Flyway migrates under
  * the migration role, Hibernate validates and the application operates under the DML-only runtime
- * role, and the runtime role is rejected when it attempts DDL.
+ * role, the optional human read-only role cannot write or run DDL, and the runtime role is rejected
+ * when it attempts DDL.
  */
 @Testcontainers
 @SpringBootTest(
@@ -45,6 +47,8 @@ class DatabaseRoleSeparationIT {
   private static final String APP_PASSWORD = "apppass";
   private static final String MIGRATION_USER = "myvanitys_migration";
   private static final String MIGRATION_PASSWORD = "migrationpass";
+  private static final String READONLY_USER = "myvanitys_readonly";
+  private static final String READONLY_PASSWORD = "readonlypass";
   private static final String PROVISIONING_SQL = "db/roles/01-separate-roles.sql";
 
   // JUnit owns and closes static fields annotated with @Container.
@@ -54,7 +58,8 @@ class DatabaseRoleSeparationIT {
       .withUsername("admin")
       .withPassword("adminpass")
       .withEnv("FLYWAY_PASSWORD", MIGRATION_PASSWORD)
-      .withEnv("APP_DB_PASSWORD", APP_PASSWORD);
+      .withEnv("APP_DB_PASSWORD", APP_PASSWORD)
+      .withEnv("READONLY_DB_PASSWORD", READONLY_PASSWORD);
 
   @Autowired
   private JdbcTemplate jdbcTemplate;
@@ -75,23 +80,27 @@ class DatabaseRoleSeparationIT {
     if (rolesProvisioned) {
       return;
     }
-    String databaseName = postgres.getDatabaseName();
-    postgres.copyFileToContainer(
-        MountableFile.forClasspathResource(PROVISIONING_SQL),
-        "/db/roles/01-separate-roles.sql");
-
-    ExecResult result = postgres.execInContainer(
-        "psql",
-        "-v", "ON_ERROR_STOP=1",
-        "-U", postgres.getUsername(),
-        "-d", databaseName,
-        "-v", "database_name=" + databaseName,
-        "-f", "/db/roles/01-separate-roles.sql");
+    ExecResult result = executeProvisioningScript(postgres);
 
     assertThat(result.getExitCode())
         .withFailMessage("Role provisioning failed: %s", result.getStderr())
         .isZero();
     rolesProvisioned = true;
+  }
+
+  private static ExecResult executeProvisioningScript(PostgreSQLContainer database) throws Exception {
+    String databaseName = database.getDatabaseName();
+    database.copyFileToContainer(
+        MountableFile.forClasspathResource(PROVISIONING_SQL),
+        "/db/roles/01-separate-roles.sql");
+
+    return database.execInContainer(
+        "psql",
+        "-v", "ON_ERROR_STOP=1",
+        "-U", database.getUsername(),
+        "-d", databaseName,
+        "-v", "database_name=" + databaseName,
+        "-f", "/db/roles/01-separate-roles.sql");
   }
 
   @Test
@@ -124,6 +133,56 @@ class DatabaseRoleSeparationIT {
         }
       }).isInstanceOf(SQLException.class)
           .hasMessageContaining("permission denied");
+    }
+  }
+
+  @Test
+  @DisplayName("Given the read-only role, when it reads seeded data, then reads succeed but writes and DDL fail")
+  void readonlyRoleCanReadButCannotWriteOrRunDdl() throws Exception {
+    try (Connection connection = DriverManager.getConnection(
+        postgres.getJdbcUrl(), READONLY_USER, READONLY_PASSWORD);
+         Statement statement = connection.createStatement()) {
+      try (ResultSet result = statement.executeQuery("SELECT count(*) FROM category")) {
+        assertThat(result.next()).isTrue();
+        assertThat(result.getInt(1)).isGreaterThan(0);
+      }
+
+      assertThatThrownBy(() -> statement.executeUpdate(
+          "INSERT INTO category (category_id, version, name, created_at, updated_at) "
+              + "VALUES ('00000000-0000-0000-0000-000000000000', 0, 'should fail', now(), now())"))
+          .isInstanceOf(SQLException.class)
+          .hasMessageContaining("permission denied");
+
+      assertThatThrownBy(() -> statement.execute("CREATE TABLE readonly_ddl_should_fail (id UUID PRIMARY KEY)"))
+          .isInstanceOf(SQLException.class)
+          .hasMessageContaining("permission denied");
+    }
+  }
+
+  @Test
+  @DisplayName("Given no read-only password, when roles are provisioned, then the optional role is skipped")
+  void provisioningSucceedsWithoutReadonlyPassword() throws Exception {
+    try (PostgreSQLContainer database = new PostgreSQLContainer("postgres:16")
+        .withDatabaseName("withoutreadonly")
+        .withUsername("admin")
+        .withPassword("adminpass")
+        .withEnv("FLYWAY_PASSWORD", MIGRATION_PASSWORD)
+        .withEnv("APP_DB_PASSWORD", APP_PASSWORD)) {
+      database.start();
+
+      ExecResult result = executeProvisioningScript(database);
+      assertThat(result.getExitCode())
+          .withFailMessage("Role provisioning without READONLY_DB_PASSWORD failed: %s", result.getStderr())
+          .isZero();
+
+      try (Connection connection = DriverManager.getConnection(
+          database.getJdbcUrl(), database.getUsername(), database.getPassword());
+           Statement statement = connection.createStatement();
+           ResultSet roles = statement.executeQuery(
+               "SELECT count(*) FROM pg_roles WHERE rolname = 'myvanitys_readonly'")) {
+        assertThat(roles.next()).isTrue();
+        assertThat(roles.getInt(1)).isZero();
+      }
     }
   }
 }
