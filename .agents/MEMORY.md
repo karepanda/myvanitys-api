@@ -13,6 +13,7 @@ Durable project memory shared by coding agents. Keep this file concise and remov
 - Treat `myvanitys-api-spec` as the source of truth for generated REST interfaces and models.
 - Use Flyway migrations with Hibernate validation so schema evolution is explicit and repeatable.
 - Separate database roles: Flyway runs as `myvanitys_migration` (DDL, `FLYWAY_USER`/`FLYWAY_PASSWORD`) and the app runs as `myvanitys_app` (DML only, `APP_DB_USER`/`APP_DB_PASSWORD`); provision via `src/main/resources/db/roles/01-separate-roles.sql` (which also revokes `CREATE` on `public` from `PUBLIC` and the runtime role).
+- Security scanning gates same-repo PRs and a weekly schedule via `.github/workflows/security-scan.yml` (Gitleaks for secrets, Trivy for dependency and image findings). Private exceptions use the `SECURITY_GITLEAKS_ALLOWLIST`, `SECURITY_GITLEAKS_IGNORE`, and `SECURITY_TRIVY_IGNORE` repository secrets; fork commits require security review before promotion to a same-repo branch. See `doc/operations/SEC-09-security-scanning.md`.
 - Preserve the established naming differences between `auth` and `product` until a dedicated refactor is approved.
 
 ## Lessons and pitfalls
