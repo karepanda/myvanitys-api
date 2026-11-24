@@ -7,21 +7,26 @@ spring:
       minimumIdle: 5
       idleTimeout: 600000
       maxLifetime: 1800000
-    # PostgreSQL configuration for Railway
+    # PostgreSQL configuration for Railway.
+    # Runtime role: DML only (no DDL). Created by src/main/resources/db/roles/01-separate-roles.sql.
     url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
-    username: ${PGUSER}
-    password: ${PGPASSWORD}
+    username: ${APP_DB_USER}
+    password: ${APP_DB_PASSWORD}
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: false
 
   flyway:
+    # Migration role: owns the schema objects and runs DDL, distinct from the runtime role.
     enabled: true
+    url: ${FLYWAY_URL:jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}}
+    user: ${FLYWAY_USER}
+    password: ${FLYWAY_PASSWORD}
     baseline-on-migrate: true
     validate-on-migrate: true
     clean-disabled: true
@@ -35,11 +40,6 @@ google:
     client-id: ${GOOGLE_CLIENT_ID}
     client-secret: ${GOOGLE_CLIENT_SECRET}
     redirect-uri: ${OAUTH_REDIRECT_URI}
-
-# Security configuration
-management:
-  security:
-    enabled: true  # Enable actuator safety
 
 jwt:
   secret: "${JWT_SECRET}"
