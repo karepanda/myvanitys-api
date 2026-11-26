@@ -12,7 +12,7 @@ Spring Boot REST API for the MyVanitys product catalog, reviews, Google OAuth, a
 mvn clean compile
 mvn test
 mvn clean test jacoco:report jacoco:check
-mvn failsafe:integration-test failsafe:verify
+mvn test-compile failsafe:integration-test failsafe:verify
 mvn clean verify
 mvn test-compile org.pitest:pitest-maven:mutationCoverage
 mvn package -DskipTests

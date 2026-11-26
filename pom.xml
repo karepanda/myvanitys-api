@@ -25,6 +25,8 @@
     <java.version>25</java.version>
     <byte-buddy.version>1.17.7</byte-buddy.version>
     <myvanitys-api-spec.version>1.13.0</myvanitys-api-spec.version>
+    <!-- Direct Failsafe runs do not execute JaCoCo's pre-integration-test phase. -->
+    <failsafeArgLine/>
     <!-- Security overrides: Spring Boot 4.1.1 is the latest 4.1.x release, so the remaining
          flagged CVEs are cleared by pinning these BOM properties above the versions it manages. -->
     <!-- Tomcat 11.0.24 (Spring Boot 4.1.1 default) has three critical CVEs
@@ -353,9 +355,22 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>resolve-test-agent-path</id>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>@{argLine} -Djdk.attach.allowAttachSelf=true</argLine>
+          <argLine>@{argLine} -javaagent:"${org.mockito:mockito-core:jar}"</argLine>
           <includes>
             <include>**/*Test.java</include>
           </includes>
@@ -365,6 +380,12 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>3.6.0</version>
+        <configuration>
+          <argLine>@{failsafeArgLine} -javaagent:"${org.mockito:mockito-core:jar}"</argLine>
+          <includes>
+            <include>**/*IT.java</include>
+          </includes>
+        </configuration>
         <executions>
           <execution>
             <id>integration-tests</id>
@@ -373,12 +394,6 @@
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
-            <configuration>
-              <argLine>@{failsafeArgLine}</argLine>
-              <includes>
-                <include>**/*IT.java</include>
-              </includes>
-            </configuration>
           </execution>
         </executions>
       </plugin>
