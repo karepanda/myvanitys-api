@@ -143,12 +143,27 @@ jobs:
             --tag ghcr.io/${{ github.repository }}:latest \
             ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
 
-      - name: Print deployment instructions
+      - name: Print image publication summary
         run: |
           echo "============================================================="
           echo "The Docker image has been built and published successfully:"
           echo "ghcr.io/${{ github.repository }}:${{ needs.tag-and-release.outputs.new_tag }}"
           echo " "
-          echo "Railway should automatically detect and deploy this image."
-          echo "If you need to verify the deployment, visit your project on Railway."
+          echo "The deploy-railway job will redeploy this image on Railway."
           echo "============================================================="
+
+  deploy-railway:
+    needs: build-and-push-docker
+    permissions: {}
+    concurrency:
+      group: railway-production
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli@5.75.0
+
+      - name: Redeploy Railway service
+        run: railway redeploy --service myvanitys-api --environment production --yes
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
